@@ -9,6 +9,7 @@
         "src/main.c",
         "-o",
         "birthday_paradox.exe",
+        "-lmenuw",
         "-lncursesw",
         "-DNCURSES_STATIC"
       ],
@@ -25,6 +26,7 @@
         "${file}",
         "-o",
         "${fileDirname}\\${fileBasenameNoExtension}.exe",
+        "-lmenuw",
         "-lncursesw",
         "-DNCURSES_STATIC"
       ],
