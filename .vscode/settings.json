@@ -14,6 +14,8 @@
     "*.css.liquid": "liquid-css",
     "*.scss.liquid": "liquid-scss",
     "menu.h": "c",
-    "windows.h": "c"
+    "windows.h": "c",
+    "random": "c",
+    "locale.h": "c"
   }
 }

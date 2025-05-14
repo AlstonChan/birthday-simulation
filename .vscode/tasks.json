@@ -6,9 +6,10 @@
       "type": "shell",
       "command": "gcc",
       "args": [
-        "src/main.c",
+        "src/*.c",
+        "-Iinclude",
         "-o",
-        "birthday_paradox.exe",
+        "birthday_simulation.exe",
         "-lmenuw",
         "-lncursesw",
         "-DNCURSES_STATIC"
@@ -23,15 +24,17 @@
       "args": [
         "-fdiagnostics-color=always",
         "-g",
-        "${file}",
+        "src/main.c",
+        "src/art.c",
         "-o",
         "${fileDirname}\\${fileBasenameNoExtension}.exe",
+        "-Iinclude",
         "-lmenuw",
         "-lncursesw",
         "-DNCURSES_STATIC"
       ],
       "options": {
-        "cwd": "${fileDirname}"
+        "cwd": "${workspaceFolder}"
       },
       "problemMatcher": ["$gcc"],
       "group": {

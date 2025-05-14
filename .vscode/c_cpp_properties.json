@@ -4,6 +4,7 @@
       "name": "Win32",
       "includePath": [
         "${workspaceFolder}/**",
+        "${workspaceFolder}/include",
         "C:/msys64/ucrt64/include",
         "C:/msys64/ucrt64/include/ncursesw"
       ],
