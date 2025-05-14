@@ -17,7 +17,12 @@
     "windows.h": "c",
     "random": "c",
     "locale.h": "c",
-    "ncurses.h": "c"
+    "ncurses.h": "c",
+    "stdlib.h": "c",
+    "xstring": "c",
+    "string": "c",
+    "format": "c",
+    "string.h": "c"
   },
   "cSpell.words": ["Iinclude", "lmenuw", "lncursesw"]
 }

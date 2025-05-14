@@ -1,6 +1,7 @@
 #include <ncurses/ncurses.h>
 #include <string.h>
 
+#include "../utils/utils.h"
 #include "art.h"
 
 /**
@@ -9,18 +10,17 @@
  * "BIRTHDAY SIMULATION" in a stylized format.
  */
 const char *const BIRTHDAY_SIMULATION_ART_TEXT[] = {
-    "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄",
-    "██ ▄▄▀██▄██ ▄▄▀█▄ ▄█ ████ ▄▀█ ▄▄▀█ ██ ████ ▄▄▄ ██▄██ ▄▀▄ █ ██ █ ██ ▄▄▀█▄ ▄██▄██▀▄▄▀█ ▄▄▀",
-    "██ ▄▄▀██ ▄█ ▀▀▄██ ██ ▄▄ █ █ █ ▀▀ █ ▀▀ ████▄▄▄▀▀██ ▄█ █▄█ █ ██ █ ██ ▀▀ ██ ███ ▄█ ██ █ ██",
-    "██ ▀▀ █▄▄▄█▄█▄▄██▄██▄██▄█▄▄██▄██▄█▀▀▀▄████ ▀▀▀ █▄▄▄█▄███▄██▄▄▄█▄▄█▄██▄██▄██▄▄▄██▄▄██▄██▄",
-    "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀"};
+    "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄",
+    "██ ▄▄▀██▄██ ▄▄▀█▄ ▄█ ████ ▄▀█ ▄▄▀█ ██ ████ ▄▄▄ ██▄██ ▄▀▄ █ ██ █ ██ ▄▄▀█▄ ▄██▄██▀▄▄▀█ ▄▄▀█",
+    "██ ▄▄▀██ ▄█ ▀▀▄██ ██ ▄▄ █ █ █ ▀▀ █ ▀▀ ████▄▄▄▀▀██ ▄█ █▄█ █ ██ █ ██ ▀▀ ██ ███ ▄█ ██ █ ██ █",
+    "██ ▀▀ █▄▄▄█▄█▄▄██▄██▄██▄█▄▄██▄██▄█▀▀▀▄████ ▀▀▀ █▄▄▄█▄███▄██▄▄▄█▄▄█▄██▄██▄██▄▄▄██▄▄██▄██▄█",
+    "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀"};
 
 /**
  * @brief The number of lines in the birthday simulation art text.
  *
  */
-const unsigned short BIRTHDAY_SIMULATION_ART_TEXT_LINE =
-    sizeof(BIRTHDAY_SIMULATION_ART_TEXT) / sizeof(BIRTHDAY_SIMULATION_ART_TEXT[0]);
+const unsigned short BIRTHDAY_SIMULATION_ART_TEXT_LINE = ARRAY_SIZE(BIRTHDAY_SIMULATION_ART_TEXT);
 
 /**
  * @brief Print the birthday simulation art text in the center of the window.

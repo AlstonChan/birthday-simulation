@@ -4,26 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "art.h"
-#include "utils.h"
-
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
-
-/**
- * @brief The main menu choices for the program.
- *
- */
-const char *const main_menu_choices[] = {
-    "Birthday Paradox Simulation", "Birthday Attack Demo", "Explanation", "System Info", "Exit"};
-
-/**
- * @brief The number of choices in the main menu.
- *
- */
-const unsigned short main_menu_choices_len = ARRAY_SIZE(main_menu_choices);
-
-int prev_max_y = 0; // Store previous dimensions
-int prev_max_x = 0;
+#include "ui/art.h"
+#include "ui/menu.h"
+#include "utils/utils.h"
 
 int main() {
   setlocale(LC_ALL, ""); // Set the locale to the user's default (utf-8)
@@ -35,46 +18,30 @@ int main() {
     fprintf(stderr, "\nBirthday Simulation: Your terminal does not support color\n");
     return 1;
   }
-  start_color();         // Start color functionality
+  start_color(); // Start color functionality
+  init_pair(1, COLOR_CYAN, COLOR_BLACK);
+
   cbreak();              // Disable line buffering
   noecho();              // Don't echo user input
   keypad(stdscr, TRUE);  // Enable special keys (like arrow keys)
   nodelay(stdscr, TRUE); // Make getch() non-blocking
-  init_pair(1, COLOR_CYAN, COLOR_BLACK);
+  curs_set(0);           // Hide the cursor
 
-  // Allocate memory for the menu items pointer array
-  ITEM **main_menu_choices_items =
-      (ITEM **)calloc((size_t)(main_menu_choices_len + 1), sizeof(ITEM *));
-  MENU *main_menu;
   int c;
 
   int max_y, max_x;               // Store the stdscr dimensions
   getmaxyx(stdscr, max_y, max_x); // Get initial window size
-  prev_max_y = max_y;
-  prev_max_x = max_x;
 
-  WINDOW *menu_win =
-      newwin(9, 40, (max_y - 15) / 2, (max_x - 40) / 2); // Create a new window for the menu
-  keypad(menu_win, TRUE);                                // Enable special keys in the menu window
-  box(menu_win, 0, 0);                                   // Draw a box around the window
-  print_in_middle(menu_win, 0, 0, 40, "Main Menu", COLOR_PAIR(1));
-  refresh();
+  // WINDOW *header_win = newwin(2, max_x, 0, 0);
+  // WINDOW *footer_win = newwin(2, max_x, max_y - 2, 0);
+  WINDOW *content_win = newwin(max_y - 4, max_x, 2, 0);
+  keypad(content_win, TRUE); // Enable special keys in the menu window
 
-  // Create menu items for each choice
-  for (unsigned short i = 0; i < main_menu_choices_len; i++) {
-    main_menu_choices_items[i] = new_item(main_menu_choices[i], NULL);
-  }
-  main_menu_choices_items[main_menu_choices_len] =
-      NULL; // Add NULL terminator to the end of the array
+  main_menu_init(content_win); // Initialize the menu in the content window
+  MENU *main_menu = main_menu_render(content_win, max_y, max_x); // Render the menu
 
-  main_menu = new_menu(main_menu_choices_items); // Create the menu
-  set_menu_win(main_menu, menu_win);
-  set_menu_sub(main_menu, derwin(menu_win, 6, 38, 2, 1));
-  set_menu_mark(main_menu, "> "); // Set the mark for selected items
-  mvprintw(LINES - 2, 0, "F1 to Exit");
-  post_menu(main_menu);                // Post the menu to the window
+  mvprintw(LINES - 2, 1, "F1 to Exit");
   ncurses_print_art_text_center(NULL); // Print the art text
-  wrefresh(menu_win);                  // Refresh the menu window to show the menu
 
   bool is_done = false;
   while ((c = getch()) != KEY_F(1) && !is_done) {
@@ -115,13 +82,10 @@ int main() {
       }
       break;
     }
-    wrefresh(menu_win); // Refresh the menu window to show the current selection
+    wrefresh(content_win); // Refresh the menu window to show the current selection
   }
 
-  unpost_menu(main_menu); // Erase the menu from the window
-  free_menu(main_menu);   // Free the memory allocated for the menu
-  for (unsigned short i = 0; i < main_menu_choices_len; ++i)
-    free_item(main_menu_choices_items[i]); // Free the memory allocated for each item
+  main_menu_destroy(); // Destroy the menu
 
   endwin(); // End ncurses mode
   return 0;
