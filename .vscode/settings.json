@@ -18,5 +18,6 @@
     "random": "c",
     "locale.h": "c",
     "ncurses.h": "c"
-  }
+  },
+  "cSpell.words": ["Iinclude", "lmenuw", "lncursesw"]
 }
