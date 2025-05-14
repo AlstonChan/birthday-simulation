@@ -16,6 +16,7 @@
     "menu.h": "c",
     "windows.h": "c",
     "random": "c",
-    "locale.h": "c"
+    "locale.h": "c",
+    "ncurses.h": "c"
   }
 }

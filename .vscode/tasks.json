@@ -26,6 +26,7 @@
         "-g",
         "src/main.c",
         "src/art.c",
+        "src/utils.c",
         "-o",
         "${fileDirname}\\${fileBasenameNoExtension}.exe",
         "-Iinclude",
