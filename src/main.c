@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "pages/system_info.h"
-#include "ui/art.h"
+#include "ui/layout.h"
 #include "ui/menu.h"
 #include "utils/utils.h"
 
@@ -33,15 +33,13 @@ int main() {
   int max_y, max_x;               // Store the stdscr dimensions
   getmaxyx(stdscr, max_y, max_x); // Get initial window size
 
-  // WINDOW *header_win = newwin(2, max_x, 0, 0);
-  // WINDOW *footer_win = newwin(2, max_x, max_y - 2, 0);
+  WINDOW *header_win = newwin(2, max_x, 0, 0);
+  WINDOW *footer_win = newwin(2, max_x, max_y - 2, 0);
   WINDOW *content_win = newwin(max_y - 4, max_x, 2, 0);
   keypad(content_win, TRUE); // Enable special keys in the menu window
 
   main_menu_init(content_win); // Initialize the menu in the content window
   MENU *main_menu = main_menu_render(content_win, max_y, max_x); // Render the menu
-
-  ncurses_print_art_text_center(NULL); // Print the art text
 
   bool is_done = false;
   while ((c = getch()) != KEY_F(1) && !is_done) {
@@ -81,15 +79,19 @@ int main() {
         break;
       case 3:
         // Call the system info function
-        // system_info();
         erase();                                       // Clear the screen
         main_menu_erase();                             // Erase the menu from the window
         refresh();                                     // Refresh the screen
         nodelay(stdscr, FALSE);                        // Make getch() blocking
+        content_layout_render(header_win, footer_win); // Render the layout
         render_system_info(content_win, max_y, max_x); // Render system info in the content window
         main_menu_restore(content_win, max_y, max_x);  // Restore the menu to the window
-        ncurses_print_art_text_center(NULL);           // Print the art text
         nodelay(stdscr, TRUE);                         // Make getch() non-blocking
+
+        werase(header_win);   // Clear the header window
+        wrefresh(header_win); // Refresh the header window
+        werase(footer_win);   // Clear the footer window
+        wrefresh(footer_win); // Refresh the footer window
         break;
       case 4:
         // Exit the program

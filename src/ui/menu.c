@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "../utils/utils.h"
+#include "art.h"
 #include "menu.h"
 
 /**
@@ -79,6 +80,8 @@ MENU *main_menu_render(WINDOW *win, int max_y, int max_x) {
 
   box(win, 0, 0);
   print_in_middle(win, 0, 0, 40, " Main Menu ", COLOR_PAIR(1));
+
+  art_text_center_render(NULL);
 
   // Render the menu navigation text
   main_menu_navigation_render(NULL, y + main_menu_win_rows + 1);

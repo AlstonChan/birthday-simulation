@@ -28,7 +28,7 @@ const unsigned short BIRTHDAY_SIMULATION_ART_TEXT_LINE = ARRAY_SIZE(BIRTHDAY_SIM
  * @param win The ncurses window to print in. Default is stdscr if NULL.
  * @return void
  */
-void ncurses_print_art_text_center(WINDOW *win) {
+void art_text_center_render(WINDOW *win) {
   int max_y, max_x, start_y, start_x, max_text_width = 0;
 
   // If no window is provided, use the default stdscr
