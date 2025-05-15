@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "pages/system_info.h"
 #include "ui/art.h"
 #include "ui/menu.h"
 #include "utils/utils.h"
@@ -45,10 +46,12 @@ int main() {
 
   bool is_done = false;
   while ((c = getch()) != KEY_F(1) && !is_done) {
+    int selected_item = item_index(current_item(main_menu)); // Get the selected item index
+
     switch (c) {
     case KEY_DOWN:
       // If the user presses down on the last item, wrap around to the first item
-      if (item_index(current_item(main_menu)) == main_menu_choices_len - 1) {
+      if (selected_item == main_menu_choices_len - 1) {
         menu_driver(main_menu, REQ_FIRST_ITEM);
       } else {
         menu_driver(main_menu, REQ_DOWN_ITEM);
@@ -56,7 +59,7 @@ int main() {
       break;
     case KEY_UP:
       // If the user presses up on the first item, wrap around to the last item
-      if (item_index(current_item(main_menu)) == 0) {
+      if (selected_item == 0) {
         menu_driver(main_menu, REQ_LAST_ITEM);
       } else {
         menu_driver(main_menu, REQ_UP_ITEM);
@@ -64,21 +67,34 @@ int main() {
       break;
     case KEY_ENTER:
     case 10: // Enter key
-      if (item_index(current_item(main_menu)) == 0) {
+      switch (selected_item) {
+      case 0:
         // Call the birthday paradox simulation function
         // birthday_paradox_simulation();
-      } else if (item_index(current_item(main_menu)) == 1) {
+        break;
+      case 1:
         // Call the birthday attack demo function
         // birthday_attack_demo();
-      } else if (item_index(current_item(main_menu)) == 2) {
+        break;
+      case 2:
         // Call the explanation function
         // explanation();
-      } else if (item_index(current_item(main_menu)) == 3) {
+        break;
+      case 3:
         // Call the system info function
         // system_info();
-      } else if (item_index(current_item(main_menu)) == 4) {
+        main_menu_erase();                             // Erase the menu from the window
+        nodelay(stdscr, FALSE);                        // Make getch() blocking
+        render_system_info(content_win, max_y, max_x); // Render system info in the content window
+        break;
+      case 4:
         // Exit the program
         is_done = true;
+        break;
+      default:
+        // This case should never be reached, exit the loop
+        is_done = true;
+        break;
       }
       break;
     }

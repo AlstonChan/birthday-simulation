@@ -21,6 +21,7 @@ const unsigned short main_menu_choices_len = ARRAY_SIZE(main_menu_choices);
 
 static ITEM **main_menu_choices_items = NULL;
 static MENU *main_menu = NULL;
+static WINDOW *main_menu_sub_win = NULL;
 
 /**
  * @brief Initializes the main menu.
@@ -45,11 +46,14 @@ void main_menu_init(WINDOW *win) {
   // Add NULL terminator to the end of the array
   main_menu_choices_items[main_menu_choices_len] = NULL;
 
-  main_menu = new_menu(main_menu_choices_items);     // Create the menu
-  set_menu_win(main_menu, win);                      // Set the window for the menu
-  set_menu_sub(main_menu, derwin(win, 6, 38, 2, 1)); // Create a sub-window for the menu
-  set_menu_mark(main_menu, "> ");                    // Set the mark for selected items
-  post_menu(main_menu);                              // Post the menu to the window
+  // Create a sub-window for the menu
+  main_menu_sub_win = derwin(win, 6, 38, 2, 1);
+
+  main_menu = new_menu(main_menu_choices_items); // Create the menu
+  set_menu_win(main_menu, win);                  // Set the window for the menu
+  set_menu_sub(main_menu, main_menu_sub_win);    // Create a sub-window for the menu
+  set_menu_mark(main_menu, "> ");                // Set the mark for selected items
+  post_menu(main_menu);                          // Post the menu to the window
 
   wrefresh(win); // Refresh the window to show the menu
 }
@@ -87,6 +91,18 @@ MENU *main_menu_render(WINDOW *win, int max_y, int max_x) {
 MENU *main_menu_get() { return main_menu; }
 
 /**
+ * @brief Erases the menu from the window. So that the window can
+ * be used for other purposes.
+ *
+ */
+void main_menu_erase() {
+  if (!main_menu)
+    return;
+
+  unpost_menu(main_menu); // Erase the menu from the window
+}
+
+/**
  * @brief Destroys the menu and frees allocated memory.
  *
  */
@@ -94,8 +110,8 @@ void main_menu_destroy() {
   if (!main_menu)
     return;
 
-  unpost_menu(main_menu); // Erase the menu from the window
-  free_menu(main_menu);   // Free the memory allocated for the menu
+  main_menu_erase();    // Erase the menu from the window
+  free_menu(main_menu); // Free the memory allocated for the menu
 
   for (unsigned short i = 0; i < main_menu_choices_len; ++i)
     free_item(main_menu_choices_items[i]);              // Free the memory allocated for each item

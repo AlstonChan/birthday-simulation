@@ -22,7 +22,8 @@
     "xstring": "c",
     "string": "c",
     "format": "c",
-    "string.h": "c"
+    "string.h": "c",
+    "unistd.h": "c"
   },
   "cSpell.words": ["Iinclude", "lmenuw", "lncursesw"]
 }
