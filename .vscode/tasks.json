@@ -4,19 +4,15 @@
     {
       "label": "build",
       "type": "shell",
-      "command": "make",
-      "args": [],
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "New-Item -ItemType Directory -Force -Path build; Set-Location build; cmake .. -G \\\"MinGW Makefiles\\\"; make"
+      ],
       "group": {
         "kind": "build",
         "isDefault": true
       },
-      "problemMatcher": ["$gcc"]
-    },
-    {
-      "label": "clean",
-      "type": "shell",
-      "command": "make",
-      "args": ["clean"],
       "problemMatcher": []
     }
   ]
