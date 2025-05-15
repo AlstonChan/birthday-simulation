@@ -1,3 +1,4 @@
+#include "version.h"
 #include <ncurses/ncurses.h>
 
 /**
@@ -22,12 +23,15 @@ void render_system_info(WINDOW *win, int max_y, int max_x) {
   // Center the system info window
   mvwin(win, (max_y - 10) / 2, (max_x - 40) / 2);
 
+  box(win, 0, 0);
+
   // Display system information
-  mvwprintw(win, 1, 1, "System Information");
+  mvwprintw(win, 0, 3, "[ System Information ]");
+  mvwprintw(win, 2, 2, "Program Version: %s", PROGRAM_VERSION_STRING);
   mvwprintw(win,
-            3,
-            1,
-            "Ncurses version: %d.%d.%d",
+            4,
+            2,
+            "- Ncurses Version: %d.%d.%d",
             NCURSES_VERSION_MAJOR,
             NCURSES_VERSION_MINOR,
             NCURSES_VERSION_PATCH);
