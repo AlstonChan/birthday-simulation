@@ -41,7 +41,6 @@ int main() {
   main_menu_init(content_win); // Initialize the menu in the content window
   MENU *main_menu = main_menu_render(content_win, max_y, max_x); // Render the menu
 
-  mvprintw(LINES - 2, 1, "F1 to Exit");
   ncurses_print_art_text_center(NULL); // Print the art text
 
   bool is_done = false;
@@ -83,9 +82,14 @@ int main() {
       case 3:
         // Call the system info function
         // system_info();
+        erase();                                       // Clear the screen
         main_menu_erase();                             // Erase the menu from the window
+        refresh();                                     // Refresh the screen
         nodelay(stdscr, FALSE);                        // Make getch() blocking
         render_system_info(content_win, max_y, max_x); // Render system info in the content window
+        main_menu_restore(content_win, max_y, max_x);  // Restore the menu to the window
+        ncurses_print_art_text_center(NULL);           // Print the art text
+        nodelay(stdscr, TRUE);                         // Make getch() non-blocking
         break;
       case 4:
         // Exit the program

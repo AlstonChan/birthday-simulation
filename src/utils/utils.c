@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <ncurses/ncurses.h>
 #include <string.h>
 
@@ -10,10 +11,10 @@
  * to the standard screen.
  *
  * @param win The window to print in. If NULL, defaults to stdscr.
- * @param start_y The starting row (y-coordinate) to print on. If 0, uses the
+ * @param start_y The starting row (y-coordinate) to print on. If INT_MAX, uses the
  * current cursor y-position of the window.
  * @param start_x The starting column (x-coordinate) to begin centering from.
- * If 0, uses the current cursor x-position of the window.
+ * If INT_MAX, uses the current cursor x-position of the window.
  * @param width The width of the area to center the string within. If 0, defaults
  * to 80 columns.
  * @param string The null-terminated string to print.
@@ -32,11 +33,11 @@ void print_in_middle(WINDOW *win, unsigned int start_y, unsigned int start_x, un
   getyx(win, y, x);
 
   // If a starting x-coordinate is provided, use it.
-  if (start_x != 0)
+  if (start_x != INT_MAX)
     x = start_x;
 
   // If a starting y-coordinate is provided, use it.
-  if (start_y != 0)
+  if (start_y != INT_MAX)
     y = start_y;
 
   // If no width is provided, default to 40 columns.

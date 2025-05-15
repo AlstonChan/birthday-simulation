@@ -54,8 +54,6 @@ void main_menu_init(WINDOW *win) {
   set_menu_sub(main_menu, main_menu_sub_win);    // Create a sub-window for the menu
   set_menu_mark(main_menu, "> ");                // Set the mark for selected items
   post_menu(main_menu);                          // Post the menu to the window
-
-  wrefresh(win); // Refresh the window to show the menu
 }
 
 /**
@@ -71,16 +69,37 @@ MENU *main_menu_render(WINDOW *win, int max_y, int max_x) {
     win = stdscr; // Use stdscr if no window is provided
 
   // Resize the window for the menu
-  wresize(win, main_menu_choices_len + 4, 40);
+  unsigned short main_menu_win_rows = main_menu_choices_len + 4;
+  wresize(win, main_menu_win_rows, 40);
 
   // Center the menu window
-  mvwin(win, (max_y - 15) / 2, (max_x - 40) / 2);
+  int y = (max_y - 15) / 2;
+  int x = (max_x - 40) / 2;
+  mvwin(win, y, x);
 
   box(win, 0, 0);
-  print_in_middle(win, 1, 0, 40, "Main Menu", COLOR_PAIR(1));
+  print_in_middle(win, 0, 0, 40, " Main Menu ", COLOR_PAIR(1));
+
+  // Render the menu navigation text
+  main_menu_navigation_render(NULL, y + main_menu_win_rows + 1);
+
   wrefresh(win);
 
+  // If the menu window is not the standard screen, refresh it
+  if (win != stdscr)
+    refresh();
+
   return main_menu;
+}
+
+void main_menu_navigation_render(WINDOW *win, int y) {
+  if (win == NULL)
+    win = stdscr; // Use stdscr if no window is provided
+
+  const char const *menu_navigation_text = "[↑/↓]: Navigate   [Enter]: Select   [F1]: Exit";
+  const unsigned short menu_navigation_text_len = strlen(menu_navigation_text);
+
+  mvwprintw(win, y, (COLS - menu_navigation_text_len) / 2, "%s", menu_navigation_text);
 }
 
 /**
@@ -100,6 +119,21 @@ void main_menu_erase() {
     return;
 
   unpost_menu(main_menu); // Erase the menu from the window
+}
+
+/**
+ * @brief Restores the menu to the window. This is useful
+ * after the menu has been erased and you want to
+ * display it again.
+ *
+ */
+void main_menu_restore(WINDOW *win, int max_y, int max_x) {
+  if (!main_menu)
+    return;
+
+  post_menu(main_menu);                // Post the menu to the window
+  main_menu_render(win, max_y, max_x); // Render the menu in the window
+  wrefresh(main_menu_sub_win);
 }
 
 /**
