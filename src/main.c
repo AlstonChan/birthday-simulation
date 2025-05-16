@@ -58,6 +58,7 @@ int main() {
       }
       break;
     case KEY_UP:
+    case KEY_BTAB: // Shift + Tab key
       // If the user presses up on the first item, wrap around to the last item
       if (selected_item == 0) {
         menu_driver(main_menu, REQ_LAST_ITEM);

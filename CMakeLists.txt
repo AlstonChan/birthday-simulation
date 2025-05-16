@@ -14,7 +14,7 @@ add_executable(birthday_simulation ${SOURCES})
 target_include_directories(birthday_simulation PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # Link with libraries
-target_link_libraries(birthday_simulation PRIVATE menuw ncursesw)
+target_link_libraries(birthday_simulation PRIVATE menuw ncursesw formw)
 
 # Custom output directory (like your Makefile)
 set_target_properties(birthday_simulation PROPERTIES

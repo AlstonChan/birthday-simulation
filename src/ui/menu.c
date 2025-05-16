@@ -69,6 +69,9 @@ MENU *main_menu_render(WINDOW *win, int max_y, int max_x) {
   if (win == NULL)
     win = stdscr; // Use stdscr if no window is provided
 
+  if (!main_menu)
+    main_menu_init(win); // Initialize the menu if not already done
+
   // Resize the window for the menu
   unsigned short main_menu_win_rows = main_menu_choices_len + 4;
   wresize(win, main_menu_win_rows, 40);
