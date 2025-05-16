@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "pages/system_info.h"
+#include "ui/footer.h"
 #include "ui/layout.h"
 #include "ui/menu.h"
 #include "utils/utils.h"
@@ -40,6 +41,8 @@ int main() {
 
   main_menu_init(content_win); // Initialize the menu in the content window
   MENU *main_menu = main_menu_render(content_win, max_y, max_x); // Render the menu
+
+  footer_render(footer_win); // Render the footer
 
   bool is_done = false;
   while ((c = getch()) != KEY_F(1) && !is_done) {
@@ -90,8 +93,8 @@ int main() {
 
         werase(header_win);   // Clear the header window
         wrefresh(header_win); // Refresh the header window
-        werase(footer_win);   // Clear the footer window
-        wrefresh(footer_win); // Refresh the footer window
+
+        footer_render(footer_win); // Render the footer
         break;
       case 4:
         // Exit the program
