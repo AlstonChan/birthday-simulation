@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "pages/paradox.h"
-#include "pages/system_info.h"
 #include "ui/footer.h"
 #include "ui/layout.h"
 #include "ui/menu.h"
@@ -72,19 +70,12 @@ int main() {
       switch (selected_item) {
       case 0:
         // Call the birthday paradox simulation function
-        erase();                                        // Clear the screen
-        main_menu_erase();                              // Erase the menu from the window
-        refresh();                                      // Refresh the screen
-        nodelay(stdscr, FALSE);                         // Make getch() blocking
-        content_layout_render(header_win, footer_win);  // Render the layout
-        render_paradox_page(content_win, max_y, max_x); // Render system info in the content window
-        main_menu_restore(content_win, max_y, max_x);   // Restore the menu to the window
-        nodelay(stdscr, TRUE);                          // Make getch() non-blocking
-
-        werase(header_win);   // Clear the header window
-        wrefresh(header_win); // Refresh the header window
-
-        footer_render(footer_win); // Render the footer
+        page_layout_render(header_win,
+                           footer_win,
+                           content_win,
+                           max_y,
+                           max_x,
+                           PARADOX_WIN); // Render the paradox page
         break;
       case 1:
         // Call the birthday attack demo function
@@ -96,19 +87,12 @@ int main() {
         break;
       case 3:
         // Call the system info function
-        erase();                                       // Clear the screen
-        main_menu_erase();                             // Erase the menu from the window
-        refresh();                                     // Refresh the screen
-        nodelay(stdscr, FALSE);                        // Make getch() blocking
-        content_layout_render(header_win, footer_win); // Render the layout
-        render_system_info(content_win, max_y, max_x); // Render system info in the content window
-        main_menu_restore(content_win, max_y, max_x);  // Restore the menu to the window
-        nodelay(stdscr, TRUE);                         // Make getch() non-blocking
-
-        werase(header_win);   // Clear the header window
-        wrefresh(header_win); // Refresh the header window
-
-        footer_render(footer_win); // Render the footer
+        page_layout_render(header_win,
+                           footer_win,
+                           content_win,
+                           max_y,
+                           max_x,
+                           SYSTEM_INFO_WIN); // Render system info
         break;
       case 4:
         // Exit the program
