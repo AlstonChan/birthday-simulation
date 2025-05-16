@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "pages/paradox.h"
 #include "pages/system_info.h"
 #include "ui/footer.h"
 #include "ui/layout.h"
@@ -50,6 +51,7 @@ int main() {
 
     switch (c) {
     case KEY_DOWN:
+    case '\t': // Tab key
       // If the user presses down on the last item, wrap around to the first item
       if (selected_item == main_menu_choices_len - 1) {
         menu_driver(main_menu, REQ_FIRST_ITEM);
@@ -70,7 +72,19 @@ int main() {
       switch (selected_item) {
       case 0:
         // Call the birthday paradox simulation function
-        // birthday_paradox_simulation();
+        erase();                                        // Clear the screen
+        main_menu_erase();                              // Erase the menu from the window
+        refresh();                                      // Refresh the screen
+        nodelay(stdscr, FALSE);                         // Make getch() blocking
+        content_layout_render(header_win, footer_win);  // Render the layout
+        render_paradox_page(content_win, max_y, max_x); // Render system info in the content window
+        main_menu_restore(content_win, max_y, max_x);   // Restore the menu to the window
+        nodelay(stdscr, TRUE);                          // Make getch() non-blocking
+
+        werase(header_win);   // Clear the header window
+        wrefresh(header_win); // Refresh the header window
+
+        footer_render(footer_win); // Render the footer
         break;
       case 1:
         // Call the birthday attack demo function
