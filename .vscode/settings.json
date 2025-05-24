@@ -24,7 +24,8 @@
     "format": "c",
     "string.h": "c",
     "unistd.h": "c",
-    "xlocmon": "c"
+    "xlocmon": "c",
+    "xlocale": "cpp"
   },
   "cSpell.words": ["Iinclude", "lmenuw", "lncursesw"]
 }
