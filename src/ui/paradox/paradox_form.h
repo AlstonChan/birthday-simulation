@@ -16,11 +16,6 @@
 #define FORM_X_PADDING 2
 
 /**
- * @brief The maximum length of a field in the paradox form.
- */
-#define MAX_FIELD_LENGTH 8
-
-/**
  * @brief The color pair for error messages.
  *
  */

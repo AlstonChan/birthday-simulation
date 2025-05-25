@@ -25,7 +25,8 @@
     "string.h": "c",
     "unistd.h": "c",
     "xlocmon": "c",
-    "xlocale": "cpp"
+    "xlocale": "cpp",
+    "paradox_form.h": "c"
   },
   "cSpell.words": ["Iinclude", "lmenuw", "lncursesw"]
 }

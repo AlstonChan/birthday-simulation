@@ -34,6 +34,21 @@ const unsigned short paradox_fields_len = ARRAY_SIZE(paradox_fields);
  */
 unsigned short max_label_length = 0;
 
+/**
+ * @brief Calculates the longest max_length from the paradox_fields array.
+ *
+ * @return unsigned short The longest max_length value.
+ */
+static unsigned short calculate_longest_max_length() {
+  unsigned short longest = 0;
+  for (unsigned short i = 0; i < paradox_fields_len; ++i) {
+    if (paradox_fields[i].max_length > longest) {
+      longest = paradox_fields[i].max_length;
+    }
+  }
+  return longest;
+}
+
 static FIELD **paradox_field = NULL;
 static FORM *paradox_form = NULL;
 static WINDOW *paradox_form_sub_win = NULL;
@@ -53,12 +68,32 @@ void update_field_highlighting() {
 
   FIELD **fields = form_fields(paradox_form);
   FIELD *current = current_field(paradox_form);
+  int current_index = field_index(current);
 
-  for (unsigned short i = 0; i < paradox_fields_len; ++i) {
+  // Show or hide cursor based on whether we're on the button
+  if (current_index == paradox_fields_len) {
+    curs_set(0); // Hide cursor on button
+  } else {
+    curs_set(1); // Show cursor on input fields
+  }
+
+  for (unsigned short i = 0; i < paradox_fields_len + 1; ++i) {
     if (fields[i] == current) {
-      set_field_back(fields[i], A_REVERSE); // Highlight current field
+      if (i == paradox_fields_len) {
+        // Button selected - invert colors
+        set_field_back(fields[i], A_REVERSE | COLOR_PAIR(BUTTON_COLOR_PAIR));
+      } else {
+        // Input field selected
+        set_field_back(fields[i], A_REVERSE);
+      }
     } else {
-      set_field_back(fields[i], A_NORMAL); // Remove highlight from other fields
+      if (i == paradox_fields_len) {
+        // Button not selected - normal button colors
+        set_field_back(fields[i], A_NORMAL | COLOR_PAIR(BUTTON_COLOR_PAIR));
+      } else {
+        // Input field not selected
+        set_field_back(fields[i], A_NORMAL);
+      }
     }
   }
 
@@ -95,7 +130,8 @@ void display_field_error(FIELD *field, int field_index) {
   int y_pos = field_index + FORM_Y_PADDING;
 
   // Clear any previous error message first
-  mvwprintw(win, y_pos, max_label_length + MAX_FIELD_LENGTH + 6, "                    ");
+  mvwprintw(
+      win, y_pos, max_label_length + calculate_longest_max_length() + 6, "                    ");
 
   // Trim trailing spaces from buffer
   char *end = buffer + strlen(buffer) - 1;
@@ -112,7 +148,8 @@ void display_field_error(FIELD *field, int field_index) {
   // Try to convert the buffer to a number
   if (sscanf(buffer, "%d", &value) != 1) {
     wattron(win, COLOR_PAIR(ERROR_COLOR_PAIR));
-    mvwprintw(win, y_pos, max_label_length + MAX_FIELD_LENGTH + 6, "Must be a number");
+    mvwprintw(
+        win, y_pos, max_label_length + calculate_longest_max_length() + 6, "Must be a number");
     wattroff(win, COLOR_PAIR(ERROR_COLOR_PAIR));
     return;
   }
@@ -123,7 +160,12 @@ void display_field_error(FIELD *field, int field_index) {
 
   if (value < min || value > max) {
     wattron(win, COLOR_PAIR(ERROR_COLOR_PAIR));
-    mvwprintw(win, y_pos, max_label_length + MAX_FIELD_LENGTH + 6, "Range: %d-%d", min, max);
+    mvwprintw(win,
+              y_pos,
+              max_label_length + calculate_longest_max_length() + 6,
+              "Range: %d-%d",
+              min,
+              max);
     wattroff(win, COLOR_PAIR(ERROR_COLOR_PAIR));
   }
 }
@@ -156,10 +198,13 @@ void paradox_form_init(WINDOW *win) {
       max_label_length = label_length;
   }
 
+  // Get the longest max_length from the fields
+  unsigned short max_field_length = calculate_longest_max_length();
+
   // Create form fields for each paradox field
   for (unsigned short i = 0; i < paradox_fields_len; ++i) {
     paradox_field[i] = new_field(1,                    // Field height
-                                 MAX_FIELD_LENGTH,     // Field width
+                                 max_field_length,     // Field width
                                  i + FORM_Y_PADDING,   // Field y-position
                                  max_label_length + 4, // Field x-position
                                  0,                    // number of offscreen rows
@@ -176,7 +221,7 @@ void paradox_form_init(WINDOW *win) {
     set_field_buffer(paradox_field[i], 0, string_buffer); // Set the default value for the field
 
     // Set maximum field length
-    set_max_field(paradox_field[i], MAX_FIELD_LENGTH);
+    set_max_field(paradox_field[i], max_field_length);
 
     free(string_buffer);
 
@@ -265,7 +310,7 @@ void paradox_form_destroy() {
 void paradox_form_clear_error_message(int field_index) {
   mvwprintw(paradox_form_sub_win,
             field_index + FORM_Y_PADDING,
-            max_label_length + MAX_FIELD_LENGTH + 6,
+            max_label_length + calculate_longest_max_length() + 6,
             "                    ");
 }
 
@@ -366,7 +411,16 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
   case KEY_BACKSPACE:
   case 127:
     if (current_index < paradox_fields_len) {
-      form_driver(paradox_form, REQ_DEL_PREV);
+      // Get field buffer
+      char *buffer = field_buffer(current, 0);
+
+      // Find the first space character which indicates end of content
+      int content_length = strcspn(buffer, " ");
+
+      // If we have content to delete, allow backspace
+      if (content_length > 0) {
+        form_driver(paradox_form, REQ_DEL_PREV);
+      }
     }
     break;
 
@@ -389,7 +443,7 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
   default:
     if (current_index < paradox_fields_len && isdigit(ch)) {
       form_driver(paradox_form, ch);
-      form_driver(paradox_form, REQ_END_LINE);
+      form_driver(paradox_form, REQ_END_FIELD);
     }
     break;
   }
