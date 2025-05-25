@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../../utils/paradox_math.h"
 #include "../../utils/utils.h"
 #include "paradox_form.h"
 
@@ -327,12 +328,33 @@ bool paradox_form_validate_all_fields(WINDOW *win) {
   }
 
   if (all_valid) {
-    // All fields are valid, display the values
-    mvwprintw(win, 15, 2, "Running simulation with the following parameters:");
-    for (int i = 0; i < paradox_fields_len; i++) {
-      char *value = field_buffer(paradox_field_get(i), 0);
-      mvwprintw(win, 15 + 1 + i, 2, "%s: %s", paradox_fields[i].label, value);
-    }
+    int form_win_x, form_win_y;
+    getmaxyx(paradox_form_sub_win, form_win_y, form_win_x);
+
+    // Calculate the estimated chance of a collision for a single simulation run
+    double collision_probability = calculate_birthday_collision_probability(
+        atoi(field_buffer(paradox_field_get(0), 0)), atoi(field_buffer(paradox_field_get(1), 0)));
+
+    // Display the estimated chance of a collision
+    mvwprintw(win,
+              form_win_y + 2,
+              FORM_X_PADDING + 1,
+              "Estimated chance of a collision: %.2f%%",
+              collision_probability * 100);
+
+    // Display the simulated runs results
+    double simulated_runs_results =
+        simulate_birthday_collision(atoi(field_buffer(paradox_field_get(0), 0)),
+                                    atoi(field_buffer(paradox_field_get(1), 0)),
+                                    atoi(field_buffer(paradox_field_get(2), 0)));
+
+    // Display the simulated runs results
+    mvwprintw(win,
+              form_win_y + 3,
+              FORM_X_PADDING + 1,
+              "Simulated runs results: %.2f%%",
+              simulated_runs_results);
+
     wrefresh(win);
 
     set_current_field(paradox_form, paradox_field_get(paradox_fields_len));
