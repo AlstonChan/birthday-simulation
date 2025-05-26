@@ -19,9 +19,8 @@ const char const *paradox_form_button_text = "[ Run Simulation ]";
  * @brief The structure for the input fields in the paradox form.
  *
  */
-const struct ParadoxInputField paradox_fields[] = {{"Domain Size (days)", 365, 5},
-                                                   {"Sample Count (people)", 23, 10},
-                                                   {"Simulation Runs", 1000, 5}};
+const struct ParadoxInputField paradox_fields[] = {
+    {"Domain Size (days)", 365, 5}, {"Sample Count (people)", 23, 9}, {"Simulation Runs", 1000, 5}};
 
 /**
  * @brief The number of fields in the paradox form.
@@ -35,21 +34,6 @@ const unsigned short paradox_fields_len = ARRAY_SIZE(paradox_fields);
  */
 unsigned short max_label_length = 0;
 
-/**
- * @brief Calculates the longest max_length from the paradox_fields array.
- *
- * @return unsigned short The longest max_length value.
- */
-static unsigned short calculate_longest_max_length() {
-  unsigned short longest = 0;
-  for (unsigned short i = 0; i < paradox_fields_len; ++i) {
-    if (paradox_fields[i].max_length > longest) {
-      longest = paradox_fields[i].max_length;
-    }
-  }
-  return longest;
-}
-
 static FIELD **paradox_field = NULL;
 static FORM *paradox_form = NULL;
 static WINDOW *paradox_form_sub_win = NULL;
@@ -60,9 +44,44 @@ FORM *paradox_form_get() { return paradox_form; }
 WINDOW *paradox_form_sub_win_get() { return paradox_form_sub_win; }
 
 /**
- * @brief Updates the highlighting of the paradox form fields based on the current field.
+ * @brief Calculates the longest max_length from the paradox_fields array.
  *
+ * @return unsigned short The longest max_length value.
  */
+static unsigned short calculate_longest_max_length() {
+  static unsigned short longest = 0;
+  static bool calculated = false;
+
+  if (calculated)
+    return longest;
+
+  for (unsigned short i = 0; i < paradox_fields_len; ++i) {
+    if (paradox_fields[i].max_length > longest) {
+      longest = paradox_fields[i].max_length;
+    }
+  }
+
+  calculated = true;
+
+  return longest;
+}
+
+/**
+ * @brief Calculates the maximum value based on the length of the field.
+ * @example If max_length is 3, max_value is 999
+ *
+ * @param length The length of the field.
+ * @return int The maximum value based on the length of the field.
+ */
+static int calculate_max_value(int length) {
+  if (length <= 0)
+    return 0; // Or handle as an error
+
+  // pow(10, length) - 1 gives the largest number with 'length' digits
+  // Example: pow(10, 3) - 1 = 1000 - 1 = 999
+  return (int)pow(10, length) - 1;
+}
+
 void update_field_highlighting() {
   if (paradox_form == NULL)
     return;
@@ -101,38 +120,17 @@ void update_field_highlighting() {
   form_driver(paradox_form, REQ_VALIDATION); // Force form refresh
 }
 
-/**
- * @brief Calculates the maximum value based on the length of the field.
- * @example If max_length is 3, max_value is 999
- *
- * @param length The length of the field.
- * @return int The maximum value based on the length of the field.
- */
-static int calculate_max_value(int length) {
-  if (length <= 0)
-    return 0; // Or handle as an error
-
-  // pow(10, length) - 1 gives the largest number with 'length' digits
-  // Example: pow(10, 3) - 1 = 1000 - 1 = 999
-  return (int)pow(10, length) - 1;
-}
-
-/**
- * @brief Displays an error message for a field in the paradox form.
- *
- * @param field The field to display the error message for.
- * @param field_index The index of the field.
- */
 void display_field_error(FIELD *field, int field_index) {
   char *buffer = field_buffer(field, 0);
   int value;
 
   WINDOW *win = paradox_form_sub_win;
   int y_pos = field_index + FORM_Y_PADDING;
+  int x_pos = FORM_X_PADDING + max_label_length + +FORM_FIELD_BRACKET_PADDING + 1 +
+              calculate_longest_max_length() + FORM_FIELD_BRACKET_PADDING + 2;
 
   // Clear any previous error message first
-  mvwprintw(
-      win, y_pos, max_label_length + calculate_longest_max_length() + 6, "                    ");
+  mvwprintw(win, y_pos, x_pos, "                    ");
 
   // Trim trailing spaces from buffer
   char *end = buffer + strlen(buffer) - 1;
@@ -149,8 +147,7 @@ void display_field_error(FIELD *field, int field_index) {
   // Try to convert the buffer to a number
   if (sscanf(buffer, "%d", &value) != 1) {
     wattron(win, COLOR_PAIR(ERROR_COLOR_PAIR));
-    mvwprintw(
-        win, y_pos, max_label_length + calculate_longest_max_length() + 6, "Must be a number");
+    mvwprintw(win, y_pos, x_pos, "Must be a number");
     wattroff(win, COLOR_PAIR(ERROR_COLOR_PAIR));
     return;
   }
@@ -161,23 +158,11 @@ void display_field_error(FIELD *field, int field_index) {
 
   if (value < min || value > max) {
     wattron(win, COLOR_PAIR(ERROR_COLOR_PAIR));
-    mvwprintw(win,
-              y_pos,
-              max_label_length + calculate_longest_max_length() + 6,
-              "Range: %d-%d",
-              min,
-              max);
+    mvwprintw(win, y_pos, x_pos, "Range: %d-%d", min, max);
     wattroff(win, COLOR_PAIR(ERROR_COLOR_PAIR));
   }
 }
 
-/**
- * @brief Initializes the paradox form with the given window.
- * If no window is provided, it will return early without doing anything.
- *
- * @param win The window to display the form in. This should ideally be
- * the content window.
- */
 void paradox_form_init(WINDOW *win) {
   if (paradox_form)
     return; // Already initialized
@@ -204,12 +189,13 @@ void paradox_form_init(WINDOW *win) {
 
   // Create form fields for each paradox field
   for (unsigned short i = 0; i < paradox_fields_len; ++i) {
-    paradox_field[i] = new_field(1,                    // Field height
-                                 max_field_length,     // Field width
-                                 i + FORM_Y_PADDING,   // Field y-position
-                                 max_label_length + 4, // Field x-position
-                                 0,                    // number of offscreen rows
-                                 0                     // number of additional working buffers
+    paradox_field[i] = new_field(1,                  // Field height
+                                 max_field_length,   // Field width
+                                 i + FORM_Y_PADDING, // Field y-position
+                                 FORM_X_PADDING + FORM_FIELD_BRACKET_PADDING + max_label_length +
+                                     FORM_FIELD_BRACKET_PADDING, // Field x-position
+                                 0,                              // number of offscreen rows
+                                 0 // number of additional working buffers
     );
 
     // Convert the default value to string
@@ -256,15 +242,6 @@ void paradox_form_init(WINDOW *win) {
   update_field_highlighting(paradox_form);
 }
 
-/**
- * @brief Renders the paradox form in the given window.
- * If no window is provided, it will return early without doing anything.
- *
- * @param win The window to render the form in. This should ideally be
- * the content window.
- * @param max_y The maximum y-coordinate of the parent window (stdscr).
- * @param max_x The maximum x-coordinate of the parent window (stdscr).
- */
 FORM *paradox_form_render(WINDOW *win, int max_y, int max_x) {
   if (win == NULL)
     return NULL; // If no window is provided, do nothing
@@ -275,7 +252,12 @@ FORM *paradox_form_render(WINDOW *win, int max_y, int max_x) {
   // Set the label for the field
   for (unsigned short i = 0; i < paradox_fields_len; ++i) {
     mvwprintw(paradox_form_sub_win, i + FORM_Y_PADDING, FORM_X_PADDING, paradox_fields[i].label);
-    mvwprintw(paradox_form_sub_win, i + FORM_Y_PADDING, max_label_length + FORM_X_PADDING, ": ");
+    mvwprintw(paradox_form_sub_win, i + FORM_Y_PADDING, FORM_X_PADDING + max_label_length, ": [");
+    mvwprintw(paradox_form_sub_win,
+              i + FORM_Y_PADDING,
+              FORM_X_PADDING + max_label_length + FORM_FIELD_BRACKET_PADDING + 1 +
+                  calculate_longest_max_length() + FORM_FIELD_BRACKET_PADDING,
+              "]");
   }
 
   form_driver(paradox_form, REQ_END_LINE);
@@ -285,10 +267,6 @@ FORM *paradox_form_render(WINDOW *win, int max_y, int max_x) {
   return paradox_form;
 }
 
-/**
- * @brief Destroys the paradox form and frees the memory allocated for it.
- *
- */
 void paradox_form_destroy() {
   if (!paradox_form)
     return;
@@ -311,7 +289,8 @@ void paradox_form_destroy() {
 void paradox_form_clear_error_message(int field_index) {
   mvwprintw(paradox_form_sub_win,
             field_index + FORM_Y_PADDING,
-            max_label_length + calculate_longest_max_length() + 6,
+            FORM_X_PADDING + max_label_length + +FORM_FIELD_BRACKET_PADDING + 1 +
+                calculate_longest_max_length() + FORM_FIELD_BRACKET_PADDING + 2,
             "                    ");
 }
 
@@ -331,11 +310,16 @@ bool paradox_form_validate_all_fields(WINDOW *win) {
     int form_win_x, form_win_y;
     getmaxyx(paradox_form_sub_win, form_win_y, form_win_x);
 
+    int domain_size = atoi(field_buffer(paradox_field_get(0), 0));
+    int sample_count = atoi(field_buffer(paradox_field_get(1), 0));
+    int simulation_runs = atoi(field_buffer(paradox_field_get(2), 0));
+
     // Calculate the estimated chance of a collision for a single simulation run
-    double collision_probability = calculate_birthday_collision_probability(
-        atoi(field_buffer(paradox_field_get(0), 0)), atoi(field_buffer(paradox_field_get(1), 0)));
+    double collision_probability =
+        calculate_birthday_collision_probability(domain_size, sample_count);
 
     // Display the estimated chance of a collision
+    mvwprintw(win, form_win_y + 2, FORM_X_PADDING + 1, "Estimated chance of a collision:       ");
     mvwprintw(win,
               form_win_y + 2,
               FORM_X_PADDING + 1,
@@ -344,11 +328,10 @@ bool paradox_form_validate_all_fields(WINDOW *win) {
 
     // Display the simulated runs results
     double simulated_runs_results =
-        simulate_birthday_collision(atoi(field_buffer(paradox_field_get(0), 0)),
-                                    atoi(field_buffer(paradox_field_get(1), 0)),
-                                    atoi(field_buffer(paradox_field_get(2), 0)));
+        simulate_birthday_collision(domain_size, sample_count, simulation_runs);
 
     // Display the simulated runs results
+    mvwprintw(win, form_win_y + 3, FORM_X_PADDING + 1, "Simulated runs results:       ");
     mvwprintw(win,
               form_win_y + 3,
               FORM_X_PADDING + 1,
