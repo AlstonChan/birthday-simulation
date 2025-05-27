@@ -45,15 +45,13 @@ WINDOW *paradox_form_sub_win_get() { return paradox_form_sub_win; }
 
 /**
  * @brief Calculates the longest max_length from the paradox_fields array.
+ * @param padding Whether to add a padding to the longest max_length. The padding
+ * will return the longest max_length + the extra width of the field.
  *
  * @return unsigned short The longest max_length value.
  */
-static unsigned short calculate_longest_max_length() {
-  static unsigned short longest = 0;
-  static bool calculated = false;
-
-  if (calculated)
-    return longest;
+static unsigned short calculate_longest_max_length(bool padding) {
+  unsigned short longest = 0;
 
   for (unsigned short i = 0; i < paradox_fields_len; ++i) {
     if (paradox_fields[i].max_length > longest) {
@@ -61,7 +59,8 @@ static unsigned short calculate_longest_max_length() {
     }
   }
 
-  calculated = true;
+  if (padding)
+    longest++;
 
   return longest;
 }
@@ -127,7 +126,7 @@ void display_field_error(FIELD *field, int field_index) {
   WINDOW *win = paradox_form_sub_win;
   int y_pos = field_index + FORM_Y_PADDING;
   int x_pos = FORM_X_PADDING + max_label_length + +FORM_FIELD_BRACKET_PADDING + 1 +
-              calculate_longest_max_length() + FORM_FIELD_BRACKET_PADDING + 2;
+              calculate_longest_max_length(true) + FORM_FIELD_BRACKET_PADDING + 2;
 
   // Clear any previous error message first
   mvwprintw(win, y_pos, x_pos, "                    ");
@@ -185,13 +184,13 @@ void paradox_form_init(WINDOW *win) {
   }
 
   // Get the longest max_length from the fields
-  unsigned short max_field_length = calculate_longest_max_length();
+  unsigned short max_field_length = calculate_longest_max_length(false);
 
   // Create form fields for each paradox field
   for (unsigned short i = 0; i < paradox_fields_len; ++i) {
-    paradox_field[i] = new_field(1,                  // Field height
-                                 max_field_length,   // Field width
-                                 i + FORM_Y_PADDING, // Field y-position
+    paradox_field[i] = new_field(1,                    // Field height
+                                 max_field_length + 1, // Field width
+                                 i + FORM_Y_PADDING,   // Field y-position
                                  FORM_X_PADDING + FORM_FIELD_BRACKET_PADDING + max_label_length +
                                      FORM_FIELD_BRACKET_PADDING, // Field x-position
                                  0,                              // number of offscreen rows
@@ -200,17 +199,20 @@ void paradox_form_init(WINDOW *win) {
 
     // Convert the default value to string
     char *string_buffer = (char *)malloc(sizeof(char) * paradox_fields[i].max_length + 1);
-    snprintf(string_buffer, paradox_fields[i].max_length, "%hu", paradox_fields[i].default_value);
+    snprintf(
+        string_buffer, paradox_fields[i].max_length + 1, "%hu", paradox_fields[i].default_value);
 
     // Make the field visible and editable
-    field_opts_off(paradox_field[i], O_AUTOSKIP | O_STATIC);
-    set_field_back(paradox_field[i], A_NORMAL); // Set normal background for all fields initially
+    field_opts_on(paradox_field[i], O_STATIC);    // Keep field static size
+    field_opts_off(paradox_field[i], O_AUTOSKIP); // Don't auto skip to next field
+    set_field_back(paradox_field[i], A_NORMAL);   // Set normal background for all fields initially
     set_field_buffer(paradox_field[i], 0, string_buffer); // Set the default value for the field
+    set_field_just(paradox_field[i], JUSTIFY_LEFT);       // Left justify the content
+
+    free(string_buffer);
 
     // Set maximum field length
     set_max_field(paradox_field[i], max_field_length);
-
-    free(string_buffer);
 
     // Set the field type to numeric
     int max_value = calculate_max_value(paradox_fields[i].max_length);
@@ -256,7 +258,7 @@ FORM *paradox_form_render(WINDOW *win, int max_y, int max_x) {
     mvwprintw(paradox_form_sub_win,
               i + FORM_Y_PADDING,
               FORM_X_PADDING + max_label_length + FORM_FIELD_BRACKET_PADDING + 1 +
-                  calculate_longest_max_length() + FORM_FIELD_BRACKET_PADDING,
+                  calculate_longest_max_length(true) + FORM_FIELD_BRACKET_PADDING,
               "]");
   }
 
@@ -290,7 +292,7 @@ void paradox_form_clear_error_message(int field_index) {
   mvwprintw(paradox_form_sub_win,
             field_index + FORM_Y_PADDING,
             FORM_X_PADDING + max_label_length + +FORM_FIELD_BRACKET_PADDING + 1 +
-                calculate_longest_max_length() + FORM_FIELD_BRACKET_PADDING + 2,
+                calculate_longest_max_length(true) + FORM_FIELD_BRACKET_PADDING + 2,
             "                    ");
 }
 
@@ -415,18 +417,7 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
 
   case KEY_BACKSPACE:
   case 127:
-    if (current_index < paradox_fields_len) {
-      // Get field buffer
-      char *buffer = field_buffer(current, 0);
-
-      // Find the first space character which indicates end of content
-      int content_length = strcspn(buffer, " ");
-
-      // If we have content to delete, allow backspace
-      if (content_length > 0) {
-        form_driver(paradox_form, REQ_DEL_PREV);
-      }
-    }
+    form_driver(paradox_form, REQ_DEL_PREV);
     break;
 
   case KEY_DC:
@@ -445,12 +436,11 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
     }
   } break;
 
-  default:
+  default: {
     if (current_index < paradox_fields_len && isdigit(ch)) {
       form_driver(paradox_form, ch);
-      form_driver(paradox_form, REQ_END_FIELD);
     }
-    break;
+  } break;
   }
   wrefresh(win);
 }
