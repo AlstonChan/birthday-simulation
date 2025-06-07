@@ -40,7 +40,9 @@ void render_system_info(WINDOW *win, int max_y, int max_x) {
   wrefresh(win);
 
   // Wait for user input before closing the system info window
-  wgetch(win);
+  int ch;
+  while ((ch = wgetch(win)) != KEY_F(2)) {
+  }
 
   // Clear the window after user input
   werase(win);

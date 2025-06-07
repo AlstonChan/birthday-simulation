@@ -5,8 +5,8 @@
 #include <string.h>
 
 #include "ui/footer.h"
+#include "ui/home/main_menu.h"
 #include "ui/layout.h"
-#include "ui/menu.h"
 #include "utils/utils.h"
 
 int main() {
@@ -79,8 +79,12 @@ int main() {
                            PARADOX_WIN); // Render the paradox page
         break;
       case 1:
-        // Call the birthday attack demo function
-        // birthday_attack_demo();
+        page_layout_render(header_win,
+                           footer_win,
+                           content_win,
+                           max_y,
+                           max_x,
+                           ATTACK_WIN); // Render the attack page
         break;
       case 2:
         // Call the explanation function

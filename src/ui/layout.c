@@ -1,13 +1,14 @@
 #include <ncurses/ncurses.h>
 #include <string.h>
 
+#include "../pages/attack.h"
 #include "../pages/paradox.h"
 #include "../pages/system_info.h"
 
 #include "footer.h"
 #include "header.h"
+#include "home/main_menu.h"
 #include "layout.h"
-#include "menu.h"
 
 void page_layout_render(WINDOW *header_win, WINDOW *footer_win, WINDOW *content_win, int max_y,
                         int max_x, PageType page_type) {
@@ -35,8 +36,7 @@ void page_layout_render(WINDOW *header_win, WINDOW *footer_win, WINDOW *content_
     render_paradox_page(content_win, max_y, max_x); // Render the paradox page
     break;
   case ATTACK_WIN:
-    // Call the birthday attack demo function
-    // birthday_attack_demo();
+    render_attack_page(content_win, max_y, max_x); // Render the attack page
     break;
   case EXPLANATION_WIN:
     // Call the explanation function
