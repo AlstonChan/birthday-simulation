@@ -27,7 +27,9 @@
     "xlocmon": "c",
     "xlocale": "cpp",
     "paradox_form.h": "c",
-    "main_menu.h": "c"
+    "main_menu.h": "c",
+    "queue": "c",
+    "stack": "c"
   },
   "cSpell.words": ["Iinclude", "lmenuw", "lncursesw"]
 }

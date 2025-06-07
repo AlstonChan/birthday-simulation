@@ -23,7 +23,9 @@ void list_menu_init(WINDOW *win, const struct ListMenuItem choices[], unsigned s
   (*choices_items)[choices_len] = NULL;
 
   // Create a sub-window for the menu
-  *sub_win = derwin(win, 6, 38, 2, 1);
+  if (*sub_win == NULL) {
+    *sub_win = derwin(win, 6, 38, 2, 1);
+  }
 
   *menu = new_menu(*choices_items); // Create the menu
   set_menu_win(*menu, win);         // Set the window for the menu
@@ -32,11 +34,16 @@ void list_menu_init(WINDOW *win, const struct ListMenuItem choices[], unsigned s
   post_menu(*menu);                 // Post the menu to the window
 }
 
-void list_menu_navigation_render(WINDOW *win, int y, int x) {
+void list_menu_navigation_render(WINDOW *win, int y, int x, bool hide_exit_text) {
   if (win == NULL)
     win = stdscr; // Use stdscr if no window is provided
 
-  const char const *menu_navigation_text = "[↑/↓]: Navigate   [Enter]: Select   [F1]: Exit";
+  const char *menu_navigation_text = "[↑/↓]: Navigate   [Enter]: Select   [F1]: Exit";
+  if (hide_exit_text) {
+    // If the exit text should be hidden, remove it from the navigation text
+    menu_navigation_text = "[↑/↓]: Navigate   [Enter]: Select";
+  }
+
   const unsigned short menu_navigation_text_len = strlen(menu_navigation_text);
 
   if (x < 0)

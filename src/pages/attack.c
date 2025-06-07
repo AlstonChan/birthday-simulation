@@ -1,6 +1,9 @@
 #include <ncurses/form.h>
 #include <ncurses/ncurses.h>
 #include <string.h>
+
+#include "../ui/attack/hash_menu.h"
+
 /**
  * @brief The title of the attack page.
  *
@@ -11,29 +14,49 @@ void render_attack_page(WINDOW *win, int max_y, int max_x) {
   if (win == NULL)
     win = stdscr;
 
-  curs_set(1);        // Show the cursor
   nodelay(win, TRUE); // Make getch() non-blocking
 
   // Clear the window before rendering
   werase(win);
 
-  // Resize the window for the paradox page
-  wresize(win, max_y - 6, max_x);
+  hash_menu_restore(win, max_y, max_x); // Restore the menu to the content window if it was erased
 
-  // Center the paradox page window
-  mvwin(win, 4, 0);
-
-  box(win, 0, 0);
+  bool hash_menu_init_status = hash_menu_init(win); // Initialize the hash menu
+  MENU *hash_menu = hash_menu_init_status ? hash_menu_render(win, max_y, max_x)
+                                          : hash_menu_get(); // Render the hash menu
 
   unsigned short title_len = strlen(attack_page_title);
   mvwprintw(win, 0, (max_x - title_len) / 2, attack_page_title);
 
-  int ch;
-  while ((ch = wgetch(win)) != KEY_F(2)) {
-    // TODO: Handle input
+  bool is_done = false;
+  int char_input;
+  while ((char_input = wgetch(win)) != KEY_F(2) && !is_done) {
+    int selected_item = item_index(current_item(hash_menu)); // Get the selected item index
+
+    switch (char_input) {
+    case KEY_DOWN:
+    case '\t': // Tab key
+      // If the user presses down on the last item, wrap around to the first item
+      if (selected_item == hash_menu_choices_len - 1) {
+        menu_driver(hash_menu, REQ_FIRST_ITEM);
+      } else {
+        menu_driver(hash_menu, REQ_DOWN_ITEM);
+      }
+      break;
+    case KEY_UP:
+    case KEY_BTAB: // Shift + Tab key
+      // If the user presses up on the first item, wrap around to the last item
+      if (selected_item == 0) {
+        menu_driver(hash_menu, REQ_LAST_ITEM);
+      } else {
+        menu_driver(hash_menu, REQ_UP_ITEM);
+      }
+      break;
+    }
   }
 
-  curs_set(0);         // Hide the cursor
+  hash_menu_destroy();
+
   nodelay(win, FALSE); // Make getch() blocking
 
   // Clear the window after user input
@@ -41,4 +64,6 @@ void render_attack_page(WINDOW *win, int max_y, int max_x) {
 
   // Refresh the window to show the changes
   wrefresh(win);
+
+  erase();
 }

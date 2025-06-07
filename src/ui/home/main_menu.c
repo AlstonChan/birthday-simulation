@@ -58,7 +58,7 @@ MENU *main_menu_render(WINDOW *win, int max_y, int max_x) {
   art_text_center_render(NULL);
 
   // Render the menu navigation text
-  list_menu_navigation_render(NULL, y + main_menu_win_rows + 1, -1);
+  list_menu_navigation_render(NULL, y + main_menu_win_rows + 1, -1, false);
 
   wrefresh(win);
 

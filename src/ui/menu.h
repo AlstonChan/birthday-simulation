@@ -9,6 +9,13 @@ struct ListMenuItem {
     const char *description;
 };
 
+/**
+ * @brief The amount of rows to pad the menu subwindow with
+ * the menu items.
+ * 
+ */
+#define MENU_PADDING_Y 2
+
 
 /**
  * @brief Initializes the a list menu.
@@ -30,7 +37,8 @@ void list_menu_init(WINDOW *win, const struct ListMenuItem choices[], unsigned s
  * @param y The y-coordinate where the navigation text will be rendered.
  * @param x The x-coordinate where the navigation text will be rendered. Negative
  * value indicates that the text will be centered in the window.
+ * @param hide_exit_text If true, the exit text will not be rendered
  */
-void list_menu_navigation_render(WINDOW *win, int y, int x);
+void list_menu_navigation_render(WINDOW *win, int y, int x, bool hide_exit_text);
                     
 #endif

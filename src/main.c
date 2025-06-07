@@ -28,7 +28,7 @@ int main() {
   nodelay(stdscr, TRUE); // Make getch() non-blocking
   curs_set(0);           // Hide the cursor
 
-  int c;
+  int char_input;
 
   int max_y, max_x;               // Store the stdscr dimensions
   getmaxyx(stdscr, max_y, max_x); // Get initial window size
@@ -44,10 +44,10 @@ int main() {
   footer_render(footer_win); // Render the footer
 
   bool is_done = false;
-  while ((c = getch()) != KEY_F(1) && !is_done) {
+  while ((char_input = getch()) != KEY_F(1) && !is_done) {
     int selected_item = item_index(current_item(main_menu)); // Get the selected item index
 
-    switch (c) {
+    switch (char_input) {
     case KEY_DOWN:
     case '\t': // Tab key
       // If the user presses down on the last item, wrap around to the first item
