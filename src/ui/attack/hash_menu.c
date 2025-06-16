@@ -5,25 +5,8 @@
 
 #include "../../utils/utils.h"
 #include "../menu.h"
+#include "hash_config.h"
 #include "hash_menu.h"
-
-/**
- * @brief The choices for the hash menu.
- *
- */
-const struct ListMenuItem hash_menu_choices[] = {
-    {"Custom Hash", "(8-bit)"},
-    {"Custom Hash", "(12-bit)"},
-    {"Custom Hash", "(16-bit)"},
-    {"RIPEMD-160", "(160-bit)"},
-    {"SHA-1", "(160-bit)"},
-    {"SHA3-256", "(256-bit)"},
-    {"SHA-256", "(256-bit)"},
-    {"SHA-512", "(512-bit)"},
-    {"SHA-384", "(384-bit)"},
-    {"Keccak-256", "(256-bit)"},
-};
-const unsigned short hash_menu_choices_len = ARRAY_SIZE(hash_menu_choices);
 
 static ITEM **hash_menu_choices_items = NULL;
 static MENU *hash_menu = NULL;
@@ -39,20 +22,24 @@ MENU *hash_menu_get() {
   return hash_menu; // Return the current hash menu
 }
 
+static int hash_menu_window_cols() { return MENU_PADDING_Y + hash_config_len + MENU_PADDING_Y; }
+const int hash_menu_window_rows = 40; ///< The number of rows for the hash menu window
+
 bool hash_menu_init(WINDOW *win) {
   if (hash_menu)
     return false; // If the menu is already initialized, do nothing
 
+  struct ListMenuItem *hash_menu_choices = get_hash_config_menu();
+
   // Resize the window for the menu BEFORE creating the sub-window
   // as the size of the sub-window depends on the main window size
-  wresize(win, MENU_PADDING_Y + hash_menu_choices_len + MENU_PADDING_Y, 40);
+  wresize(win, hash_menu_window_cols(), hash_menu_window_rows);
 
-  hash_menu_sub_win =
-      derwin(win, hash_menu_choices_len, 32, 2, 1); // Create a sub-window for the menu
+  hash_menu_sub_win = derwin(win, hash_config_len, 32, 2, 1); // Create a sub-window for the menu
 
   list_menu_init(win,
                  hash_menu_choices,
-                 hash_menu_choices_len,
+                 hash_config_len,
                  &hash_menu_choices_items,
                  &hash_menu,
                  &hash_menu_sub_win);
@@ -68,15 +55,14 @@ MENU *hash_menu_render(WINDOW *win, int max_y, int max_x) {
 
   // Center the menu window
   int y = (max_y - 20) / 2;
-  int x = (max_x - 40) / 2;
+  int x = (max_x - hash_menu_window_rows) / 2;
   mvwin(win, y, x);
 
   box(win, 0, 0);
-  print_in_middle(win, 0, 0, 40, " Select hash function ", COLOR_PAIR(1));
+  print_in_middle(win, 0, 0, hash_menu_window_rows, " Select hash function ", COLOR_PAIR(1));
 
   // Render the menu navigation text
-  list_menu_navigation_render(
-      NULL, y + MENU_PADDING_Y + hash_menu_choices_len + MENU_PADDING_Y + 1, -1, true);
+  list_menu_navigation_render(NULL, y + hash_menu_window_cols() + 1, -1, true);
 
   wrefresh(win);
 
@@ -98,9 +84,21 @@ void hash_menu_restore(WINDOW *win, int max_y, int max_x) {
   if (!hash_menu)
     return;
 
+  // Check if the window size is equal to hash_menu_window_cols(), resize it if not
+  if (getmaxy(win) != hash_menu_window_cols() || getmaxx(win) != hash_menu_window_rows) {
+    wresize(win, hash_menu_window_cols(), hash_menu_window_rows);
+
+    // Resize the sub-window to match the new window size
+    wresize(hash_menu_sub_win, hash_config_len, 32);
+    mvwin(hash_menu_sub_win, 2, 1); // Move the sub-window to the correct position
+
+    mvwin(win, (max_y - hash_menu_window_cols()) / 2, (max_x - hash_menu_window_rows) / 2);
+  }
+
   post_menu(hash_menu);                // Post the menu to the window
   hash_menu_render(win, max_y, max_x); // Render the menu in the window
   wrefresh(hash_menu_sub_win);
+  wrefresh(win);
 }
 
 void hash_menu_destroy() {
@@ -109,6 +107,8 @@ void hash_menu_destroy() {
 
   hash_menu_erase();    // Erase the menu from the window
   free_menu(hash_menu); // Free the memory allocated for the menu
+
+  struct ListMenuItem *hash_menu_choices = get_hash_config_menu();
 
   for (unsigned short i = 0; i < ARRAY_SIZE(hash_menu_choices); ++i)
     free_item(hash_menu_choices_items[i]); // Free the memory allocated for each item

@@ -29,7 +29,10 @@
     "paradox_form.h": "c",
     "main_menu.h": "c",
     "queue": "c",
-    "stack": "c"
+    "stack": "c",
+    "stdbool.h": "c",
+    "utils.h": "c",
+    "hash_config.h": "c"
   },
   "cSpell.words": ["Iinclude", "lmenuw", "lncursesw"]
 }

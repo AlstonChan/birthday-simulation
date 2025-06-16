@@ -6,9 +6,6 @@
 
 #include "../menu.h"
 
-extern const struct ListMenuItem hash_menu_choices[];
-extern const unsigned short hash_menu_choices_len;
-
 MENU *hash_menu_get();
 
 /**

@@ -2,6 +2,8 @@
 #include <ncurses/ncurses.h>
 #include <string.h>
 
+#include "../ui/attack/hash_collision.h"
+#include "../ui/attack/hash_config.h"
 #include "../ui/attack/hash_menu.h"
 
 /**
@@ -37,7 +39,7 @@ void render_attack_page(WINDOW *win, int max_y, int max_x) {
     case KEY_DOWN:
     case '\t': // Tab key
       // If the user presses down on the last item, wrap around to the first item
-      if (selected_item == hash_menu_choices_len - 1) {
+      if (selected_item == hash_config_len - 1) {
         menu_driver(hash_menu, REQ_FIRST_ITEM);
       } else {
         menu_driver(hash_menu, REQ_DOWN_ITEM);
@@ -52,6 +54,17 @@ void render_attack_page(WINDOW *win, int max_y, int max_x) {
         menu_driver(hash_menu, REQ_UP_ITEM);
       }
       break;
+    case KEY_ENTER:
+    case 10: // Enter key
+      switch (selected_item) {
+      case 0: // 8-bit hash
+        hash_menu_erase();
+        render_hash_collision_page(win, max_y, max_x, HASH_CONFIG_8BIT);
+        break;
+      }
+
+      // Back to menu after exiting the hash collision page
+      hash_menu_restore(win, max_y, max_x);
     }
   }
 

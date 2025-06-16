@@ -1,25 +1,10 @@
 #include <limits.h>
 #include <ncurses/ncurses.h>
+#include <stdlib.h>
 #include <string.h>
 
-/**
- * @brief Prints a string centered within a specified area of a window.
- *
- * This function calculates the horizontal center of the given width and prints
- * the provided string at that position within the specified window, row,
- * and with the given color attribute. If no window is provided, it defaults
- * to the standard screen.
- *
- * @param win The window to print in. If NULL, defaults to stdscr.
- * @param start_y The starting row (y-coordinate) to print on. If INT_MAX, uses the
- * current cursor y-position of the window.
- * @param start_x The starting column (x-coordinate) to begin centering from.
- * If INT_MAX, uses the current cursor x-position of the window.
- * @param width The width of the area to center the string within. If 0, defaults
- * to 80 columns.
- * @param string The null-terminated string to print.
- * @param color The color attribute to apply to the printed string (e.g., A_BOLD | COLOR_PAIR(1)).
- */
+#include "utils.h"
+
 void print_in_middle(WINDOW *win, unsigned int start_y, unsigned int start_x, unsigned int width,
                      const char *string, chtype color) {
   int length, x, y;
@@ -62,4 +47,35 @@ void print_in_middle(WINDOW *win, unsigned int start_y, unsigned int start_x, un
 
   // Refresh the window to display the changes.
   refresh();
+}
+
+size_t generate_random_input(uint8_t *buffer, size_t min_len, size_t max_len) {
+  size_t len = min_len + (rand() % (max_len - min_len + 1));
+
+  for (size_t i = 0; i < len; i++) {
+    buffer[i] = 32 + (rand() % 95); // Generate printable ASCII characters (32-126)
+    // if (rand() % 3 == 0) {
+    //   // 1/3 chance: Generate printable ASCII (32-126)
+    //   buffer[i] = 32 + (rand() % 95);
+    // } else {
+    //   // 2/3 chance: Generate any byte value
+    //   buffer[i] = rand() & 0xFF;
+    // }
+  }
+
+  return len;
+}
+
+void binary_to_string(const uint8_t *data, size_t len, char *output) {
+  size_t pos = 0;
+  for (size_t i = 0; i < len; i++) {
+    if (data[i] >= 32 && data[i] <= 126) {
+      // Printable ASCII character
+      output[pos++] = data[i];
+    } else {
+      // Non-printable character - show as \xHH
+      pos += sprintf(output + pos, "\\x%02X", data[i]);
+    }
+  }
+  output[pos] = '\0';
 }
