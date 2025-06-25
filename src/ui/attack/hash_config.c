@@ -44,3 +44,12 @@ struct ListMenuItem *get_hash_config_menu() {
 
   return hash_config_menu;
 }
+
+hash_config_t get_hash_config_item(enum hash_function_ids id) {
+  if (id < 0 || id >= hash_config_len) {
+    fprintf(stderr, "Invalid hash function ID: %d\n", id);
+    exit(EXIT_FAILURE);
+  }
+
+  return hash_config[id];
+}

@@ -4,6 +4,8 @@
 #include <ncurses/ncurses.h>
 #include <ncurses/form.h>
 
+#include "../form.h"
+
 /**
  * @brief The y-padding of the form relative to the parent window.
  *
@@ -16,18 +18,6 @@
 #define FORM_X_PADDING 2
 
 /**
- * @brief The color pair for error messages.
- *
- */
-#define ERROR_COLOR_PAIR 2
-
-/**
- * @brief The color pair for the button.
- *
- */
-#define BUTTON_COLOR_PAIR 3
-
-/**
  * @brief The padding between the field and the bracket.
  */
 #define FORM_FIELD_BRACKET_PADDING 2
@@ -36,14 +26,9 @@
  * @brief The structure for the input fields in the paradox form.
  * 
  */
-struct ParadoxInputField {
-    char *label;  
-    unsigned short default_value; 
-    int max_length;  
-};
 
 extern const char const *paradox_form_button_text;
-extern const struct ParadoxInputField paradox_fields[];
+extern const struct FormInputField paradox_fields[];
 extern const unsigned short paradox_fields_len;
 extern unsigned short max_label_length;
 

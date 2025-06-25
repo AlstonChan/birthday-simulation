@@ -24,6 +24,7 @@ typedef struct {
     const char *space_size;     ///< Space size of the hash function
 } hash_config_t;
 
+extern const hash_config_t hash_config[]; ///< Array of hash configurations
 extern const unsigned short hash_config_len; ///< The number of hash configurations
 
 /**
@@ -32,5 +33,13 @@ extern const unsigned short hash_config_len; ///< The number of hash configurati
  * @return struct ListMenuItem* 
  */
 struct ListMenuItem *get_hash_config_menu();
+
+/**
+ * @brief Get the hash config item for a specific hash function ID
+ * 
+ * @param id The ID of the hash function
+ * @return struct ListMenuItem The menu item for the specified hash function
+ */
+hash_config_t get_hash_config_item(enum hash_function_ids id);
 
 #endif
