@@ -1,6 +1,8 @@
 #include <ncurses/ncurses.h>
 #include <string.h>
 
+#include "../utils/utils.h"
+
 void header_render(WINDOW *header_win) {
   if (header_win == NULL)
     return;
@@ -15,9 +17,9 @@ void header_render(WINDOW *header_win) {
   const unsigned short program_name_len = strlen(program_name);
 
   // Set the attribute to bold and cyan
-  wattron(header_win, A_BOLD | COLOR_PAIR(1));
+  wattron(header_win, A_BOLD | COLOR_PAIR(BH_MAIN_COLOR_PAIR));
   mvwprintw(header_win, 1, max_x - program_name_len - 2, program_name);
-  wattroff(header_win, A_BOLD | COLOR_PAIR(1)); // Turn off the attributes
+  wattroff(header_win, A_BOLD | COLOR_PAIR(BH_MAIN_COLOR_PAIR)); // Turn off the attributes
 
   wrefresh(header_win);
 }

@@ -13,14 +13,8 @@ int main() {
   setlocale(LC_ALL, ""); // Set the locale to the user's default (utf-8)
 
   initscr(); // Initialize ncurses
-
-  if (has_colors() == FALSE) { // Check if the terminal supports colors
-    endwin();
-    fprintf(stderr, "\nBirthday Simulation: Your terminal does not support color\n");
+  if (init_color_pairs() != 0)
     return 1;
-  }
-  start_color(); // Start color functionality
-  init_pair(1, COLOR_CYAN, COLOR_BLACK);
 
   cbreak();              // Disable line buffering
   noecho();              // Don't echo user input

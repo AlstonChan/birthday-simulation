@@ -79,3 +79,21 @@ void binary_to_string(const uint8_t *data, size_t len, char *output) {
   }
   output[pos] = '\0';
 }
+
+uint8_t init_color_pairs() {
+  if (has_colors() == FALSE) { // Check if the terminal supports colors
+    endwin();
+    fprintf(stderr, "\nBirthday Simulation: Your terminal does not support color\n");
+    return 1;
+  }
+  start_color(); // Start color functionality
+
+  // Initialize color pairs for ncurses
+  init_pair(BH_MAIN_COLOR_PAIR, COLOR_CYAN, COLOR_BLACK);         // Main color
+  init_pair(BH_ERROR_COLOR_PAIR, COLOR_RED, COLOR_BLACK);         // Error color
+  init_pair(BH_SUCCESS_COLOR_PAIR, COLOR_GREEN, COLOR_BLACK);     // Success color
+  init_pair(BH_WARNING_COLOR_PAIR, COLOR_YELLOW, COLOR_BLACK);    // Warning color
+  init_pair(BH_INFO_COLOR_PAIR, COLOR_CYAN, COLOR_BLACK);         // Info color
+  init_pair(BH_HIGHLIGHT_COLOR_PAIR, COLOR_MAGENTA, COLOR_BLACK); // Highlight color
+  return 0;
+}

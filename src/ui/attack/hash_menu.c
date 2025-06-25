@@ -59,7 +59,8 @@ MENU *hash_menu_render(WINDOW *win, int max_y, int max_x) {
   mvwin(win, y, x);
 
   box(win, 0, 0);
-  print_in_middle(win, 0, 0, hash_menu_window_rows, " Select hash function ", COLOR_PAIR(1));
+  print_in_middle(
+      win, 0, 0, hash_menu_window_rows, " Select hash function ", COLOR_PAIR(BH_MAIN_COLOR_PAIR));
 
   // Render the menu navigation text
   list_menu_navigation_render(NULL, y + hash_menu_window_cols() + 1, -1, true);

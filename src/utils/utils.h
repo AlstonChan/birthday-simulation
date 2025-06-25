@@ -47,4 +47,19 @@ size_t generate_random_input(uint8_t *buffer, size_t min_len, size_t max_len) ;
  */
 void binary_to_string(const uint8_t *data, size_t len, char *output);
 
+#define BH_MAIN_COLOR_PAIR 1
+#define BH_ERROR_COLOR_PAIR 2
+#define BH_SUCCESS_COLOR_PAIR 3
+#define BH_WARNING_COLOR_PAIR 4
+#define BH_INFO_COLOR_PAIR 5
+#define BH_HIGHLIGHT_COLOR_PAIR 6
+
+/**
+ * @brief Initialize color pairs for ncurses
+ *
+ * This function initializes color pairs used in the application.
+ * It should be called after initscr() and before any other ncurses functions.
+ */
+uint8_t init_color_pairs();
+
 #endif

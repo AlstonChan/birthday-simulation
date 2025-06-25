@@ -53,7 +53,7 @@ MENU *main_menu_render(WINDOW *win, int max_y, int max_x) {
   mvwin(win, y, x);
 
   box(win, 0, 0);
-  print_in_middle(win, 0, 0, 40, " Main Menu ", COLOR_PAIR(1));
+  print_in_middle(win, 0, 0, 40, " Main Menu ", COLOR_PAIR(BH_MAIN_COLOR_PAIR));
 
   art_text_center_render(NULL);
 
