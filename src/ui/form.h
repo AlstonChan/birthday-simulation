@@ -84,10 +84,11 @@ void update_field_highlighting(FORM *current_form, unsigned short form_field_cou
  * @param max_label_length The maximum length of the field label of the form.
  * @param max_field_length The maximum length of the field value of the form.
  * @param max_field_value The maximum value allowed for the current field based on its max_length.
+ * @param y_padding Whether to apply BH_FORM_Y_PADDING to the error message.
  */
 void display_field_error(WINDOW *sub_win, FIELD *field, int field_index,
                          unsigned short max_label_length, unsigned short max_field_length,
-                         int max_field_value);
+                         int max_field_value, bool y_padding);
                 
 /**
  * @brief Clears the error message for a specific field in the form created by
@@ -97,6 +98,7 @@ void display_field_error(WINDOW *sub_win, FIELD *field, int field_index,
  * @param field_index The index of the field in the form's field array.
  * @param max_label_length The maximum length of the field label of the form.
  * @param max_field_length The maximum length of the field value of the form.
+ * 
  */
 void clear_field_error(WINDOW *sub_win, int field_index, unsigned short max_label_length,
                        unsigned short max_field_length);

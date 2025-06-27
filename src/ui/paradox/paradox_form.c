@@ -182,7 +182,8 @@ bool paradox_form_validate_all_fields(WINDOW *win) {
                           i,
                           max_label_length,
                           longest_max_length_pad,
-                          calculate_form_max_value(paradox_form_field_metadata[i].max_length));
+                          calculate_form_max_value(paradox_form_field_metadata[i].max_length),
+                          true);
     }
   }
 
@@ -236,9 +237,14 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
       paradox_form_field_metadata, paradox_form_field_metadata_len, true);
 
   switch (ch) {
+  case KEY_UP:
   case KEY_DOWN: {
     int result = form_driver(paradox_form, REQ_VALIDATION);
-    form_driver(paradox_form, REQ_NEXT_FIELD);
+    if (ch == KEY_DOWN) {
+      form_driver(paradox_form, REQ_NEXT_FIELD);
+    } else {
+      form_driver(paradox_form, REQ_PREV_FIELD);
+    }
     form_driver(paradox_form, REQ_END_LINE);
 
     current = current_field(paradox_form);
@@ -251,43 +257,9 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
           current_index,
           max_label_length,
           longest_max_length_pad,
-          calculate_form_max_value(paradox_form_field_metadata[current_index].max_length));
+          calculate_form_max_value(paradox_form_field_metadata[current_index].max_length),
+          true);
 
-    } else {
-      clear_field_error(
-          paradox_form_sub_win, current_index, max_label_length, longest_max_length_pad);
-    }
-
-    update_field_highlighting(paradox_form,
-                              paradox_form_field_metadata_len + 1,
-                              (unsigned short[]){paradox_form_field_metadata_len},
-                              1);
-
-    if (current_index < paradox_form_field_metadata_len) {
-      pos_form_cursor(paradox_form);
-    } else {
-      set_field_buffer(
-          paradox_form_field_get(paradox_form_field_metadata_len), 0, form_submit_button_text);
-      pos_form_cursor(paradox_form);
-    }
-  } break;
-
-  case KEY_UP: {
-    int result = form_driver(paradox_form, REQ_VALIDATION);
-    form_driver(paradox_form, REQ_PREV_FIELD);
-    form_driver(paradox_form, REQ_END_LINE);
-
-    current = current_field(paradox_form);
-    current_index = field_index(current);
-
-    if (result == E_INVALID_FIELD) {
-      display_field_error(
-          paradox_form_sub_win,
-          current,
-          current_index,
-          max_label_length,
-          longest_max_length_pad,
-          calculate_form_max_value(paradox_form_field_metadata[current_index].max_length));
     } else {
       clear_field_error(
           paradox_form_sub_win, current_index, max_label_length, longest_max_length_pad);
@@ -312,7 +284,6 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
       form_driver(paradox_form, REQ_PREV_CHAR);
     }
     break;
-
   case KEY_RIGHT:
     if (current_index < paradox_form_field_metadata_len) {
       form_driver(paradox_form, REQ_NEXT_CHAR);
@@ -323,7 +294,6 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
   case 127:
     form_driver(paradox_form, REQ_DEL_PREV);
     break;
-
   case KEY_DC:
     if (current_index < paradox_form_field_metadata_len) {
       form_driver(paradox_form, REQ_DEL_CHAR);
@@ -340,7 +310,8 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
           current_index,
           max_label_length,
           longest_max_length_pad,
-          calculate_form_max_value(paradox_form_field_metadata[current_index].max_length));
+          calculate_form_max_value(paradox_form_field_metadata[current_index].max_length),
+          true);
     } else if (current_index == paradox_form_field_metadata_len) {
       paradox_form_validate_all_fields(win);
     }

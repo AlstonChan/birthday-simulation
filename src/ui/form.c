@@ -95,11 +95,14 @@ void update_field_highlighting(FORM *current_form, unsigned short form_field_cou
 
 void display_field_error(WINDOW *sub_win, FIELD *field, int field_index,
                          unsigned short max_label_length, unsigned short max_field_length,
-                         int max_field_value) {
+                         int max_field_value, bool y_padding) {
   char *buffer = field_buffer(field, 0);
   int value;
 
-  int y_pos = field_index + BH_FORM_Y_PADDING;
+  int y_pos = field_index;
+  if (y_padding)
+    y_pos += BH_FORM_Y_PADDING; // Apply vertical padding if needed
+
   int x_pos = BH_FORM_X_PADDING + max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1 +
               max_field_length + BH_FORM_FIELD_BRACKET_PADDING + 2;
 
