@@ -21,14 +21,6 @@ FORM *paradox_form_get();
 WINDOW *paradox_form_sub_win_get();
 
 /**
- * @brief Displays an error message for a field in the paradox form.
- *
- * @param field The field to display the error message for.
- * @param field_index The index of the field.
- */
-void display_field_error(FIELD *field, int field_index);
-
-/**
  * @brief Initializes the paradox form with the given window.
  * If no window is provided, it will return early without doing anything.
  *

@@ -30,51 +30,6 @@ FIELD **paradox_form_field_get_all() { return paradox_form_field; }
 FORM *paradox_form_get() { return paradox_form; }
 WINDOW *paradox_form_sub_win_get() { return paradox_form_sub_win; }
 
-void display_field_error(FIELD *field, int field_index) {
-  char *buffer = field_buffer(field, 0);
-  int value;
-
-  WINDOW *win = paradox_form_sub_win;
-  int y_pos = field_index + BH_FORM_Y_PADDING;
-  int x_pos = BH_FORM_X_PADDING + max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1 +
-              calculate_longest_max_length(
-                  paradox_form_field_metadata, paradox_form_field_metadata_len, true) +
-              BH_FORM_FIELD_BRACKET_PADDING + 2;
-
-  // Clear any previous error message first
-  mvwprintw(win, y_pos, x_pos, "                    ");
-
-  // Trim trailing spaces from buffer
-  char *end = buffer + strlen(buffer) - 1;
-  while (end > buffer && isspace(*end)) {
-    *end = '\0';
-    end--;
-  }
-
-  // If empty after trimming, don't show error
-  if (strlen(buffer) == 0) {
-    return;
-  }
-
-  // Try to convert the buffer to a number
-  if (sscanf(buffer, "%d", &value) != 1) {
-    wattron(win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
-    mvwprintw(win, y_pos, x_pos, "Must be a number");
-    wattroff(win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
-    return;
-  }
-
-  // Get the maximum allowed value based on the field's max length
-  int min = 1;
-  int max = calculate_form_max_value(paradox_form_field_metadata[field_index].max_length);
-
-  if (value < min || value > max) {
-    wattron(win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
-    mvwprintw(win, y_pos, x_pos, "Range: %d-%d", min, max);
-    wattroff(win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
-  }
-}
-
 void paradox_form_init(WINDOW *win) {
   if (paradox_form)
     return; // Already initialized
@@ -227,10 +182,17 @@ bool paradox_form_validate_all_fields(WINDOW *win) {
   for (int i = 0; i < paradox_form_field_metadata_len; i++) {
     set_current_field(paradox_form, paradox_form_field_get(i));
     int result = form_driver(paradox_form, REQ_VALIDATION);
+    unsigned short longest_max_length_pad = calculate_longest_max_length(
+        paradox_form_field_metadata, paradox_form_field_metadata_len, true);
 
     if (result == E_INVALID_FIELD) {
       all_valid = false;
-      display_field_error(paradox_form_field_get(i), i);
+      display_field_error(paradox_form_sub_win,
+                          paradox_form_field_get(i),
+                          i,
+                          max_label_length,
+                          longest_max_length_pad,
+                          calculate_form_max_value(paradox_form_field_metadata[i].max_length));
     }
   }
 
@@ -280,6 +242,8 @@ bool paradox_form_validate_all_fields(WINDOW *win) {
 void paradox_form_handle_input(WINDOW *win, int ch) {
   FIELD *current = current_field(paradox_form);
   int current_index = field_index(current);
+  unsigned short longest_max_length_pad = calculate_longest_max_length(
+      paradox_form_field_metadata, paradox_form_field_metadata_len, true);
 
   switch (ch) {
   case KEY_DOWN: {
@@ -291,7 +255,14 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
     current_index = field_index(current);
 
     if (result == E_INVALID_FIELD) {
-      display_field_error(current, current_index);
+      display_field_error(
+          paradox_form_sub_win,
+          current,
+          current_index,
+          max_label_length,
+          longest_max_length_pad,
+          calculate_form_max_value(paradox_form_field_metadata[current_index].max_length));
+
     } else {
       paradox_form_clear_error_message(current_index);
     }
@@ -319,7 +290,13 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
     current_index = field_index(current);
 
     if (result == E_INVALID_FIELD) {
-      display_field_error(current, current_index);
+      display_field_error(
+          paradox_form_sub_win,
+          current,
+          current_index,
+          max_label_length,
+          longest_max_length_pad,
+          calculate_form_max_value(paradox_form_field_metadata[current_index].max_length));
     } else {
       paradox_form_clear_error_message(current_index);
     }
@@ -365,7 +342,13 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
     int result = form_driver(paradox_form, REQ_VALIDATION);
 
     if (result == E_INVALID_FIELD) {
-      display_field_error(current, current_index);
+      display_field_error(
+          paradox_form_sub_win,
+          current,
+          current_index,
+          max_label_length,
+          longest_max_length_pad,
+          calculate_form_max_value(paradox_form_field_metadata[current_index].max_length));
     } else if (current_index == paradox_form_field_metadata_len) {
       paradox_form_validate_all_fields(win);
     }

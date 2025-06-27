@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <math.h>
 #include <ncurses/form.h>
 #include <string.h>
@@ -90,4 +91,48 @@ void update_field_highlighting(FORM *current_form, unsigned short form_field_cou
   }
 
   form_driver(current_form, REQ_VALIDATION); // Force form refresh
+}
+
+void display_field_error(WINDOW *sub_win, FIELD *field, int field_index,
+                         unsigned short max_label_length, unsigned short max_field_length,
+                         int max_field_value) {
+  char *buffer = field_buffer(field, 0);
+  int value;
+
+  int y_pos = field_index + BH_FORM_Y_PADDING;
+  int x_pos = BH_FORM_X_PADDING + max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1 +
+              max_field_length + BH_FORM_FIELD_BRACKET_PADDING + 2;
+
+  // Clear any previous error message first
+  mvwprintw(sub_win, y_pos, x_pos, "                    ");
+
+  // Trim trailing spaces from buffer
+  char *end = buffer + strlen(buffer) - 1;
+  while (end > buffer && isspace(*end)) {
+    *end = '\0';
+    end--;
+  }
+
+  // If empty after trimming, don't show error
+  if (strlen(buffer) == 0) {
+    return;
+  }
+
+  // Try to convert the buffer to a number
+  if (sscanf(buffer, "%d", &value) != 1) {
+    wattron(sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+    mvwprintw(sub_win, y_pos, x_pos, "Must be a number");
+    wattroff(sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+    return;
+  }
+
+  // Get the maximum allowed value based on the field's max length
+  int min = 1;
+  int max = max_field_value;
+
+  if (value < min || value > max) {
+    wattron(sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+    mvwprintw(sub_win, y_pos, x_pos, "Range: %d-%d", min, max);
+    wattroff(sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+  }
 }
