@@ -136,3 +136,12 @@ void display_field_error(WINDOW *sub_win, FIELD *field, int field_index,
     wattroff(sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
   }
 }
+
+void clear_field_error(WINDOW *sub_win, int field_index, unsigned short max_label_length,
+                       unsigned short max_field_length) {
+  mvwprintw(sub_win,
+            field_index + BH_FORM_Y_PADDING,
+            BH_FORM_X_PADDING + max_label_length + +BH_FORM_FIELD_BRACKET_PADDING + 1 +
+                max_field_length + BH_FORM_FIELD_BRACKET_PADDING + 2,
+            "                    ");
+}

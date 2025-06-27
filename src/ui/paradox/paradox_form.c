@@ -167,16 +167,6 @@ void paradox_form_destroy() {
   paradox_form_sub_win = NULL;
 }
 
-void paradox_form_clear_error_message(int field_index) {
-  mvwprintw(paradox_form_sub_win,
-            field_index + BH_FORM_Y_PADDING,
-            BH_FORM_X_PADDING + max_label_length + +BH_FORM_FIELD_BRACKET_PADDING + 1 +
-                calculate_longest_max_length(
-                    paradox_form_field_metadata, paradox_form_field_metadata_len, true) +
-                BH_FORM_FIELD_BRACKET_PADDING + 2,
-            "                    ");
-}
-
 bool paradox_form_validate_all_fields(WINDOW *win) {
   bool all_valid = true;
   for (int i = 0; i < paradox_form_field_metadata_len; i++) {
@@ -264,7 +254,8 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
           calculate_form_max_value(paradox_form_field_metadata[current_index].max_length));
 
     } else {
-      paradox_form_clear_error_message(current_index);
+      clear_field_error(
+          paradox_form_sub_win, current_index, max_label_length, longest_max_length_pad);
     }
 
     update_field_highlighting(paradox_form,
@@ -298,7 +289,8 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
           longest_max_length_pad,
           calculate_form_max_value(paradox_form_field_metadata[current_index].max_length));
     } else {
-      paradox_form_clear_error_message(current_index);
+      clear_field_error(
+          paradox_form_sub_win, current_index, max_label_length, longest_max_length_pad);
     }
 
     update_field_highlighting(paradox_form,

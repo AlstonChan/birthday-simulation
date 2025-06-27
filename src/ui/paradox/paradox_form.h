@@ -51,13 +51,7 @@ FORM *paradox_form_render(WINDOW *win, int max_y, int max_x);
  *
  */
 void paradox_form_handle_input(WINDOW *win, int ch);
-
-/**
- * @brief Clears the error message for a given field.
- *
- */
-void paradox_form_clear_error_message(int field_index);
-
+ 
 /**
  * @brief Validates all fields in the paradox form.
  *

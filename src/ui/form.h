@@ -88,5 +88,17 @@ void update_field_highlighting(FORM *current_form, unsigned short form_field_cou
 void display_field_error(WINDOW *sub_win, FIELD *field, int field_index,
                          unsigned short max_label_length, unsigned short max_field_length,
                          int max_field_value);
-                               
+                
+/**
+ * @brief Clears the error message for a specific field in the form created by
+ * display_field_error.
+ * 
+ * @param sub_win The sub-window where the form is displayed.
+ * @param field_index The index of the field in the form's field array.
+ * @param max_label_length The maximum length of the field label of the form.
+ * @param max_field_length The maximum length of the field value of the form.
+ */
+void clear_field_error(WINDOW *sub_win, int field_index, unsigned short max_label_length,
+                       unsigned short max_field_length);
+                         
 #endif
