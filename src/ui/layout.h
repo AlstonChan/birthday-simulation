@@ -3,6 +3,8 @@
 
 #include <ncurses/ncurses.h>
 
+#define BH_LAYOUT_PADDING 6
+
 /**
  * @brief The type of page that the layout can render.
  * 

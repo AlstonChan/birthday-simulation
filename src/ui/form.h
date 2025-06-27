@@ -62,4 +62,17 @@ FIELD *create_button_field(const char *label, unsigned short frow, unsigned shor
  */
 int calculate_form_max_value(int length);
 
+/**
+ * @brief Updates the highlighting of the fields in the form based on the current field.
+ *
+ * @param current_form The current form to update.
+ * @param form_field_count The number of fields in the form. This includes both input fields and buttons.
+ * @param form_button_indexes The indexes of the button fields in the form. The indexes 
+ *                            MUST be sorted in ascending order.
+ * @param form_button_indexes_len The length of the button indexes array.
+ */
+void update_field_highlighting(FORM *current_form, unsigned short form_field_count,
+                               unsigned short form_button_indexes[],
+                               unsigned short form_button_indexes_len);
+
 #endif

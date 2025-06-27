@@ -97,3 +97,25 @@ uint8_t init_color_pairs() {
   init_pair(BH_HIGHLIGHT_COLOR_PAIR, COLOR_MAGENTA, COLOR_BLACK); // Highlight color
   return 0;
 }
+
+bool binary_search(unsigned short arr[], unsigned short size, unsigned short target) {
+  unsigned short left = 0, right = size - 1;
+
+  if (arr == NULL || size == 0) {
+    return false; // Handle empty or null array
+  }
+  if (target < arr[left] || target > arr[right]) {
+    return false; // Target is out of bounds
+  }
+
+  while (left <= right) {
+    unsigned short mid = left + (right - left) / 2;
+    if (arr[mid] == target)
+      return true;
+    if (arr[mid] < target)
+      left = mid + 1;
+    else
+      right = mid - 1;
+  }
+  return false;
+}

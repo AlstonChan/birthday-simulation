@@ -62,4 +62,16 @@ void binary_to_string(const uint8_t *data, size_t len, char *output);
  */
 uint8_t init_color_pairs();
 
+/**
+ * @brief Perform a binary search on a sorted array
+ *
+ * This function performs a binary search on a sorted array to find the target value.
+ *
+ * @param arr The sorted array to search in
+ * @param size The size of the array
+ * @param target The value to search for
+ * @return true if the target is found, false otherwise
+ */
+bool binary_search(unsigned short arr[], unsigned short size, unsigned short target);
+
 #endif

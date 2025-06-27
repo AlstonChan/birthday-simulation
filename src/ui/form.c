@@ -46,3 +46,48 @@ int calculate_form_max_value(int length) {
   // Example: pow(10, 3) - 1 = 1000 - 1 = 999
   return (int)pow(10, length) - 1;
 }
+
+void update_field_highlighting(FORM *current_form, unsigned short form_field_count,
+                               unsigned short form_button_indexes[],
+                               unsigned short form_button_indexes_len) {
+  if (current_form == NULL || form_field_count == 0 || form_button_indexes == NULL)
+    return;
+
+  FIELD **fields = form_fields(current_form);
+  FIELD *current = current_field(current_form);
+  int current_index = field_index(current);
+
+  // Show or hide cursor based on whether we're on the button
+  bool is_button = binary_search(form_button_indexes, form_button_indexes_len, current_index);
+  if (is_button) {
+    curs_set(0); // Hide cursor on button
+  } else {
+    curs_set(1); // Show cursor on input fields
+  }
+
+  for (unsigned short i = 0; i < form_field_count + 1; ++i) {
+    // If the field is the current one, highlight it
+    if (fields[i] == current) {
+      bool is_button = binary_search(form_button_indexes, form_button_indexes_len, i);
+      if (is_button) {
+        // Button selected - invert colors
+        set_field_back(fields[i], A_REVERSE | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
+      } else {
+        // Input field selected
+        set_field_back(fields[i], A_REVERSE);
+      }
+    } else {
+      // If the field is not the current one, set normal colors
+      bool is_button = binary_search(form_button_indexes, form_button_indexes_len, i);
+      if (is_button) {
+        // Button not selected - normal button colors
+        set_field_back(fields[i], A_NORMAL | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
+      } else {
+        // Input field not selected
+        set_field_back(fields[i], A_NORMAL);
+      }
+    }
+  }
+
+  form_driver(current_form, REQ_VALIDATION); // Force form refresh
+}

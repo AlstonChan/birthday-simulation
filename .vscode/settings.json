@@ -33,6 +33,8 @@
     "stdbool.h": "c",
     "utils.h": "c",
     "hash_config.h": "c"
+    "system_error": "c",
+    "type_traits": "c",
   },
   "cSpell.words": ["Iinclude", "lmenuw", "lncursesw"]
 }
