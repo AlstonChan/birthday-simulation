@@ -119,3 +119,32 @@ bool binary_search(unsigned short arr[], unsigned short size, unsigned short tar
   }
   return false;
 }
+
+bool is_prime(size_t n) {
+  if (n < 2)
+    return false;
+  if (n == 2)
+    return true;
+  if (n % 2 == 0)
+    return false;
+
+  for (size_t i = 3; i * i <= n; i += 2) {
+    if (n % i == 0)
+      return false;
+  }
+  return true;
+}
+
+size_t next_prime(size_t n) {
+  if (n < 2)
+    return 2;
+
+  // Make sure n is odd (except for 2)
+  if (n > 2 && n % 2 == 0)
+    n++;
+
+  while (!is_prime(n)) {
+    n += 2; // Only check odd numbers
+  }
+  return n;
+}

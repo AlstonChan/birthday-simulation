@@ -74,4 +74,24 @@ uint8_t init_color_pairs();
  */
 bool binary_search(unsigned short arr[], unsigned short size, unsigned short target);
 
+/**
+ * @brief Check if a number is prime
+ *
+ * This function checks if a given number is prime.
+ *
+ * @param n The number to check
+ * @return true if the number is prime, false otherwise
+ */
+bool is_prime(size_t n);
+
+/**
+ * @brief Find the next prime number greater than or equal to n
+ *
+ * This function finds the next prime number that is greater than or equal to n.
+ *
+ * @param n The starting number
+ * @return The next prime number greater than or equal to n
+ */
+size_t next_prime(size_t n);
+
 #endif

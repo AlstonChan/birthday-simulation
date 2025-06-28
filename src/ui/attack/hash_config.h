@@ -19,7 +19,7 @@ enum hash_function_ids {
 typedef struct {
     enum hash_function_ids id;         ///< The ID of the hash function
     const char *label;          ///< The label for the hash function
-    const char *bits;           ///< The bit size of the hash function
+    const unsigned short bits;           ///< The bit size of the hash function
     const char *estimated_collisions; ///< Estimated collisions for the hash function
     const char *space_size;     ///< Space size of the hash function
 } hash_config_t;
@@ -41,5 +41,13 @@ struct ListMenuItem *get_hash_config_menu();
  * @return struct ListMenuItem The menu item for the specified hash function
  */
 hash_config_t get_hash_config_item(enum hash_function_ids id);
+
+/**
+ * @brief Get maximum hash hex string length for a given hash function
+ * 
+ * @param hash_id The ID of the hash function to get the hex length for
+ * @return size_t The maximum length of the hash hex string, including the null terminator
+ */
+size_t get_hash_hex_length(enum hash_function_ids hash_id);
 
 #endif
