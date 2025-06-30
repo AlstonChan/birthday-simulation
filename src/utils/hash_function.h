@@ -42,4 +42,18 @@ uint16_t hash_12bit(const void *data, size_t len);
  */
 uint16_t hash_16bit(const void *data, size_t len);
 
+/**
+ * @brief RIPEMD-160 hash function
+ * 
+ * REMEMBER TO `free()` the returned pointer after use.
+ *
+ * This function computes the RIPEMD-160 hash of the input data.
+ * The output is a 20-byte hash value, suitable for cryptographic applications.
+ *
+ * @param data Pointer to input data buffer
+ * @param len Length of input data in bytes
+ * @return unsigned char* Pointer to the 20-byte hash value, caller must free it
+ */
+unsigned char *hash_ripemd160(const void *data, size_t len);
+
 #endif 

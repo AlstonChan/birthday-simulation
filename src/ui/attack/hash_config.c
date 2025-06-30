@@ -15,7 +15,7 @@ const hash_config_t hash_config[] = {
     {HASH_CONFIG_SHA256, "SHA-256", (unsigned short)256, "~2^128", "2^256"},
     {HASH_CONFIG_SHA512, "SHA-512", (unsigned short)512, "~2^256", "2^512"},
     {HASH_CONFIG_SHA384, "SHA-384", (unsigned short)384, "~2^192", "2^384"},
-    {HASH_CONFIG_KECCAK256, "Keccak-256", (unsigned short)256, "~2^128", "2^256"},
+    // {HASH_CONFIG_KECCAK256, "Keccak-256", (unsigned short)256, "~2^128", "2^256"},
 };
 
 const unsigned short hash_config_len = ARRAY_SIZE(hash_config);

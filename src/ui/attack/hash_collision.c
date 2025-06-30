@@ -86,6 +86,18 @@ static bool compute_hash(enum hash_function_ids hash_id, const uint8_t *input, s
     uint16_t result = hash_16bit(input, input_len);
     sprintf(*output, "%04X", result);
   } break;
+  case HASH_CONFIG_RIPEMD160: {
+    unsigned char *result = hash_ripemd160(input, input_len);
+    if (!result) {
+      free(*output);
+      return false; // Memory allocation failed in hash_ripemd160
+    }
+    for (size_t i = 0; i < 20; i++) {
+      sprintf(&(*output)[i * 2], "%02X", result[i]);
+    }
+    (*output)[40] = '\0';
+    free(result);
+  }
   }
 
   return true;
@@ -216,7 +228,7 @@ hash_collision_simulation_run(enum hash_function_ids hash_id, int max_attempts) 
       // Collision found. BIRTHDAY ATTACK SUCCESS: Same hash with different inputs!
       result->collision_found = true;
       result->collision_input_1 = strdup(existing->input);
-      result->collision_input_2 = strdup((char *)current_input);
+      result->collision_input_2 = strdup(bytes_to_hex(current_input, input_len, 1));
       result->collision_hash_hex = strdup(hash_hex);
 
       // Free the hash hex before exiting the loop
@@ -224,7 +236,7 @@ hash_collision_simulation_run(enum hash_function_ids hash_id, int max_attempts) 
       break;
     } else {
       // No collision, insert the new hash into the table
-      hash_table_insert(table, (char *)current_input, hash_hex);
+      hash_table_insert(table, bytes_to_hex(current_input, input_len, 1), hash_hex);
     }
 
     // Free the hash hex after each attempt
@@ -271,11 +283,10 @@ static bool hash_form_validate_all_fields(WINDOW *win, enum hash_function_ids ha
     uint8_t starting_y = hash_form_field_metadata_len + 1 + 2;
 
     // Clear the sub-window from starting_y to starting_y + 5
-    for (unsigned short i = starting_y; i < starting_y + 6; ++i) {
-      mvwprintw(hash_collision_form_sub_win,
-                i,
-                BH_FORM_X_PADDING,
-                "                                                 ");
+    for (unsigned short row = starting_y; row < starting_y + 6; ++row) {
+      for (int col = BH_FORM_X_PADDING; col <= COLS - BH_FORM_X_PADDING; col++) {
+        mvwaddch(hash_collision_form_sub_win, row, col, ' ');
+      }
     }
 
     if (results->collision_found) {
@@ -383,7 +394,8 @@ static void hash_collision_form_init(WINDOW *win) {
   hash_form_field[hash_form_field_metadata_len + 1] = NULL;
 
   // Create a sub-window for the form with extra space for the button
-  hash_collision_form_sub_win = derwin(win, hash_form_field_metadata_len + 12, COLS - 4, 9, 1);
+  hash_collision_form_sub_win = derwin(
+      win, hash_form_field_metadata_len + 12, COLS - BH_FORM_X_PADDING - BH_FORM_X_PADDING, 9, 1);
   keypad(hash_collision_form_sub_win, TRUE);
 
   // Create the form

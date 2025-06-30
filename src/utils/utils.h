@@ -39,13 +39,17 @@ void print_in_middle(WINDOW *win, unsigned int start_y, unsigned int start_x, un
 size_t generate_random_input(uint8_t *buffer, size_t min_len, size_t max_len) ;
                      
 /**
- * @brief Convert binary data to printable string representation
+ * @brief Convert a byte array to a hexadecimal string
  *
- * @param data Binary data to convert
- * @param len Length of binary data
- * @param output Output buffer (should be at least len*4 + 1 bytes)
+ * This function converts a byte array to a hexadecimal string representation.
+ * The output is null-terminated and can be used for display or logging.
+ *
+ * @param data Pointer to the byte array
+ * @param len Length of the byte array
+ * @param uppercase If non-zero, uses uppercase letters (A-F), otherwise lowercase (a-f)
+ * @return char* Pointer to the hexadecimal string, caller must free it
  */
-void binary_to_string(const uint8_t *data, size_t len, char *output);
+char *bytes_to_hex(const uint8_t *data, size_t len, int uppercase);
 
 #define BH_MAIN_COLOR_PAIR 1
 #define BH_ERROR_COLOR_PAIR 2

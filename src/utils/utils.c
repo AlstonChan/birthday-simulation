@@ -1,5 +1,6 @@
 #include <limits.h>
 #include <ncurses/ncurses.h>
+#include <openssl/rand.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -51,33 +52,25 @@ void print_in_middle(WINDOW *win, unsigned int start_y, unsigned int start_x, un
 
 size_t generate_random_input(uint8_t *buffer, size_t min_len, size_t max_len) {
   size_t len = min_len + (rand() % (max_len - min_len + 1));
-
-  for (size_t i = 0; i < len; i++) {
-    buffer[i] = 32 + (rand() % 95); // Generate printable ASCII characters (32-126)
-    // if (rand() % 3 == 0) {
-    //   // 1/3 chance: Generate printable ASCII (32-126)
-    //   buffer[i] = 32 + (rand() % 95);
-    // } else {
-    //   // 2/3 chance: Generate any byte value
-    //   buffer[i] = rand() & 0xFF;
-    // }
-  }
-
+  RAND_bytes(buffer, len); // fills with secure random bytes
   return len;
 }
 
-void binary_to_string(const uint8_t *data, size_t len, char *output) {
-  size_t pos = 0;
+char *bytes_to_hex(const uint8_t *data, size_t len, int uppercase) {
+  if (!data || len == 0)
+    return NULL;
+
+  // Allocate buffer: 2 characters per byte + null terminator
+  char *hex = malloc((len * 2) + 1);
+  if (!hex)
+    return NULL;
+
   for (size_t i = 0; i < len; i++) {
-    if (data[i] >= 32 && data[i] <= 126) {
-      // Printable ASCII character
-      output[pos++] = data[i];
-    } else {
-      // Non-printable character - show as \xHH
-      pos += sprintf(output + pos, "\\x%02X", data[i]);
-    }
+    sprintf(hex + (i * 2), uppercase ? "%02X" : "%02x", data[i]);
   }
-  output[pos] = '\0';
+
+  hex[len * 2] = '\0'; // Null-terminate the string
+  return hex;
 }
 
 uint8_t init_color_pairs() {

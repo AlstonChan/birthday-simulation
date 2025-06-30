@@ -1,3 +1,4 @@
+#include <openssl/evp.h>
 #include <stdint.h>
 
 #include "hash_function.h"
@@ -45,6 +46,45 @@ uint16_t hash_16bit(const void *data, size_t len) {
       }
     }
   }
+
+  return hash;
+}
+
+unsigned char *hash_ripemd160(const void *data, size_t len) {
+  // 1. Buffer to store the hash (RIPEMD-160 = 20 bytes)
+  unsigned char *hash = malloc(EVP_MD_size(EVP_ripemd160()));
+  unsigned int hash_len = 0;
+
+  // 2. Create and initialize the message digest context
+  EVP_MD_CTX *ctx = EVP_MD_CTX_new(); // dynamically allocate context
+  if (ctx == NULL) {
+    free(hash);  // Free the hash buffer on error
+    return NULL; // Return NULL if context creation fails
+  }
+
+  // 3. Initialize the context with RIPEMD160 algorithm
+  if (EVP_DigestInit_ex(ctx, EVP_ripemd160(), NULL) != 1) {
+    free(hash);           // Free the hash buffer on error
+    EVP_MD_CTX_free(ctx); // Free the context on error
+    return NULL;
+  }
+
+  // 4. Feed data into the hash function
+  if (EVP_DigestUpdate(ctx, data, len) != 1) {
+    free(hash);           // Free the hash buffer on error
+    EVP_MD_CTX_free(ctx); // Free the context on error
+    return NULL;
+  }
+
+  // 5. Finalize and get the digest output
+  if (EVP_DigestFinal_ex(ctx, hash, &hash_len) != 1) {
+    free(hash);           // Free the hash buffer on error
+    EVP_MD_CTX_free(ctx); // Free the context on error
+    return NULL;
+  }
+
+  // 6. Free the context
+  EVP_MD_CTX_free(ctx);
 
   return hash;
 }
