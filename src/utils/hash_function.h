@@ -42,18 +42,28 @@ uint16_t hash_12bit(const void *data, size_t len);
  */
 uint16_t hash_16bit(const void *data, size_t len);
 
+enum openssl_hash_function_ids {
+    BH_OPENSSL_HASH_RIPEMD160,
+    BH_OPENSSL_HASH_SHA1,
+    BH_OPENSSL_HASH_SHA3_256,
+    BH_OPENSSL_HASH_SHA256,
+    BH_OPENSSL_HASH_SHA512,
+    BH_OPENSSL_HASH_SHA384,
+};
+
 /**
- * @brief RIPEMD-160 hash function
+ * @brief Generic wrapper for OpenSSL hash functions
  * 
  * REMEMBER TO `free()` the returned pointer after use.
  *
- * This function computes the RIPEMD-160 hash of the input data.
- * The output is a 20-byte hash value, suitable for cryptographic applications.
  *
  * @param data Pointer to input data buffer
  * @param len Length of input data in bytes
+ * @param hash_id The ID of the hash function to use
  * @return unsigned char* Pointer to the 20-byte hash value, caller must free it
  */
-unsigned char *hash_ripemd160(const void *data, size_t len);
+unsigned char *openssl_hash(const void *data, size_t len,enum openssl_hash_function_ids hash_id);
+
+
 
 #endif 

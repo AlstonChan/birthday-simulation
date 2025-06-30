@@ -50,9 +50,39 @@ uint16_t hash_16bit(const void *data, size_t len) {
   return hash;
 }
 
-unsigned char *hash_ripemd160(const void *data, size_t len) {
-  // 1. Buffer to store the hash (RIPEMD-160 = 20 bytes)
-  unsigned char *hash = malloc(EVP_MD_size(EVP_ripemd160()));
+unsigned char *openssl_hash(const void *data, size_t len, enum openssl_hash_function_ids hash_id) {
+  // 0. Set the correct hash function based on the ID
+  const EVP_MD *(*hash_fn)(void) = NULL;
+
+  switch (hash_id) {
+  case BH_OPENSSL_HASH_RIPEMD160:
+    hash_fn = EVP_ripemd160;
+    break;
+  case BH_OPENSSL_HASH_SHA1:
+    hash_fn = EVP_sha1;
+    break;
+  case BH_OPENSSL_HASH_SHA3_256:
+    hash_fn = EVP_sha3_256;
+    break;
+  case BH_OPENSSL_HASH_SHA256:
+    hash_fn = EVP_sha256;
+    break;
+  case BH_OPENSSL_HASH_SHA512:
+    hash_fn = EVP_sha512;
+    break;
+  case BH_OPENSSL_HASH_SHA384:
+    hash_fn = EVP_sha384;
+    break;
+  default:
+    return NULL; // Unsupported hash function ID
+  }
+
+  // 1. Buffer to store the hash
+  const EVP_MD *md = hash_fn();
+  if (!md)
+    return NULL;
+
+  unsigned char *hash = malloc(EVP_MD_size(md));
   unsigned int hash_len = 0;
 
   // 2. Create and initialize the message digest context
@@ -62,8 +92,8 @@ unsigned char *hash_ripemd160(const void *data, size_t len) {
     return NULL; // Return NULL if context creation fails
   }
 
-  // 3. Initialize the context with RIPEMD160 algorithm
-  if (EVP_DigestInit_ex(ctx, EVP_ripemd160(), NULL) != 1) {
+  // 3. Initialize the context with hash algorithm
+  if (EVP_DigestInit_ex(ctx, md, NULL) != 1) {
     free(hash);           // Free the hash buffer on error
     EVP_MD_CTX_free(ctx); // Free the context on error
     return NULL;

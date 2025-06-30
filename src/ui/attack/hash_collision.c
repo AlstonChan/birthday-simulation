@@ -86,18 +86,53 @@ static bool compute_hash(enum hash_function_ids hash_id, const uint8_t *input, s
     uint16_t result = hash_16bit(input, input_len);
     sprintf(*output, "%04X", result);
   } break;
-  case HASH_CONFIG_RIPEMD160: {
-    unsigned char *result = hash_ripemd160(input, input_len);
-    if (!result) {
+  case HASH_CONFIG_RIPEMD160:
+  case HASH_CONFIG_SHA1:
+  case HASH_CONFIG_SHA3_256:
+  case HASH_CONFIG_SHA256:
+  case HASH_CONFIG_SHA512:
+  case HASH_CONFIG_SHA384: {
+    int openssl_id;
+    switch (hash_id) {
+    case HASH_CONFIG_RIPEMD160:
+      openssl_id = BH_OPENSSL_HASH_RIPEMD160;
+      break;
+    case HASH_CONFIG_SHA1:
+      openssl_id = BH_OPENSSL_HASH_SHA1;
+      break;
+    case HASH_CONFIG_SHA3_256:
+      openssl_id = BH_OPENSSL_HASH_SHA3_256;
+      break;
+    case HASH_CONFIG_SHA256:
+      openssl_id = BH_OPENSSL_HASH_SHA256;
+      break;
+    case HASH_CONFIG_SHA512:
+      openssl_id = BH_OPENSSL_HASH_SHA512;
+      break;
+    case HASH_CONFIG_SHA384:
+      openssl_id = BH_OPENSSL_HASH_SHA384;
+      break;
+    default:
       free(*output);
-      return false; // Memory allocation failed in hash_ripemd160
+      return false;
     }
-    for (size_t i = 0; i < 20; i++) {
-      sprintf(&(*output)[i * 2], "%02X", result[i]);
+
+    unsigned char *digest = openssl_hash(input, input_len, openssl_id);
+    if (!digest) {
+      free(*output);
+      return false;
     }
-    (*output)[40] = '\0';
-    free(result);
-  }
+
+    size_t bin_len = hash_hex_len - 1;          // Exclude null terminator
+    *output = bytes_to_hex(digest, bin_len, 1); // Convert to hex string
+    (*output)[hash_hex_len - 1] = '\0';         // Null-terminate the string
+    if (!*output) {
+      free(digest);
+      return false; // Memory allocation failed in bytes_to_hex
+    }
+
+    free(digest); // Free the binary digest after conversion
+  } break;
   }
 
   return true;
