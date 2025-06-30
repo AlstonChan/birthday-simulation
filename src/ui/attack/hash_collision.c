@@ -74,10 +74,18 @@ static bool compute_hash(enum hash_function_ids hash_id, const uint8_t *input, s
   *output = malloc(hash_hex_len);
 
   switch (hash_id) {
-  case HASH_CONFIG_8BIT:
+  case HASH_CONFIG_8BIT: {
     uint8_t result = hash_8bit(input, input_len);
     sprintf(*output, "%02X", result);
-    break;
+  } break;
+  case HASH_CONFIG_12BIT: {
+    uint16_t result = hash_12bit(input, input_len);
+    sprintf(*output, "%03X", result);
+  } break;
+  case HASH_CONFIG_16BIT: {
+    uint16_t result = hash_16bit(input, input_len);
+    sprintf(*output, "%04X", result);
+  } break;
   }
 
   return true;
@@ -273,7 +281,11 @@ static bool hash_form_validate_all_fields(WINDOW *win, enum hash_function_ids ha
     if (results->collision_found) {
       // Display the results of the collision simulation
       wattron(hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
-      mvwprintw(hash_collision_form_sub_win, starting_y, BH_FORM_X_PADDING, "Collision Found!");
+      mvwprintw(hash_collision_form_sub_win,
+                starting_y,
+                BH_FORM_X_PADDING,
+                "Collision Found at attempt %d!",
+                results->attempts_made);
       wattroff(hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
       mvwprintw(hash_collision_form_sub_win,
                 starting_y + 1,

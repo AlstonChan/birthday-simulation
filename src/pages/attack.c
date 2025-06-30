@@ -56,12 +56,8 @@ void render_attack_page(WINDOW *win, int max_y, int max_x) {
       break;
     case KEY_ENTER:
     case 10: // Enter key
-      switch (selected_item) {
-      case 0: // 8-bit hash
-        hash_menu_erase();
-        render_hash_collision_page(win, max_y, max_x, HASH_CONFIG_8BIT);
-        break;
-      }
+      hash_menu_erase();
+      render_hash_collision_page(win, max_y, max_x, selected_item);
 
       // Back to menu after exiting the hash collision page
       hash_menu_restore(win, max_y, max_x);
