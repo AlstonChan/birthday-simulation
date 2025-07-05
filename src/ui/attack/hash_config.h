@@ -45,9 +45,13 @@ hash_config_t get_hash_config_item(enum hash_function_ids id);
 /**
  * @brief Get maximum hash hex string length for a given hash function
  * 
+ * It returns a uint16_t, because the maximum length of a hash function's hex string 
+ * length in bits is definitely small enough to fit within a 16-bit unsigned integer.
+ * Even like sha-512, has a 512-bit output, which is less than 2^16 - 1 = 65,535.
+ * 
  * @param hash_id The ID of the hash function to get the hex length for
  * @return size_t The maximum length of the hash hex string, including the null terminator
  */
-size_t get_hash_hex_length(enum hash_function_ids hash_id);
+uint16_t get_hash_hex_length(enum hash_function_ids hash_id);
 
 #endif

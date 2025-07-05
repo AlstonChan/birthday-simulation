@@ -159,8 +159,8 @@ void paradox_form_destroy() {
   for (unsigned short i = 0; i < paradox_form_field_metadata_len; ++i) {
     free_field(paradox_form_field[i]);
   }
-  free(paradox_form_field[paradox_form_field_metadata_len]);     // Free the NULL terminator
-  free(paradox_form_field[paradox_form_field_metadata_len + 1]); // Free the button field
+  free_field(paradox_form_field[paradox_form_field_metadata_len]); // Free the NULL terminator
+  free(paradox_form_field[paradox_form_field_metadata_len + 1]);   // Free the button field
 
   paradox_form_field = NULL;
   paradox_form = NULL;

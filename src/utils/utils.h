@@ -46,10 +46,10 @@ size_t generate_random_input(uint8_t *buffer, size_t min_len, size_t max_len) ;
  *
  * @param data Pointer to the byte array
  * @param len Length of the byte array
- * @param uppercase If non-zero, uses uppercase letters (A-F), otherwise lowercase (a-f)
+ * @param uppercase If true, uses uppercase letters (A-F), otherwise lowercase (a-f)
  * @return char* Pointer to the hexadecimal string, caller must free it
  */
-char *bytes_to_hex(const uint8_t *data, size_t len, int uppercase);
+char *bytes_to_hex(const uint8_t *data, size_t len, bool uppercase);
 
 #define BH_MAIN_COLOR_PAIR 1
 #define BH_ERROR_COLOR_PAIR 2
@@ -86,7 +86,7 @@ bool binary_search(unsigned short arr[], unsigned short size, unsigned short tar
  * @param n The number to check
  * @return true if the number is prime, false otherwise
  */
-bool is_prime(size_t n);
+bool is_prime(unsigned int n);
 
 /**
  * @brief Find the next prime number greater than or equal to n
@@ -96,6 +96,6 @@ bool is_prime(size_t n);
  * @param n The starting number
  * @return The next prime number greater than or equal to n
  */
-size_t next_prime(size_t n);
+unsigned int next_prime(unsigned int n);
 
 #endif

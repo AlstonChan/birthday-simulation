@@ -57,7 +57,7 @@ hash_config_t get_hash_config_item(enum hash_function_ids id) {
   return hash_config[id];
 }
 
-size_t get_hash_hex_length(enum hash_function_ids hash_id) {
+uint16_t get_hash_hex_length(enum hash_function_ids hash_id) {
   hash_config_t hash_config_item = get_hash_config_item(hash_id);
   return hash_config_item.bits / 4 + 1; // +1 for null terminator
 }

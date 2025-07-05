@@ -56,7 +56,7 @@ size_t generate_random_input(uint8_t *buffer, size_t min_len, size_t max_len) {
   return len;
 }
 
-char *bytes_to_hex(const uint8_t *data, size_t len, int uppercase) {
+char *bytes_to_hex(const uint8_t *data, size_t len, bool uppercase) {
   if (!data || len == 0)
     return NULL;
 
@@ -113,7 +113,7 @@ bool binary_search(unsigned short arr[], unsigned short size, unsigned short tar
   return false;
 }
 
-bool is_prime(size_t n) {
+bool is_prime(unsigned int n) {
   if (n < 2)
     return false;
   if (n == 2)
@@ -128,7 +128,7 @@ bool is_prime(size_t n) {
   return true;
 }
 
-size_t next_prime(size_t n) {
+unsigned int next_prime(unsigned int n) {
   if (n < 2)
     return 2;
 

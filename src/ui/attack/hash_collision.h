@@ -17,13 +17,13 @@
  */
 void render_hash_collision_page(WINDOW *win, int max_y, int max_x, enum hash_function_ids hash_id);
 
-typedef struct {
+typedef struct HashCollisionSimulationResult {
     enum hash_function_ids id;     ///< The ID of the hash function
-    int attempts_made;       ///< The number of attempts made to find a collision or no collision
+    unsigned int attempts_made;             ///< The number of attempts made to find a collision or no collision
     bool collision_found;          ///< Whether a collision was found or not
     char *collision_input_1;       ///< The first input that caused a collision
     char *collision_input_2;       ///< The second input that caused a collision
-    char *collision_hash_hex;          ///< The hash value of the collision inputs
+    char *collision_hash_hex;      ///< The hash value of the collision inputs
 } hash_collision_simulation_result_t;
 
 typedef struct HashNode {
