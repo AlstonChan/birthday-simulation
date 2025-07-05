@@ -82,7 +82,12 @@ int main() {
         break;
       case 2:
         // Call the explanation function
-        // explanation();
+        page_layout_render(header_win,
+                           footer_win,
+                           content_win,
+                           max_y,
+                           max_x,
+                           EXPLANATION_WIN); // Render the explanation page
         break;
       case 3:
         // Call the system info function

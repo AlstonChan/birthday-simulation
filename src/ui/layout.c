@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "../pages/attack.h"
+#include "../pages/explanation.h"
 #include "../pages/paradox.h"
 #include "../pages/system_info.h"
 
@@ -39,8 +40,7 @@ void page_layout_render(WINDOW *header_win, WINDOW *footer_win, WINDOW *content_
     render_attack_page(content_win, max_y, max_x); // Render the attack page
     break;
   case EXPLANATION_WIN:
-    // Call the explanation function
-    // explanation();
+    render_explanation_page(content_win, max_y, max_x); // Render the explanation page
     break;
   case SYSTEM_INFO_WIN:
     render_system_info(content_win, max_y, max_x); // Render system info in the content window
