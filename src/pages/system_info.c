@@ -1,5 +1,6 @@
 #include "version.h"
 #include <ncurses/ncurses.h>
+#include <openssl/crypto.h>
 
 /**
  * @brief Render the system information page given a window.
@@ -28,13 +29,26 @@ void render_system_info(WINDOW *win, int max_y, int max_x) {
   // Display system information
   mvwprintw(win, 0, 3, "[ System Information ]");
   mvwprintw(win, 2, 2, "Program Version: %s", PROGRAM_VERSION_STRING);
+
+  // Display dependency versions
+  mvwprintw(win, 4, 2, "Dependencies:");
+  mvwprintw(win, 5, 2, "- C Standard Version: %d", __STDC_VERSION__);
   mvwprintw(win,
-            4,
+            6,
             2,
             "- Ncurses Version: %d.%d.%d",
             NCURSES_VERSION_MAJOR,
             NCURSES_VERSION_MINOR,
             NCURSES_VERSION_PATCH);
+
+  unsigned long version_num = OPENSSL_VERSION_NUMBER;
+  mvwprintw(win,
+            7,
+            2,
+            "- OpenSSL Version: %lu.%lu.%lu",
+            (version_num >> 28) & 0xFF,
+            (version_num >> 20) & 0xFF,
+            (version_num >> 4) & 0xFF);
 
   // Refresh the window to show the system info
   wrefresh(win);
