@@ -30,7 +30,7 @@ void page_layout_render(WINDOW *header_win, WINDOW *footer_win, WINDOW *content_
   }
 
   header_render(header_win);
-  footer_render(footer_win);
+  footer_render(footer_win, max_y, max_x);
 
   switch (page_type) {
   case PARADOX_WIN:
@@ -64,5 +64,5 @@ void page_layout_render(WINDOW *header_win, WINDOW *footer_win, WINDOW *content_
   wrefresh(content_win);
 
   // Render the footer
-  footer_render(footer_win);
+  footer_render(footer_win, max_y, max_x);
 }
