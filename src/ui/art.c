@@ -1,7 +1,3 @@
-#include <ncurses/ncurses.h>
-#include <string.h>
-
-#include "../utils/utils.h"
 #include "art.h"
 
 /**
@@ -22,21 +18,19 @@ const char *const BIRTHDAY_SIMULATION_ART_TEXT[] = {
  */
 const unsigned short BIRTHDAY_SIMULATION_ART_TEXT_LINE = ARRAY_SIZE(BIRTHDAY_SIMULATION_ART_TEXT);
 
-/**
- * @brief Print the birthday simulation art text in the center of the window.
- *
- * @param win The ncurses window to print in. Default is stdscr if NULL.
- * @return void
- */
-void art_text_center_render(WINDOW *win) {
-  int max_y, max_x, start_y, start_x, max_text_width = 0;
+void art_text_center_render(WINDOW *win, int max_y, int max_x) {
+  int start_y, start_x, max_text_width = 0;
 
-  // If no window is provided, use the default stdscr
   if (win == NULL)
     win = stdscr;
 
-  // Get the maximum size of the window
-  getmaxyx(win, max_y, max_x);
+  if (max_y == 0) {
+    max_y = getmaxy(win);
+  }
+
+  if (max_x == 0) {
+    max_x = getmaxx(win);
+  }
 
   // Calculate the maximum width of the art text
   for (int i = 0; i < BIRTHDAY_SIMULATION_ART_TEXT_LINE; i++) {
