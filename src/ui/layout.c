@@ -1,14 +1,3 @@
-#include <ncurses/ncurses.h>
-#include <string.h>
-
-#include "../pages/attack.h"
-#include "../pages/explanation.h"
-#include "../pages/paradox.h"
-#include "../pages/system_info.h"
-
-#include "footer.h"
-#include "header.h"
-#include "home/main_menu.h"
 #include "layout.h"
 
 void page_layout_render(WINDOW *header_win, WINDOW *footer_win, WINDOW *content_win, int max_y,

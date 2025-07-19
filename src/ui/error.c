@@ -1,6 +1,6 @@
 #include "error.h"
 
-void render_full_page_error(WINDOW *win, int max_y, int max_x, char *message) {
+void _full_page_error(WINDOW *win, int max_y, int max_x, char *message) {
   if (win == NULL)
     win = stdscr;
 
@@ -71,4 +71,13 @@ void render_full_page_error(WINDOW *win, int max_y, int max_x, char *message) {
   int char_input;
   while ((char_input = wgetch(win)) != KEY_F(1)) {
   }
+}
+
+void render_full_page_error(WINDOW *win, int max_y, int max_x, char *message) {
+  _full_page_error(win, max_y, max_x, message);
+}
+
+void render_full_page_error_exit(WINDOW *win, int max_y, int max_x, char *message) {
+  _full_page_error(win, max_y, max_x, message);
+  exit(1);
 }

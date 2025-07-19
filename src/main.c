@@ -45,13 +45,13 @@ int main() {
   int char_input;
   bool is_done = false;
   while ((char_input = getch()) != KEY_F(1) && !is_done) {
-    int selected_item = item_index(current_item(main_menu));
+    int selected_item_index = item_index(current_item(main_menu));
 
     switch (char_input) {
     case KEY_DOWN:
     case '\t': // Tab key
       // If the user presses down on the last item, wrap around to the first item
-      if (selected_item == main_menu_choices_len - 1) {
+      if (selected_item_index == main_menu_choices_len - 1) {
         menu_driver(main_menu, REQ_FIRST_ITEM);
       } else {
         menu_driver(main_menu, REQ_DOWN_ITEM);
@@ -60,7 +60,7 @@ int main() {
     case KEY_UP:
     case KEY_BTAB: // Shift + Tab key
       // If the user presses up on the first item, wrap around to the last item
-      if (selected_item == 0) {
+      if (selected_item_index == 0) {
         menu_driver(main_menu, REQ_LAST_ITEM);
       } else {
         menu_driver(main_menu, REQ_UP_ITEM);
@@ -68,18 +68,12 @@ int main() {
       break;
     case KEY_ENTER:
     case 10: // Enter key
-      switch (selected_item) {
-      case 0:
-        page_layout_render(header_win, footer_win, content_win, max_y, max_x, PARADOX_WIN);
-        break;
-      case 1:
-        page_layout_render(header_win, footer_win, content_win, max_y, max_x, ATTACK_WIN);
-        break;
-      case 2:
-        page_layout_render(header_win, footer_win, content_win, max_y, max_x, EXPLANATION_WIN);
-        break;
-      case 3:
-        page_layout_render(header_win, footer_win, content_win, max_y, max_x, SYSTEM_INFO_WIN);
+      switch (selected_item_index) {
+      case PARADOX_WIN:
+      case ATTACK_WIN:
+      case EXPLANATION_WIN:
+      case SYSTEM_INFO_WIN:
+        page_layout_render(header_win, footer_win, content_win, max_y, max_x, selected_item_index);
         break;
       case 4:
         is_done = true;
@@ -99,6 +93,7 @@ int main() {
         render_full_page_error(
             stdscr, 0, 0, "Unable to resize the UI to the terminal new size. Resize failure.");
       }
+      // mvwprintw(stdscr, 0, 0, "%d-%d", win_size.Y, win_size.X); // For debugging purpose only
 
       max_y = win_size.Y;
       max_x = win_size.X;

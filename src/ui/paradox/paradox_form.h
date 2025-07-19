@@ -3,20 +3,22 @@
 
 #include <ncurses/ncurses.h>
 #include <ncurses/form.h>
+#include <ctype.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "../../utils/paradox_math.h"
+#include "../../utils/utils.h"
+#include "../../ui/error.h"
 #include "../form.h"
-
-/**
- * @brief The structure for the input fields in the paradox form.
- * 
- */
 
 extern const char const *paradox_form_button_text;
 extern const struct FormInputField paradox_fields[];
 extern const unsigned short paradox_fields_len;
 
-FIELD *paradox_field_get(int index);
-FIELD **paradox_field_get_all();
+FIELD *paradox_form_field_get(int index);
+FIELD **paradox_form_field_get_all();
 FORM *paradox_form_get();
 WINDOW *paradox_form_sub_win_get();
 
@@ -26,8 +28,20 @@ WINDOW *paradox_form_sub_win_get();
  *
  * @param win The window to display the form in. This should ideally be
  * the content window.
+ * @param max_y The maximum height of the screen space that can be rendered
+ * @param max_x The maximum width of the screen space that can be rendered
  */
 void paradox_form_init(WINDOW *win, int max_y, int max_x);
+
+/**
+ * @brief Renders the paradox form in the given window.
+ *
+ * @param win The window to render the form in. This should ideally be
+ * the content window.
+ * @param max_y The maximum height of the screen space that can be rendered
+ * @param max_x The maximum width of the screen space that can be rendered
+ */
+FORM *paradox_form_render(WINDOW *win, int max_y, int max_x);
 
 /**
  * @brief Destroys the paradox form and frees the memory allocated for it.
@@ -36,32 +50,19 @@ void paradox_form_init(WINDOW *win, int max_y, int max_x);
 void paradox_form_destroy();
 
 /**
- * @brief Renders the paradox form in the given window.
- * If no window is provided, it will return early without doing anything.
- *
- * @param win The window to render the form in. This should ideally be
- * the content window.
- * @param max_y The maximum y-coordinate of the parent window (stdscr).
- * @param max_x The maximum x-coordinate of the parent window (stdscr).
- */
-FORM *paradox_form_render(WINDOW *win, int max_y, int max_x);
-
-/**
  * @brief Handles input for the paradox form.
  *
  */
 void paradox_form_handle_input(WINDOW *win, int ch);
- 
+
 /**
- * @brief Validates all fields in the paradox form.
+ * @brief Restore the form to the window, that has previously
+ * been cleared
  *
+ * @param win The window that should restore the form to.
+ * @param max_y The maximum height of the screen space that can be rendered
+ * @param max_x The maximum width of the screen space that can be rendered
  */
-bool paradox_form_validate_all_fields(WINDOW *win);
-
-void paradox_form_erase();
-
 void paradox_form_restore(WINDOW *win, int max_y, int max_x);
-
-void paradox_form_create_sub_win(WINDOW *win, int max_y, int max_x);
 
 #endif
