@@ -34,7 +34,8 @@ void page_layout_render(WINDOW *header_win, WINDOW *footer_win, WINDOW *content_
 
   switch (page_type) {
   case PARADOX_WIN:
-    render_paradox_page(content_win, max_y, max_x); // Render the paradox page
+    render_paradox_page(
+        content_win, header_win, footer_win, max_y, max_x); // Render the paradox page
     break;
   case ATTACK_WIN:
     render_attack_page(content_win, max_y, max_x); // Render the attack page

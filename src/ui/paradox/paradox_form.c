@@ -30,7 +30,7 @@ FIELD **paradox_form_field_get_all() { return paradox_form_field; }
 FORM *paradox_form_get() { return paradox_form; }
 WINDOW *paradox_form_sub_win_get() { return paradox_form_sub_win; }
 
-void paradox_form_init(WINDOW *win) {
+void paradox_form_init(WINDOW *win, int max_y, int max_x) {
   if (paradox_form)
     return; // Already initialized
 
@@ -100,21 +100,9 @@ void paradox_form_init(WINDOW *win) {
   // Add NULL terminator after the button
   paradox_form_field[paradox_form_field_metadata_len + 1] = NULL;
 
-  // Create a sub-window for the form with extra space for the button
-  paradox_form_sub_win = derwin(win, paradox_form_field_metadata_len + 5, COLS - 4, 1, 1);
-  keypad(paradox_form_sub_win, TRUE);
-
   // Create the form
   paradox_form = new_form(paradox_form_field);
-  set_form_win(paradox_form, win);
-  set_form_sub(paradox_form, paradox_form_sub_win);
-  post_form(paradox_form);
-
-  set_current_field(paradox_form, paradox_form_field[0]);
-  update_field_highlighting(paradox_form,
-                            paradox_form_field_metadata_len + 1,
-                            (unsigned short[]){paradox_form_field_metadata_len},
-                            1);
+  paradox_form_create_sub_win(win, max_y, max_x);
 }
 
 FORM *paradox_form_render(WINDOW *win, int max_y, int max_x) {
@@ -122,7 +110,7 @@ FORM *paradox_form_render(WINDOW *win, int max_y, int max_x) {
     return NULL; // If no window is provided, do nothing
 
   if (paradox_form == NULL)
-    paradox_form_init(win); // Initialize the form if not already done
+    paradox_form_init(win, max_y, max_x); // Initialize the form if not already done
 
   // Set the label for the field
   for (unsigned short i = 0; i < paradox_form_field_metadata_len; ++i) {
@@ -141,11 +129,68 @@ FORM *paradox_form_render(WINDOW *win, int max_y, int max_x) {
               "]");
   }
 
+  set_current_field(paradox_form, paradox_form_field[0]);
+  update_field_highlighting(paradox_form,
+                            paradox_form_field_metadata_len + 1,
+                            (unsigned short[]){paradox_form_field_metadata_len},
+                            1);
   form_driver(paradox_form, REQ_END_LINE);
 
   wrefresh(win);
 
   return paradox_form;
+}
+
+void paradox_form_create_sub_win(WINDOW *win, int max_y, int max_x) {
+  if (paradox_form_sub_win) {
+    delwin(paradox_form_sub_win);
+    paradox_form_sub_win = NULL;
+  }
+
+  // Create a sub-window for the form with extra space for the button
+  paradox_form_sub_win = derwin(win, paradox_form_field_metadata_len + 5, max_x - 4, 1, 1);
+  keypad(paradox_form_sub_win, TRUE);
+
+  set_form_win(paradox_form, win);
+  set_form_sub(paradox_form, paradox_form_sub_win);
+
+  unpost_form(paradox_form); // Safeguard against state issues
+  post_form(paradox_form);
+}
+
+void paradox_form_erase() {
+  if (!paradox_form)
+    return;
+
+  unpost_form(paradox_form);
+}
+
+void paradox_form_restore(WINDOW *win, int max_y, int max_x) {
+  if (!paradox_form)
+    return;
+
+  // recreate the sub win
+  paradox_form_create_sub_win(win, max_y, max_x);
+
+  // Force re-render of field labels
+  paradox_form_render(win, max_y, max_x);
+
+  // Manually restore field buffers
+  for (int i = 0; paradox_form_field[i] != NULL; ++i) {
+    const char *buf = field_buffer(paradox_form_field[i], 0);
+    set_field_buffer(paradox_form_field[i], 0, buf); // Force internal repaint
+  }
+
+  // Step 6: Force redraw current field again
+  set_current_field(paradox_form, paradox_form_field[0]);
+  form_driver(paradox_form, REQ_FIRST_FIELD);
+
+  // Step 7: Final refresh
+  wrefresh(paradox_form_sub_win);
+
+  // post_form(paradox_form);
+  // paradox_form_render(win, max_y, max_x);
+  // wrefresh(paradox_form_sub_win);
 }
 
 void paradox_form_destroy() {
@@ -323,5 +368,4 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
     }
   } break;
   }
-  wrefresh(win);
 }

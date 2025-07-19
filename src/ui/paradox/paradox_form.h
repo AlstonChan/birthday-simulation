@@ -27,7 +27,7 @@ WINDOW *paradox_form_sub_win_get();
  * @param win The window to display the form in. This should ideally be
  * the content window.
  */
-void paradox_form_init(WINDOW *win);
+void paradox_form_init(WINDOW *win, int max_y, int max_x);
 
 /**
  * @brief Destroys the paradox form and frees the memory allocated for it.
@@ -57,5 +57,11 @@ void paradox_form_handle_input(WINDOW *win, int ch);
  *
  */
 bool paradox_form_validate_all_fields(WINDOW *win);
+
+void paradox_form_erase();
+
+void paradox_form_restore(WINDOW *win, int max_y, int max_x);
+
+void paradox_form_create_sub_win(WINDOW *win, int max_y, int max_x);
 
 #endif
