@@ -82,8 +82,7 @@ static void run_simulation_from_input(double *collision_probability,
 }
 
 /**
- * @brief Render the simulation result by taking the value from
- * the input form. The field should ideally be validated.
+ * @brief Render the simulation result given the value in the arguments
  *
  * @param win The window that it will render the content on, which also contain
  * the sub win that holds the form. It will assume that the subwin is at the top
@@ -125,16 +124,10 @@ static void render_simulation_result(WINDOW *win, double collision_probability,
  * @brief Loop over all field and validate the field. Error message will
  * be displayed at the side of the field if any
  *
- * @param win The window of the sub win that the form is rendered in
  * @return true No error found, all field is valid
  * @return false One or more input is invalid
  */
-static bool paradox_form_validate_all_fields(WINDOW *win) {
-  if (win == NULL) {
-    render_full_page_error_exit(
-        stdscr, 0, 0, "The window passed to paradox_form_validate_all_fields is null");
-  }
-
+static bool paradox_form_validate_all_fields() {
   bool all_valid = true;
   for (int i = 0; i < paradox_form_field_metadata_len; i++) {
     set_current_field(paradox_form, paradox_form_field_get(i));
@@ -168,11 +161,16 @@ static bool paradox_form_validate_all_fields(WINDOW *win) {
 ****************************************************************/
 
 void paradox_form_init(WINDOW *win, int max_y, int max_x) {
-  if (paradox_form)
-    return; // Already initialized
-
   if (win == NULL) {
     render_full_page_error_exit(stdscr, 0, 0, "The window passed to paradox_form_init is null");
+  }
+
+  if (paradox_form) {
+    render_full_page_error_exit(win,
+                                0,
+                                0,
+                                "The paradox form has already been initialized and another "
+                                "attempt to initialize is not permitted");
   }
 
   // Allocate memory for the form fields
@@ -309,12 +307,7 @@ void paradox_form_restore(WINDOW *win, int max_y, int max_x, double collision_pr
     render_simulation_result(win, collision_probability, simulated_runs_results);
   }
 
-  // Final refresh
   wrefresh(paradox_form_sub_win);
-
-  // post_form(paradox_form);
-  // paradox_form_render(win, max_y, max_x);
-  // wrefresh(paradox_form_sub_win);
 }
 
 void paradox_form_destroy() {
@@ -425,7 +418,7 @@ void paradox_form_handle_input(WINDOW *win, int ch, double *collision_probabilit
           calculate_form_max_value(paradox_form_field_metadata[current_index].max_length),
           true);
     } else if (current_index == paradox_form_field_metadata_len) {
-      bool all_field_valid = paradox_form_validate_all_fields(win);
+      bool all_field_valid = paradox_form_validate_all_fields();
       if (all_field_valid) {
         run_simulation_from_input(collision_probability, simulated_runs_results);
         render_simulation_result(win, *collision_probability, *simulated_runs_results);

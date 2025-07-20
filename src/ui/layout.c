@@ -28,7 +28,7 @@ void page_layout_render(WINDOW *header_win, WINDOW *footer_win, WINDOW *content_
         content_win, header_win, footer_win, max_y, max_x); // Render the paradox page
     break;
   case ATTACK_WIN:
-    render_attack_page(content_win, max_y, max_x); // Render the attack page
+    render_attack_page(content_win, header_win, footer_win, max_y, max_x); // Render the attack page
     break;
   case EXPLANATION_WIN:
     render_explanation_page(content_win, max_y, max_x); // Render the explanation page

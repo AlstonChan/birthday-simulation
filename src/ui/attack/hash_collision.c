@@ -1,17 +1,4 @@
-#include <ctype.h>
-#include <ncurses/form.h>
-#include <ncurses/ncurses.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "hash_collision.h"
-#include "hash_config.h"
-
-#include "../../utils/hash_function.h"
-#include "../../utils/utils.h"
-#include "../form.h"
-#include "../layout.h"
 
 static const char *s_hash_collision_page_title = "[ Hash Collision Demonstration ]";
 static const char const *s_hash_form_submit_button_text = "[ Run Simulation ]";
@@ -24,7 +11,7 @@ static const unsigned short s_hash_form_field_metadata_len = ARRAY_SIZE(s_hash_f
  * @brief The longest field label length in the hash form.
  *
  */
-static unsigned short max_label_length = 0;
+static unsigned short s_max_label_length = 0;
 
 /**
  * @brief Holds all the fields for the hash collision form. ALl fields
@@ -84,6 +71,8 @@ static bool compute_hash(enum hash_function_ids hash_id, const uint8_t *input, s
                          char **output) {
   size_t hash_hex_len = get_hash_hex_length(hash_id);
   *output = malloc(hash_hex_len);
+  if (!output)
+    return false;
 
   switch (hash_id) {
   case HASH_CONFIG_8BIT: {
@@ -284,8 +273,8 @@ hash_collision_simulation_run(enum hash_function_ids hash_id, unsigned int max_a
   // Initialize result structure
   hash_collision_simulation_result_t *result = malloc(sizeof(hash_collision_simulation_result_t));
   if (!result) {
-    fprintf(stderr, "Memory allocation failed for hash collision simulation result.\n");
-    exit(EXIT_FAILURE);
+    render_full_page_error_exit(
+        stdscr, 0, 0, "Memory allocation failed for hash collision simulation result.");
   }
 
   // Initialize result fields
@@ -305,9 +294,8 @@ hash_collision_simulation_run(enum hash_function_ids hash_id, unsigned int max_a
   hash_table_t *table = hash_table_create(table_size);
 
   if (!table) {
-    fprintf(stderr, "Memory allocation failed for hash table.\n");
     free(result);
-    exit(EXIT_FAILURE);
+    render_full_page_error_exit(stdscr, 0, 0, "Memory allocation failed for hash table.");
   }
 
   // Birthday Attack simulation core logic
@@ -320,7 +308,12 @@ hash_collision_simulation_run(enum hash_function_ids hash_id, unsigned int max_a
 
     // Step 2: Compute the hash of this input
     char *hash_hex = malloc(hash_hex_len);
-    compute_hash(hash_id, current_input, input_len, &hash_hex);
+    bool compute_success = compute_hash(hash_id, current_input, input_len, &hash_hex);
+    if (!compute_success) {
+      free(hash_hex);
+      free(result);
+      render_full_page_error_exit(stdscr, 0, 0, "compute_hash was unsuccessful");
+    }
 
     // Step 3: Birthday Attack Core - Check if this hash already exists
     hash_node_t *existing = hash_table_find(table, hash_hex);
@@ -337,7 +330,13 @@ hash_collision_simulation_run(enum hash_function_ids hash_id, unsigned int max_a
       break;
     } else {
       // No collision, insert the new hash into the table
-      hash_table_insert(table, bytes_to_hex(current_input, input_len, true), hash_hex);
+      bool insert_success =
+          hash_table_insert(table, bytes_to_hex(current_input, input_len, true), hash_hex);
+      if (!insert_success) {
+        free(hash_hex);
+        free(result);
+        render_full_page_error_exit(stdscr, 0, 0, "Hash insertion into the hash table failed.");
+      }
     }
 
     // Free the hash hex after each attempt
@@ -353,7 +352,117 @@ hash_collision_simulation_run(enum hash_function_ids hash_id, unsigned int max_a
                     FORM HANDLING FUNCTIONS
 **************************************************************/
 
-static bool hash_form_validate_all_fields(WINDOW *win, enum hash_function_ids hash_id) {
+/**
+ * @brief Create a sub window from the parent window for the form
+ *
+ * @param win The window that will contain the created subwin for the form. This
+ * should ideally be the content win
+ * @param max_y The maximum height of the screen space that can be rendered
+ * @param max_x The maximum width of the screen space that can be rendered
+ */
+static void hash_form_create_sub_win(WINDOW *win, int max_y, int max_x) {
+  if (win == NULL) {
+    render_full_page_error_exit(
+        stdscr, 0, 0, "The window passed to hash_form_create_sub_win is null");
+  }
+
+  if (s_hash_collision_form_sub_win) {
+    delwin(s_hash_collision_form_sub_win);
+    s_hash_collision_form_sub_win = NULL;
+  }
+
+  const int sub_win_rows_count = s_hash_form_field_metadata_len + 12;
+  const int sub_win_cols_count = max_x - BH_FORM_X_PADDING - BH_FORM_X_PADDING;
+
+  // Create a sub-window for the form with extra space for the button
+  s_hash_collision_form_sub_win = derwin(win, sub_win_rows_count, sub_win_cols_count, 9, 1);
+  keypad(s_hash_collision_form_sub_win, TRUE);
+
+  set_form_win(s_hash_collision_form, win);
+  set_form_sub(s_hash_collision_form, s_hash_collision_form_sub_win);
+
+  unpost_form(s_hash_collision_form); // Safeguard against state issues
+  post_form(s_hash_collision_form);
+}
+
+/**
+ * @brief Take the value from the form field as arguments for simulating the
+ * birthday attack. The result will be stored back to the arguments
+ * provided to the function.
+ *
+ * @param hash_id The hash id of the hash function to use to simulate
+ * @param attempts A reference of the value of the probability of
+ * hash collision of this result
+ * @param results A reference of the value of the actual collision
+ * occur in simulations
+ */
+static hash_collision_simulation_result_t *
+run_hash_collision_from_input(enum hash_function_ids hash_id) {
+  unsigned int attempts = atoi(field_buffer(hash_collision_form_field_get(0), 0));
+  return hash_collision_simulation_run(hash_id, attempts);
+}
+
+/**
+ * @brief Render the birthday attack result given the value
+ *
+ * @param results The final results to render, either it is a successful hash collision
+ * or no collision found
+ */
+static void render_attack_result(hash_collision_simulation_result_t results) {
+  uint8_t starting_y = s_hash_form_field_metadata_len + 1 + 2;
+
+  // Clear the sub-window from starting_y to starting_y + 5
+  for (unsigned short row = starting_y; row < starting_y + 6; ++row) {
+    for (int col = BH_FORM_X_PADDING; col <= COLS - BH_FORM_X_PADDING; col++) {
+      mvwaddch(s_hash_collision_form_sub_win, row, col, ' ');
+    }
+  }
+
+  if (results.collision_found) {
+    // Display the results of the collision simulation
+    wattron(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
+    mvwprintw(s_hash_collision_form_sub_win,
+              starting_y,
+              BH_FORM_X_PADDING,
+              "Collision Found at attempt %d!",
+              results.attempts_made);
+    wattroff(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
+    mvwprintw(s_hash_collision_form_sub_win,
+              starting_y + 1,
+              BH_FORM_X_PADDING,
+              "Input 1: %s",
+              results.collision_input_1);
+    mvwprintw(s_hash_collision_form_sub_win,
+              starting_y + 2,
+              BH_FORM_X_PADDING,
+              "Input 2: %s",
+              results.collision_input_2);
+    mvwprintw(s_hash_collision_form_sub_win,
+              starting_y + 3,
+              BH_FORM_X_PADDING,
+              "Hash   : %s",
+              results.collision_hash_hex);
+  } else {
+    wattron(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+    mvwprintw(s_hash_collision_form_sub_win,
+              starting_y,
+              BH_FORM_X_PADDING,
+              "No Collision Found after %d attempts.",
+              results.attempts_made);
+    wattroff(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+  }
+
+  wrefresh(s_hash_collision_form_sub_win);
+}
+
+/**
+ * @brief Loop over all field and validate the field. Error message will
+ * be displayed at the side of the field if any
+ *
+ * @return true No error found, all field is valid
+ * @return false One or more input is invalid
+ */
+static bool hash_form_validate_all_fields() {
   bool all_valid = true;
   unsigned short longest_max_length_pad = calculate_longest_max_length(
       s_hash_form_field_metadata, s_hash_form_field_metadata_len, true);
@@ -366,75 +475,47 @@ static bool hash_form_validate_all_fields(WINDOW *win, enum hash_function_ids ha
       display_field_error(s_hash_collision_form_sub_win,
                           field,
                           i,
-                          max_label_length,
+                          s_max_label_length,
                           longest_max_length_pad,
                           calculate_form_max_value(s_hash_form_field_metadata[i].max_length),
                           true);
       all_valid = false;
     } else {
-      clear_field_error(s_hash_collision_form_sub_win, i, max_label_length, longest_max_length_pad);
+      clear_field_error(
+          s_hash_collision_form_sub_win, i, s_max_label_length, longest_max_length_pad);
     }
   }
 
   if (all_valid) {
-    // If all fields are valid, run the simulation
-    int attempts = atoi(field_buffer(hash_collision_form_field_get(0), 0));
-    hash_collision_simulation_result_t *results = hash_collision_simulation_run(hash_id, attempts);
-
-    uint8_t starting_y = s_hash_form_field_metadata_len + 1 + 2;
-
-    // Clear the sub-window from starting_y to starting_y + 5
-    for (unsigned short row = starting_y; row < starting_y + 6; ++row) {
-      for (int col = BH_FORM_X_PADDING; col <= COLS - BH_FORM_X_PADDING; col++) {
-        mvwaddch(s_hash_collision_form_sub_win, row, col, ' ');
-      }
-    }
-
-    if (results->collision_found) {
-      // Display the results of the collision simulation
-      wattron(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
-      mvwprintw(s_hash_collision_form_sub_win,
-                starting_y,
-                BH_FORM_X_PADDING,
-                "Collision Found at attempt %d!",
-                results->attempts_made);
-      wattroff(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
-      mvwprintw(s_hash_collision_form_sub_win,
-                starting_y + 1,
-                BH_FORM_X_PADDING,
-                "Input 1: %s",
-                results->collision_input_1);
-      mvwprintw(s_hash_collision_form_sub_win,
-                starting_y + 2,
-                BH_FORM_X_PADDING,
-                "Input 2: %s",
-                results->collision_input_2);
-      mvwprintw(s_hash_collision_form_sub_win,
-                starting_y + 3,
-                BH_FORM_X_PADDING,
-                "Hash   : %s",
-                results->collision_hash_hex);
-    } else {
-      wattron(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_ERROR_COLOR_PAIR));
-      mvwprintw(s_hash_collision_form_sub_win,
-                starting_y,
-                BH_FORM_X_PADDING,
-                "No Collision Found after %d attempts.",
-                attempts);
-      wattroff(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_ERROR_COLOR_PAIR));
-    }
+    set_current_field(s_hash_collision_form,
+                      hash_collision_form_field_get(s_hash_form_field_metadata_len));
+  } else {
+    set_current_field(s_hash_collision_form, hash_collision_form_field_get(0));
   }
 
   return all_valid;
 }
 
-static void hash_collision_form_init(WINDOW *win) {
-  if (s_hash_collision_form != NULL) {
-    return; // If the form is already initialized, do nothing
+/**
+ * @brief Initializes the hash collision form with the given window.
+ *
+ * @param win The window to display the form in. This should ideally be
+ * the content window.
+ * @param max_y The maximum height of the screen space that can be rendered
+ * @param max_x The maximum width of the screen space that can be rendered
+ */
+static void hash_collision_form_init(WINDOW *win, int max_y, int max_x) {
+  if (win == NULL) {
+    render_full_page_error_exit(
+        stdscr, 0, 0, "The window passed to hash_collision_form_init is null");
   }
 
-  if (win == NULL) {
-    win = stdscr; // Use stdscr if no window is provided
+  if (s_hash_collision_form != NULL) {
+    render_full_page_error_exit(win,
+                                0,
+                                0,
+                                "The hash collision form has already been initialized and another "
+                                "attempt to initialize is not permitted");
   }
 
   // Allocate memory for the form fields
@@ -444,8 +525,8 @@ static void hash_collision_form_init(WINDOW *win) {
   // Find the longest label length for the fields
   for (unsigned short i = 0; i < s_hash_form_field_metadata_len; ++i) {
     unsigned short label_length = strlen(s_hash_form_field_metadata[i].label);
-    if (label_length > max_label_length)
-      max_label_length = label_length;
+    if (label_length > s_max_label_length)
+      s_max_label_length = label_length;
   }
 
   // Get the longest max_length from the fields
@@ -457,13 +538,18 @@ static void hash_collision_form_init(WINDOW *win) {
                                      max_field_length + 1,
                                      i,
                                      BH_FORM_X_PADDING + BH_FORM_FIELD_BRACKET_PADDING +
-                                         max_label_length + BH_FORM_FIELD_BRACKET_PADDING,
+                                         s_max_label_length + BH_FORM_FIELD_BRACKET_PADDING,
                                      0,
                                      0);
 
     // Convert the default value to string
     char *string_buffer =
         (char *)malloc(sizeof(char) * s_hash_form_field_metadata[i].max_length + 1);
+    if (!string_buffer) {
+      render_full_page_error_exit(
+          stdscr, 0, 0, "Memory allocation failed for hash collision form default value");
+    }
+
     snprintf(string_buffer,
              s_hash_form_field_metadata[i].max_length + 1,
              "%hu",
@@ -496,39 +582,43 @@ static void hash_collision_form_init(WINDOW *win) {
   // Add a NULL terminator to the field array
   s_hash_form_field[s_hash_form_field_metadata_len + 1] = NULL;
 
-  // Create a sub-window for the form with extra space for the button
-  s_hash_collision_form_sub_win = derwin(
-      win, s_hash_form_field_metadata_len + 12, COLS - BH_FORM_X_PADDING - BH_FORM_X_PADDING, 9, 1);
-  keypad(s_hash_collision_form_sub_win, TRUE);
-
   // Create the form
   s_hash_collision_form = new_form(s_hash_form_field);
-  set_form_win(s_hash_collision_form, win);
-  set_form_sub(s_hash_collision_form, s_hash_collision_form_sub_win);
-  post_form(s_hash_collision_form);
 
   set_current_field(s_hash_collision_form, s_hash_form_field[0]);
   update_field_highlighting(s_hash_collision_form,
                             s_hash_form_field_metadata_len + 1,
                             (unsigned short[]){s_hash_form_field_metadata_len},
                             1);
+
+  hash_form_create_sub_win(win, max_y, max_x);
 }
 
+/**
+ * @brief Renders the hash collision form in the given window.
+ *
+ * @param win The window to render the form in. This should ideally be
+ * the content window.
+ * @param max_y The maximum height of the screen space that can be rendered
+ * @param max_x The maximum width of the screen space that can be rendered
+ */
 static FORM *hash_collision_form_render(WINDOW *win, int max_y, int max_x) {
-  if (win == NULL)
-    win = stdscr; // Use stdscr if no window is provided
+  if (win == NULL) {
+    render_full_page_error_exit(
+        stdscr, 0, 0, "The window passed to hash_collision_form_render is null");
+  }
 
   if (s_hash_collision_form == NULL)
-    hash_collision_form_init(win); // Initialize the form if not already done
+    hash_collision_form_init(win, max_y, max_x); // Initialize the form if not already done
 
   // Set the label for the field
   for (unsigned short i = 0; i < s_hash_form_field_metadata_len; ++i) {
     mvwprintw(
         s_hash_collision_form_sub_win, i, BH_FORM_X_PADDING, s_hash_form_field_metadata[i].label);
-    mvwprintw(s_hash_collision_form_sub_win, i, BH_FORM_X_PADDING + max_label_length, ": [");
+    mvwprintw(s_hash_collision_form_sub_win, i, BH_FORM_X_PADDING + s_max_label_length, ": [");
     mvwprintw(s_hash_collision_form_sub_win,
               i,
-              BH_FORM_X_PADDING + max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1 +
+              BH_FORM_X_PADDING + s_max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1 +
                   calculate_longest_max_length(
                       s_hash_form_field_metadata, s_hash_form_field_metadata_len, true) +
                   BH_FORM_FIELD_BRACKET_PADDING,
@@ -542,6 +632,51 @@ static FORM *hash_collision_form_render(WINDOW *win, int max_y, int max_x) {
   return s_hash_collision_form;
 }
 
+/**
+ * @brief Restore the form to the window, that has previously
+ * been cleared
+ *
+ * @param win The window that should restore the form to.
+ * @param max_y The maximum height of the screen space that can be rendered
+ * @param max_x The maximum width of the screen space that can be rendered
+ */
+static void hash_collision_form_restore(WINDOW *win, int max_y, int max_x,
+                                        hash_collision_simulation_result_t result) {
+  if (!s_hash_collision_form)
+    return;
+
+  if (win == NULL) {
+    render_full_page_error_exit(
+        stdscr, 0, 0, "The window passed to hash_collision_form_restore is null");
+  }
+
+  // recreate the sub win
+  hash_form_create_sub_win(win, max_y, max_x);
+
+  // Force re-render of field labels
+  hash_collision_form_render(win, max_y, max_x);
+
+  // Manually restore field buffers
+  for (int i = 0; s_hash_form_field[i] != NULL; ++i) {
+    const char *buf = field_buffer(s_hash_form_field[i], 0);
+    set_field_buffer(s_hash_form_field[i], 0, buf); // Force internal repaint
+  }
+
+  // Force redraw current field again
+  set_current_field(s_hash_collision_form, s_hash_form_field[0]);
+  form_driver(s_hash_collision_form, REQ_FIRST_FIELD);
+
+  if (result.attempts_made != -1) {
+    render_attack_result(result);
+  }
+
+  wrefresh(s_hash_collision_form_sub_win);
+}
+
+/**
+ * @brief Destroys the hash collision form and frees the memory allocated for it.
+ *
+ */
 static void hash_collision_form_destroy() {
   if (s_hash_collision_form == NULL)
     return; // If the form is already destroyed, do nothing
@@ -561,7 +696,15 @@ static void hash_collision_form_destroy() {
   s_hash_collision_form_sub_win = NULL;
 }
 
-static void hash_form_handle_input(WINDOW *win, enum hash_function_ids hash_id, int ch) {
+/**
+ * @brief Handles input for the hash collision form.
+ *
+ * @param hash_id The current hash id of the hash function
+ * @param ch The current int character input from the key pressed
+ * @param collision_result The results of the birthday attack reference
+ */
+static void hash_form_handle_input(enum hash_function_ids hash_id, int ch,
+                                   hash_collision_simulation_result_t **collision_result) {
   FIELD *current = current_field(s_hash_collision_form);
   int current_index = field_index(current);
   unsigned short longest_max_length_pad = calculate_longest_max_length(
@@ -586,13 +729,13 @@ static void hash_form_handle_input(WINDOW *win, enum hash_function_ids hash_id, 
           s_hash_collision_form_sub_win,
           current,
           current_index,
-          max_label_length,
+          s_max_label_length,
           longest_max_length_pad,
           calculate_form_max_value(s_hash_form_field_metadata[current_index].max_length),
           false);
     } else {
       clear_field_error(
-          s_hash_collision_form_sub_win, current_index, max_label_length, longest_max_length_pad);
+          s_hash_collision_form_sub_win, current_index, s_max_label_length, longest_max_length_pad);
     }
 
     update_field_highlighting(s_hash_collision_form,
@@ -639,12 +782,21 @@ static void hash_form_handle_input(WINDOW *win, enum hash_function_ids hash_id, 
           s_hash_collision_form_sub_win,
           current,
           current_index,
-          max_label_length,
+          s_max_label_length,
           longest_max_length_pad,
           calculate_form_max_value(s_hash_form_field_metadata[current_index].max_length),
           true);
     } else if (current_index == s_hash_form_field_metadata_len) {
-      hash_form_validate_all_fields(win, hash_id);
+      bool all_field_valid = hash_form_validate_all_fields();
+      if (all_field_valid) {
+        // We must free the collision_result every time before we reassign a
+        // new result to it. This is because all the result struct assign to
+        // it is created with malloc, which is heap memory struct, and must
+        // manually freeing it to avoid memory leak.
+        free(*collision_result);
+        *collision_result = run_hash_collision_from_input(hash_id);
+        render_attack_result(**collision_result);
+      }
     }
   } break;
 
@@ -655,36 +807,38 @@ static void hash_form_handle_input(WINDOW *win, enum hash_function_ids hash_id, 
   }
 }
 
-/**************************************************************
-                      EXTERNAL FUNCTIONS
-**************************************************************/
-
-void render_hash_collision_page(WINDOW *win, int max_y, int max_x, enum hash_function_ids hash_id) {
-  curs_set(1);        // Show the cursor
-  nodelay(win, TRUE); // Make getch() non-blocking
-
-  // Clear the window before rendering
-  werase(win);
-
-  wresize(win, max_y - BH_LAYOUT_PADDING, max_x);
-  mvwin(win, 4, 0);
-  box(win, 0, 0);
-
-  unsigned short title_len = strlen(s_hash_collision_page_title);
-  mvwprintw(win, 0, (max_x - title_len) / 2, s_hash_collision_page_title);
-
-  hash_config_t current_hash_function = get_hash_config_item(hash_id);
+/**
+ * @brief Render the current's page hash function details
+ *
+ * @param content_win The window to actually prints all the details in
+ * @param current_hash_function The current hash function configuration
+ * as the main details to show
+ * @param max_x The maximum width of the screen space that can be rendered
+ */
+static void render_page_details(WINDOW *content_win, hash_config_t current_hash_function,
+                                int max_x) {
+  if (content_win == NULL) {
+    render_full_page_error_exit(stdscr, 0, 0, "The window passed to render_page_details is null");
+  }
 
   // Display the hash function details
-  mvwprintw(win, 2, BH_FORM_X_PADDING, "Hash Function       : %s", current_hash_function.label);
-  mvwprintw(win, 3, BH_FORM_X_PADDING, "Hash output bits    : %u bits", current_hash_function.bits);
-  mvwprintw(win,
+  mvwprintw(
+      content_win, 2, BH_FORM_X_PADDING, "Hash Function       : %s", current_hash_function.label);
+  mvwprintw(content_win,
+            3,
+            BH_FORM_X_PADDING,
+            "Hash output bits    : %u bits",
+            current_hash_function.bits);
+  mvwprintw(content_win,
             4,
             BH_FORM_X_PADDING,
             "Estimated Collisions: %s",
             current_hash_function.estimated_collisions);
-  mvwprintw(
-      win, 5, BH_FORM_X_PADDING, "Space Size          : %s", current_hash_function.space_size);
+  mvwprintw(content_win,
+            5,
+            BH_FORM_X_PADDING,
+            "Space Size          : %s",
+            current_hash_function.space_size);
 
   // Segment the details and form input fields with a line
   char *separator_line =
@@ -693,27 +847,114 @@ void render_hash_collision_page(WINDOW *win, int max_y, int max_x, enum hash_fun
   for (int i = 0; i < max_x - 4; i++) {
     separator_line[i] = '-';
   }
-  separator_line[max_x - 4] = '\0';                     // Null-terminate the string
-  mvwprintw(win, 7, BH_FORM_X_PADDING, separator_line); // Draw a line below the details
+  separator_line[max_x - 4] = '\0';                             // Null-terminate the string
+  mvwprintw(content_win, 7, BH_FORM_X_PADDING, separator_line); // Draw a line below the details
 
-  hash_collision_form_init(win); // Initialize the form fields
+  free(separator_line);
+}
+
+/**************************************************************
+                      EXTERNAL FUNCTIONS
+**************************************************************/
+
+void render_hash_collision_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer_win,
+                                int max_y, int max_x, enum hash_function_ids hash_id) {
+  if (content_win == NULL || header_win == NULL || footer_win == NULL) {
+    render_full_page_error_exit(
+        stdscr, 0, 0, "The window passed to render_hash_collision_page is null");
+  }
+
+  curs_set(1); // Show the cursor
+  bool nodelay_modified = false;
+  if (!is_nodelay(content_win)) {
+    nodelay(content_win, TRUE);
+    nodelay_modified = true; // Track if we modified nodelay
+  }
+
+  // Clear the window before rendering
+  werase(content_win);
+  wresize(content_win, max_y - BH_LAYOUT_PADDING, max_x);
+  mvwin(content_win, 4, 0);
+  box(content_win, 0, 0);
+
+  COORD win_size;
+
+  unsigned short title_len = strlen(s_hash_collision_page_title);
+  mvwprintw(content_win, 0, (max_x - title_len) / 2, s_hash_collision_page_title);
+
+  hash_config_t current_hash_function = get_hash_config_item(hash_id);
+
+  render_page_details(content_win, current_hash_function, max_x);
+
+  hash_collision_form_init(content_win, max_y, max_x); // Initialize the form fields
   FORM *s_hash_collision_form = hash_collision_form_render(
-      win, max_y - BH_LAYOUT_PADDING, max_x); // Render the form in the window
+      content_win, max_y - BH_LAYOUT_PADDING, max_x); // Render the form in the window
+
+  pos_form_cursor(s_hash_collision_form);
+
+  // Initialize result structure
+  hash_collision_simulation_result_t *result = malloc(sizeof(hash_collision_simulation_result_t));
+  if (!result) {
+    render_full_page_error_exit(
+        stdscr, 0, 0, "Memory allocation failed for hash collision simulation result.");
+  }
+
+  // Initialize result fields
+  result->id = hash_id;
+  result->attempts_made = -1;
+  result->collision_found = false;
+  result->collision_input_1 = NULL;
+  result->collision_input_2 = NULL;
+  result->collision_hash_hex = NULL;
 
   bool is_done = false;
   int char_input;
-  while ((char_input = wgetch(win)) != KEY_F(2) && !is_done) {
-    hash_form_handle_input(win, hash_id, char_input); // Handle user input for the form
+  while ((char_input = wgetch(content_win)) != KEY_F(2) && !is_done) {
+    hash_form_handle_input(hash_id, char_input,
+                           &result); // Handle user input for the form
+
+    if (check_console_window_resize_event(&win_size)) {
+      int resize_result = resize_term(win_size.Y, win_size.X);
+      if (resize_result != OK) {
+        render_full_page_error(
+            content_win, 0, 0, "Unable to resize the UI to the terminal new size. Resize failure.");
+      }
+      // mvwprintw(stdscr, 0, 0, "%d-%d", win_size.Y, win_size.X); // For debugging purpose only
+
+      wclear(footer_win);
+
+      clear();
+      wclear(content_win);
+      refresh();
+
+      max_y = win_size.Y;
+      max_x = win_size.X;
+
+      wresize(content_win, max_y - BH_LAYOUT_PADDING, max_x);
+      box(content_win, 0, 0);
+      render_page_details(content_win, current_hash_function, max_x);
+
+      header_render(header_win);
+      mvwin(footer_win, win_size.Y - 2, 0);
+      footer_render(footer_win, win_size.Y - 2, max_x);
+      hash_collision_form_restore(content_win, max_y, max_x, *result);
+
+      mvwprintw(content_win, 0, (max_x - title_len) / 2, s_hash_collision_page_title);
+
+      wrefresh(content_win);
+    }
   }
 
   hash_collision_form_destroy(); // Clean up the form resources
 
-  curs_set(0);         // Hide the cursor
-  nodelay(win, FALSE); // Make getch() blocking
+  curs_set(0); // Hide the cursor
+  if (nodelay_modified) {
+    nodelay(content_win, FALSE); // Restore nodelay to true
+  }
 
   // Clear the window after user input
-  werase(win);
+  werase(content_win);
 
   // Refresh the window to show the changes
-  wrefresh(win);
+  wrefresh(content_win);
 }

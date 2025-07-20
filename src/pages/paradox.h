@@ -20,7 +20,6 @@
 
 /**
  * @brief Renders the paradox page in the given window.
- * If no window is provided, it will use stdscr.
  *
  * @param content_win The window to render the paradox page on
  * @param header_win The window to render the header content, normally for 

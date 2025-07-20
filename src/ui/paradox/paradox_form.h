@@ -24,7 +24,6 @@ WINDOW *paradox_form_sub_win_get();
 
 /**
  * @brief Initializes the paradox form with the given window.
- * If no window is provided, it will return early without doing anything.
  *
  * @param win The window to display the form in. This should ideally be
  * the content window.
