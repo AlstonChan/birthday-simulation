@@ -34,7 +34,11 @@ void page_layout_render(WINDOW *header_win, WINDOW *footer_win, WINDOW *content_
     render_explanation_page(content_win, max_y, max_x); // Render the explanation page
     break;
   case SYSTEM_INFO_WIN:
-    render_system_info(content_win, max_y, max_x); // Render system info in the content window
+    render_system_info(content_win,
+                       header_win,
+                       footer_win,
+                       max_y,
+                       max_x); // Render system info in the content window
     break;
   default:
     // If an unknown page type is provided, do nothing

@@ -30,6 +30,6 @@
  * @param max_y The maximum y-coordinate of the parent window (stdscr).
  * @param max_x The maximum x-coordinate of the parent window (stdscr).
  */
-void render_paradox_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer_win,int max_y, int max_x);
+void render_paradox_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer_win, int max_y, int max_x);
  
 #endif 

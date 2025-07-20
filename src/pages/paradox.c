@@ -60,13 +60,13 @@ void render_paradox_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer
       wclear(footer_win);
 
       box(content_win, 0, 0);
+      mvwprintw(content_win, 0, (max_x - title_len) / 2, paradox_page_title);
       header_render(header_win);
       mvwin(footer_win, win_size.Y - 2, 0);
       footer_render(footer_win, win_size.Y - 2, max_x);
       paradox_form_restore(
           content_win, max_y, max_x, collision_probability, simulated_runs_results);
 
-      wrefresh(footer_win);
       wrefresh(content_win);
     } else {
       wrefresh(content_win);
