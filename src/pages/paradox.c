@@ -37,9 +37,10 @@ void render_paradox_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer
   wrefresh(content_win);
   pos_form_cursor(paradox_form); // Position the cursor for the current field
 
+  double collision_probability = -1, simulated_runs_results = -1;
   int ch;
   while ((ch = wgetch(content_win)) != KEY_F(2)) {
-    paradox_form_handle_input(content_win, ch);
+    paradox_form_handle_input(content_win, ch, &collision_probability, &simulated_runs_results);
 
     // Check if terminal was resized
     if (check_console_window_resize_event(&win_size)) {
@@ -62,7 +63,8 @@ void render_paradox_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer
       header_render(header_win);
       mvwin(footer_win, win_size.Y - 2, 0);
       footer_render(footer_win, win_size.Y - 2, max_x);
-      paradox_form_restore(content_win, max_y, max_x);
+      paradox_form_restore(
+          content_win, max_y, max_x, collision_probability, simulated_runs_results);
 
       wrefresh(footer_win);
       wrefresh(content_win);

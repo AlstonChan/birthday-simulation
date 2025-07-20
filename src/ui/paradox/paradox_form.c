@@ -44,8 +44,14 @@ static void paradox_form_create_sub_win(WINDOW *win, int max_y, int max_x) {
     paradox_form_sub_win = NULL;
   }
 
+  const int sub_win_rows_count = BH_FORM_Y_PADDING + // One border row, one spacing row
+                                 paradox_form_field_metadata_len + // Number of input
+                                 1 +                               // One spacing row
+                                 1 +                               // Button Row
+                                 BH_FORM_Y_PADDING; // One border row, one spacing row
+
   // Create a sub-window for the form with extra space for the button
-  paradox_form_sub_win = derwin(win, paradox_form_field_metadata_len + 5, max_x - 4, 1, 1);
+  paradox_form_sub_win = derwin(win, sub_win_rows_count, max_x - 4, 1, 1);
   keypad(paradox_form_sub_win, TRUE);
 
   set_form_win(paradox_form, win);
@@ -53,6 +59,66 @@ static void paradox_form_create_sub_win(WINDOW *win, int max_y, int max_x) {
 
   unpost_form(paradox_form); // Safeguard against state issues
   post_form(paradox_form);
+}
+
+/**
+ * @brief Take the value from the form field as arguments for calculating the
+ * collision and simulation. The result will be stored back to the arguments
+ * provided to the function.
+ *
+ * @param collision_probability A reference of the value of the probability of
+ * hash collision of this result
+ * @param simulated_runs_results A reference of the value of the actual collision
+ * occur in simulations
+ */
+static void run_simulation_from_input(double *collision_probability,
+                                      double *simulated_runs_results) {
+  int domain_size = atoi(field_buffer(paradox_form_field_get(0), 0));
+  int sample_count = atoi(field_buffer(paradox_form_field_get(1), 0));
+  int simulation_runs = atoi(field_buffer(paradox_form_field_get(2), 0));
+
+  *collision_probability = calculate_birthday_collision_probability(domain_size, sample_count);
+  *simulated_runs_results = simulate_birthday_collision(domain_size, sample_count, simulation_runs);
+}
+
+/**
+ * @brief Render the simulation result by taking the value from
+ * the input form. The field should ideally be validated.
+ *
+ * @param win The window that it will render the content on, which also contain
+ * the sub win that holds the form. It will assume that the subwin is at the top
+ * of the window and will render the content {BH_FORM_Y_PADDING} under it
+ * @param collision_probability The result of the collision probability to render
+ * @param simulated_runs_results The result of the simulations to render
+ */
+static void render_simulation_result(WINDOW *win, double collision_probability,
+                                     double simulated_runs_results) {
+  if (win == NULL) {
+    render_full_page_error_exit(
+        stdscr, 0, 0, "The window passed to render_simulation_result is null");
+  }
+
+  int form_win_x, form_win_y;
+  getmaxyx(paradox_form_sub_win, form_win_y, form_win_x);
+
+  uint8_t starting_rows = form_win_y + BH_FORM_Y_PADDING;
+  uint8_t starting_cols = BH_FORM_X_PADDING + 1;
+
+  mvwprintw(win, starting_rows, starting_cols, "Estimated chance of a collision:       ");
+  mvwprintw(win,
+            starting_rows,
+            starting_cols,
+            "Estimated chance of a collision: %.2f%%",
+            collision_probability * 100);
+
+  mvwprintw(win, starting_rows + 1, starting_cols, "Simulated runs results:       ");
+  mvwprintw(win,
+            starting_rows + 1,
+            starting_cols,
+            "Simulated runs results: %.2f%%",
+            simulated_runs_results);
+
+  wrefresh(win);
 }
 
 /**
@@ -89,40 +155,6 @@ static bool paradox_form_validate_all_fields(WINDOW *win) {
   }
 
   if (all_valid) {
-    int form_win_x, form_win_y;
-    getmaxyx(paradox_form_sub_win, form_win_y, form_win_x);
-
-    int domain_size = atoi(field_buffer(paradox_form_field_get(0), 0));
-    int sample_count = atoi(field_buffer(paradox_form_field_get(1), 0));
-    int simulation_runs = atoi(field_buffer(paradox_form_field_get(2), 0));
-
-    // Calculate the estimated chance of a collision for a single simulation run
-    double collision_probability =
-        calculate_birthday_collision_probability(domain_size, sample_count);
-
-    // Display the estimated chance of a collision
-    mvwprintw(
-        win, form_win_y + 2, BH_FORM_X_PADDING + 1, "Estimated chance of a collision:       ");
-    mvwprintw(win,
-              form_win_y + 2,
-              BH_FORM_X_PADDING + 1,
-              "Estimated chance of a collision: %.2f%%",
-              collision_probability * 100);
-
-    // Display the simulated runs results
-    double simulated_runs_results =
-        simulate_birthday_collision(domain_size, sample_count, simulation_runs);
-
-    // Display the simulated runs results
-    mvwprintw(win, form_win_y + 3, BH_FORM_X_PADDING + 1, "Simulated runs results:       ");
-    mvwprintw(win,
-              form_win_y + 3,
-              BH_FORM_X_PADDING + 1,
-              "Simulated runs results: %.2f%%",
-              simulated_runs_results);
-
-    wrefresh(win);
-
     set_current_field(paradox_form, paradox_form_field_get(paradox_form_field_metadata_len));
   } else {
     set_current_field(paradox_form, paradox_form_field_get(0));
@@ -248,7 +280,8 @@ FORM *paradox_form_render(WINDOW *win, int max_y, int max_x) {
   return paradox_form;
 }
 
-void paradox_form_restore(WINDOW *win, int max_y, int max_x) {
+void paradox_form_restore(WINDOW *win, int max_y, int max_x, double collision_probability,
+                          double simulated_runs_results) {
   if (!paradox_form)
     return;
 
@@ -268,11 +301,15 @@ void paradox_form_restore(WINDOW *win, int max_y, int max_x) {
     set_field_buffer(paradox_form_field[i], 0, buf); // Force internal repaint
   }
 
-  // Step 6: Force redraw current field again
+  // Force redraw current field again
   set_current_field(paradox_form, paradox_form_field[0]);
   form_driver(paradox_form, REQ_FIRST_FIELD);
 
-  // Step 7: Final refresh
+  if (collision_probability != -1 && simulated_runs_results != -1) {
+    render_simulation_result(win, collision_probability, simulated_runs_results);
+  }
+
+  // Final refresh
   wrefresh(paradox_form_sub_win);
 
   // post_form(paradox_form);
@@ -299,7 +336,8 @@ void paradox_form_destroy() {
   paradox_form_sub_win = NULL;
 }
 
-void paradox_form_handle_input(WINDOW *win, int ch) {
+void paradox_form_handle_input(WINDOW *win, int ch, double *collision_probability,
+                               double *simulated_runs_results) {
   if (win == NULL) {
     render_full_page_error_exit(
         stdscr, 0, 0, "The window passed to paradox_form_handle_input is null");
@@ -387,7 +425,11 @@ void paradox_form_handle_input(WINDOW *win, int ch) {
           calculate_form_max_value(paradox_form_field_metadata[current_index].max_length),
           true);
     } else if (current_index == paradox_form_field_metadata_len) {
-      paradox_form_validate_all_fields(win);
+      bool all_field_valid = paradox_form_validate_all_fields(win);
+      if (all_field_valid) {
+        run_simulation_from_input(collision_probability, simulated_runs_results);
+        render_simulation_result(win, *collision_probability, *simulated_runs_results);
+      }
     }
   } break;
 
