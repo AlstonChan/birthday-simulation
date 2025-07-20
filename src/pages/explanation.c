@@ -7,7 +7,7 @@
 #include "../utils/utils.h"
 #include "explanation.h"
 
-static const char const *explanation_page_title = "[ Birthday Paradox Information ]";
+static const char const *s_explanation_page_title = "[ Birthday Paradox Information ]";
 
 /**
  * @brief Renders the explanation page in the given window.
@@ -32,8 +32,8 @@ void render_explanation_page(WINDOW *win, int max_y, int max_x) {
 
   box(win, 0, 0);
 
-  unsigned short title_len = strlen(explanation_page_title);
-  mvwprintw(win, 0, (max_x - title_len) / 2, explanation_page_title);
+  unsigned short title_len = strlen(s_explanation_page_title);
+  mvwprintw(win, 0, (max_x - title_len) / 2, s_explanation_page_title);
 
   // Refresh the window to show the explanation page
   wrefresh(win);

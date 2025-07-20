@@ -1,7 +1,7 @@
 #include "system_info.h"
 
-static const char const *system_info_page_title = "[ System Information ]";
-static int win_rows = 15, win_cols = 40;
+static const char const *s_system_info_page_title = "[ System Information ]";
+static int s_win_rows = 15, s_win_cols = 40;
 
 /****************************************************************
                        INTERNAL FUNCTION
@@ -18,8 +18,8 @@ static void render_info(WINDOW *win) {
     render_full_page_error_exit(stdscr, 0, 0, "The window passed to render_info is null");
   }
 
-  unsigned short title_len = strlen(system_info_page_title);
-  mvwprintw(win, 0, (win_cols - title_len) / 2, system_info_page_title);
+  unsigned short title_len = strlen(s_system_info_page_title);
+  mvwprintw(win, 0, (s_win_cols - title_len) / 2, s_system_info_page_title);
 
   mvwprintw(win, 2, 2, "Program Version: %s", PROGRAM_VERSION_STRING);
 
@@ -54,8 +54,8 @@ static void render_info(WINDOW *win) {
  * @param win_x The value to store the window's x coordinate
  */
 static void calculate_win_size(int max_y, int max_x, int *win_y, int *win_x) {
-  *win_y = (max_y - win_rows) / 2;
-  *win_x = (max_x - win_cols) / 2;
+  *win_y = (max_y - s_win_rows) / 2;
+  *win_x = (max_x - s_win_cols) / 2;
 }
 
 /****************************************************************
@@ -77,8 +77,8 @@ void render_system_info(WINDOW *content_win, WINDOW *header_win, WINDOW *footer_
   int win_y, win_x;
   calculate_win_size(max_y, max_x, &win_y, &win_x);
 
-  werase(content_win);                      // Clear the window before rendering
-  wresize(content_win, win_rows, win_cols); // Resize the window for the system info
+  werase(content_win);                          // Clear the window before rendering
+  wresize(content_win, s_win_rows, s_win_cols); // Resize the window for the system info
 
   mvwin(content_win, win_y, win_x); // Center the system info window
   box(content_win, 0, 0);

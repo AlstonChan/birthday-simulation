@@ -4,7 +4,7 @@
  * @brief The title of the paradox page.
  *
  */
-static const char const *paradox_page_title = "[ Birthday Paradox Simulation ]";
+static const char const *s_paradox_page_title = "[ Birthday Paradox Simulation ]";
 
 void render_paradox_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer_win, int max_y,
                          int max_x) {
@@ -27,8 +27,8 @@ void render_paradox_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer
   mvwin(content_win, 4, 0);
   box(content_win, 0, 0);
 
-  unsigned short title_len = strlen(paradox_page_title);
-  mvwprintw(content_win, 0, (max_x - title_len) / 2, paradox_page_title);
+  unsigned short title_len = strlen(s_paradox_page_title);
+  mvwprintw(content_win, 0, (max_x - title_len) / 2, s_paradox_page_title);
 
   paradox_form_init(content_win, max_y, max_x); // Initialize the paradox form
   FORM *paradox_form = paradox_form_render(content_win, max_y, max_x); // Render the paradox form
@@ -60,7 +60,7 @@ void render_paradox_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer
       wclear(footer_win);
 
       box(content_win, 0, 0);
-      mvwprintw(content_win, 0, (max_x - title_len) / 2, paradox_page_title);
+      mvwprintw(content_win, 0, (max_x - title_len) / 2, s_paradox_page_title);
       header_render(header_win);
       mvwin(footer_win, win_size.Y - 2, 0);
       footer_render(footer_win, win_size.Y - 2, max_x);

@@ -2,6 +2,10 @@
 
 static HANDLE s_handle_console_output = NULL;
 
+/****************************************************************
+                       INTERNAL FUNCTION
+****************************************************************/
+
 /**
  * @brief Get the console output handle object.
  * See [Console Handles
@@ -29,6 +33,10 @@ static HANDLE get_console_output_handle(void) {
   }
   return s_handle_console_output;
 }
+
+/****************************************************************
+                       EXTERNAL FUNCTION
+****************************************************************/
 
 bool check_console_window_resize_event(COORD *info) {
   // We hold the old screen size between calls to this function

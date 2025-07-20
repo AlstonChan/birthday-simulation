@@ -4,7 +4,7 @@
  * @brief The title of the attack page.
  *
  */
-static const char *attack_page_title = "[ Birthday Attack Demo ]";
+static const char *s_attack_page_title = "[ Birthday Attack Demo ]";
 
 void render_attack_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer_win, int max_y,
                         int max_x) {
@@ -28,8 +28,8 @@ void render_attack_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer_
   MENU *hash_menu = hash_menu_init_status ? hash_menu_render(content_win, max_y, max_x)
                                           : hash_menu_get(); // Render the hash menu
 
-  unsigned short title_len = strlen(attack_page_title);
-  mvwprintw(content_win, 0, (max_x - title_len) / 2, attack_page_title);
+  unsigned short title_len = strlen(s_attack_page_title);
+  mvwprintw(content_win, 0, (max_x - title_len) / 2, s_attack_page_title);
 
   COORD win_size;
 
@@ -90,7 +90,7 @@ void render_attack_page(WINDOW *content_win, WINDOW *header_win, WINDOW *footer_
       mvwin(footer_win, win_size.Y - 2, 0);
       footer_render(footer_win, win_size.Y - 2, max_x);
 
-      mvwprintw(content_win, 0, (max_x - title_len) / 2, attack_page_title);
+      mvwprintw(content_win, 0, (max_x - title_len) / 2, s_attack_page_title);
 
       wrefresh(content_win);
     }

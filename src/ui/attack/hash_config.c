@@ -1,8 +1,3 @@
-#include <stdlib.h>
-#include <string.h>
-
-#include "../../utils/utils.h"
-#include "../menu.h"
 #include "hash_config.h"
 
 const hash_config_t hash_config[] = {

@@ -28,6 +28,10 @@ static WINDOW *s_hash_collision_form_sub_win = NULL;
 
 static FIELD *hash_collision_form_field_get(int index) { return s_hash_form_field[index]; }
 
+/****************************************************************
+                       INTERNAL FUNCTION
+****************************************************************/
+
 /**************************************************************
                       HASH TABLE FUNCTIONS
 **************************************************************/

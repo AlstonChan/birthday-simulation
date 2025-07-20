@@ -3,7 +3,11 @@
 
 #include <ncurses/menu.h>
 #include <ncurses/ncurses.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "../../utils/utils.h"
+#include "../art.h"
 #include "../menu.h"
 
 extern const struct ListMenuItem main_menu_choices[];

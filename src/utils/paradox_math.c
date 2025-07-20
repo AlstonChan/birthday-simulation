@@ -1,5 +1,9 @@
 #include "paradox_math.h"
 
+/****************************************************************
+                       INTERNAL FUNCTION
+****************************************************************/
+
 /**
  * Helper function to check if there's a collision in an array of numbers
  */
@@ -14,6 +18,10 @@ static bool has_collision(const int *numbers, int size) {
   }
   return false;
 }
+
+/****************************************************************
+                       EXTERNAL FUNCTION
+****************************************************************/
 
 double calculate_birthday_collision_probability(int domain_size, int sample_size) {
   // Handle edge cases

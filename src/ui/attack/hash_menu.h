@@ -3,15 +3,19 @@
 
 #include <ncurses/menu.h>
 #include <ncurses/ncurses.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "../../utils/utils.h"
 #include "../menu.h"
+#include "hash_config.h"
 
 MENU *hash_menu_get();
 
 /**
  * @brief Initializes the has algo selection menu.
  *
- * @param win The window to display the menu in. If NULL, uses stdscr.
+ * @param win The window to display the menu in
  * @return true if the menu was successfully initialized, false if it was already initialized.
  */
 bool hash_menu_init(WINDOW *win);
@@ -20,9 +24,9 @@ bool hash_menu_init(WINDOW *win);
 /**
  * @brief Renders the menu in the specified window.
  *
- * @param win The window to render the menu in. If NULL, uses stdscr.
- * @param max_y The maximum y-coordinate of the parent window (stdscr).
- * @param max_x The maximum x-coordinate of the parent window (stdscr).
+ * @param win The window to render the menu in
+ * @param max_y The maximum height of the screen space that can be rendered
+ * @param max_x The maximum width of the screen space that can be rendered
  * @return MENU* The rendered menu.
  */
 MENU *hash_menu_render(WINDOW *win, int max_y, int max_x);

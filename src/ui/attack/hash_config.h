@@ -1,6 +1,10 @@
 #ifndef HASH_CONFIG_H
 #define HASH_CONFIG_H
 
+#include <stdlib.h>
+#include <string.h>
+
+#include "../../utils/utils.h"
 #include "../menu.h"
 
 enum hash_function_ids {
