@@ -1,11 +1,9 @@
-#include <ncurses/ncurses.h>
-#include <string.h>
-
-#include "../utils/utils.h"
+#include "header.h"
 
 void header_render(WINDOW *header_win) {
-  if (header_win == NULL)
-    return;
+  if (header_render == NULL) {
+    render_full_page_error_exit(stdscr, 0, 0, "The window passed to header_render is null");
+  }
 
   int max_y, max_x;
   getmaxyx(header_win, max_y, max_x); // Get the size of the header window

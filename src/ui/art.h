@@ -4,6 +4,7 @@
 #include <ncurses/ncurses.h>
 #include <string.h>
 
+#include "error.h"
 #include "../utils/utils.h"
 
 extern const char *const BIRTHDAY_SIMULATION_ART_TEXT[];

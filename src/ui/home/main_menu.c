@@ -55,10 +55,10 @@ MENU *main_menu_render(WINDOW *win, int max_y, int max_x) {
   box(win, 0, 0);
   print_in_middle(win, 0, 0, 40, " Main Menu ", COLOR_PAIR(BH_MAIN_COLOR_PAIR));
 
-  art_text_center_render(NULL, max_y, max_x);
+  art_text_center_render(stdscr, max_y, max_x);
 
   // Render the menu navigation text
-  list_menu_navigation_render(NULL, y + main_menu_win_rows + 1, -1, false);
+  list_menu_navigation_render(stdscr, y + main_menu_win_rows + 1, -1, false);
 
   wrefresh(win);
 

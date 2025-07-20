@@ -16,16 +16,17 @@ int main() {
   setlocale(LC_ALL, ""); // Set the locale to the user's default (utf-8)
 
   initscr(); // Initialize ncurses
-  if (init_color_pairs() != 0) {
-    render_full_page_error(stdscr, 0, 0, "Your terminal does not supports colours");
-    return 1;
-  }
 
   cbreak();              // Disable line buffering
   noecho();              // Don't echo user input
   keypad(stdscr, TRUE);  // Enable special keys (like arrow keys)
   nodelay(stdscr, TRUE); // Make getch() non-blocking
   curs_set(0);           // Hide the cursor
+
+  if (init_color_pairs() != 0) {
+    render_full_page_error(stdscr, 0, 0, "Your terminal does not supports colours");
+    return 1;
+  }
 
   COORD win_size;
 

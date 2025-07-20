@@ -1,15 +1,10 @@
-#include <ncurses/menu.h>
-#include <ncurses/ncurses.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../utils/utils.h"
 #include "menu.h"
 
 void list_menu_init(WINDOW *win, const struct ListMenuItem choices[], unsigned short choices_len,
                     ITEM ***choices_items, MENU **menu, WINDOW **sub_win) {
-  if (win == NULL)
-    win = stdscr; // Use stdscr if no window is provided
+  if (win == NULL) {
+    render_full_page_error_exit(stdscr, 0, 0, "The window passed to list_menu_init is null");
+  }
 
   // Allocate memory for the menu items pointer array
   *choices_items = (ITEM **)calloc((size_t)(choices_len + 1), sizeof(ITEM *));
@@ -35,8 +30,10 @@ void list_menu_init(WINDOW *win, const struct ListMenuItem choices[], unsigned s
 }
 
 void list_menu_navigation_render(WINDOW *win, int y, int x, bool hide_exit_text) {
-  if (win == NULL)
-    win = stdscr; // Use stdscr if no window is provided
+  if (win == NULL) {
+    render_full_page_error_exit(
+        stdscr, 0, 0, "The window passed to list_menu_navigation_render is null");
+  }
 
   const char *menu_navigation_text = "[↑/↓]: Navigate   [Enter]: Select   [F1]: Exit";
   if (hide_exit_text) {

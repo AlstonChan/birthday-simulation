@@ -1,6 +1,10 @@
 #ifndef PARADOX_MATH_H
 #define PARADOX_MATH_H
 
+#include <stdbool.h>
+#include <stdlib.h>
+#include <time.h>
+
 /**
  * @brief Calculates the probability of at least two people having the same birthday
  *        in a group of people (Birthday Paradox/Problem)

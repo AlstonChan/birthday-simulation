@@ -1,10 +1,4 @@
-#include <ncurses/form.h>
-#include <ncurses/ncurses.h>
-#include <string.h>
-
-#include "../ui/attack/hash_collision.h"
-#include "../ui/attack/hash_config.h"
-#include "../ui/attack/hash_menu.h"
+#include "attack.h"
 
 /**
  * @brief The title of the attack page.

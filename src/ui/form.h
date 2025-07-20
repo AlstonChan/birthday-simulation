@@ -3,6 +3,11 @@
 
 #include <ncurses/ncurses.h>
 #include <ncurses/form.h>
+#include <ctype.h>
+#include <math.h>
+#include <string.h>
+
+#include "../utils/utils.h"
 
 /**
  * @brief The structure for the input fields in the paradox form.

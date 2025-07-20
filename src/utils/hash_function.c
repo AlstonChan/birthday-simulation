@@ -1,6 +1,3 @@
-#include <openssl/evp.h>
-#include <stdint.h>
-
 #include "hash_function.h"
 
 uint8_t hash_8bit(const void *data, size_t len) {

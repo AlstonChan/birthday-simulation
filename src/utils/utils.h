@@ -4,6 +4,12 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 #include <ncurses/ncurses.h>
+#include <limits.h>
+#include <openssl/rand.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "../ui/error.h"
 
 /**
  * @brief Prints a string centered within a specified area of a window.

@@ -1,7 +1,19 @@
 #include "paradox_math.h"
-#include <stdbool.h>
-#include <stdlib.h>
-#include <time.h>
+
+/**
+ * Helper function to check if there's a collision in an array of numbers
+ */
+static bool has_collision(const int *numbers, int size) {
+  // Check each pair of numbers for a match
+  for (int i = 0; i < size - 1; i++) {
+    for (int j = i + 1; j < size; j++) {
+      if (numbers[i] == numbers[j]) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 double calculate_birthday_collision_probability(int domain_size, int sample_size) {
   // Handle edge cases
@@ -35,21 +47,6 @@ double calculate_birthday_collision_probability(int domain_size, int sample_size
 
   // The probability of at least one collision is the complement of no collision
   return 1.0 - no_collision_prob;
-}
-
-/**
- * Helper function to check if there's a collision in an array of numbers
- */
-static bool has_collision(const int *numbers, int size) {
-  // Check each pair of numbers for a match
-  for (int i = 0; i < size - 1; i++) {
-    for (int j = i + 1; j < size; j++) {
-      if (numbers[i] == numbers[j]) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 double simulate_birthday_collision(int domain_size, int sample_size, int num_runs) {

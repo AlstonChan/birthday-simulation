@@ -3,6 +3,11 @@
 
 #include <ncurses/menu.h>
 #include <ncurses/ncurses.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "../utils/utils.h"
+#include "error.h"
 
 struct ListMenuItem {
     const char *label;
@@ -20,7 +25,7 @@ struct ListMenuItem {
 /**
  * @brief Initializes the a list menu.
  *
- * @param win The window to display the menu in. If NULL, uses stdscr.
+ * @param win The window to display the menu in
  * @param choices The choices for the menu.
  * @param choices_len The number of choices in the menu.
  * @param choices_items The ncurses menu items created from the choices.
@@ -33,7 +38,7 @@ void list_menu_init(WINDOW *win, const struct ListMenuItem choices[], unsigned s
 /**
  * @brief Renders the menu navigation text in the specified window.
  * 
- * @param win The window to render the navigation text in. If NULL, uses stdscr.
+ * @param win The window to render the navigation text in
  * @param y The y-coordinate where the navigation text will be rendered.
  * @param x The x-coordinate where the navigation text will be rendered. Negative
  * value indicates that the text will be centered in the window.

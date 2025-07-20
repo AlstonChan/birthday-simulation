@@ -4,6 +4,8 @@
 #include <ncurses/ncurses.h>
 #include <string.h>
 
+#include "error.h"
+
 /**
  * @brief Render the footer of the application
  * 

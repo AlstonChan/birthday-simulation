@@ -2,6 +2,8 @@
 #define HASH_FUNCTION_H
 
 #include <stdint.h>
+#include <openssl/evp.h>
+#include <stdint.h>
 
 /**
  * @brief 8-bit hash function using simple polynomial rolling hash

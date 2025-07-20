@@ -1,9 +1,3 @@
-#include <limits.h>
-#include <ncurses/ncurses.h>
-#include <openssl/rand.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "utils.h"
 
 void print_in_middle(WINDOW *win, unsigned int start_y, unsigned int start_x, unsigned int width,
@@ -11,9 +5,9 @@ void print_in_middle(WINDOW *win, unsigned int start_y, unsigned int start_x, un
   int length, x, y;
   float temp;
 
-  // If no window is provided, use the standard screen.
-  if (win == NULL)
-    win = stdscr;
+  if (win == NULL) {
+    render_full_page_error_exit(stdscr, 0, 0, "The window passed to print_in_middle is null");
+  }
 
   // Get the current cursor position of the window.
   getyx(win, y, x);
@@ -76,7 +70,6 @@ char *bytes_to_hex(const uint8_t *data, size_t len, bool uppercase) {
 uint8_t init_color_pairs() {
   if (has_colors() == FALSE) { // Check if the terminal supports colors
     endwin();
-    fprintf(stderr, "\nBirthday Simulation: Your terminal does not support color\n");
     return 1;
   }
   start_color(); // Start color functionality

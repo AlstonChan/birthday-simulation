@@ -11,6 +11,7 @@
 
 #include "footer.h"
 #include "header.h"
+#include "error.h"
 #include "home/main_menu.h"
 
 #define BH_LAYOUT_PADDING 6

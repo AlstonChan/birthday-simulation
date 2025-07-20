@@ -1,9 +1,3 @@
-#include <ctype.h>
-#include <math.h>
-#include <ncurses/form.h>
-#include <string.h>
-
-#include "../utils/utils.h"
 #include "form.h"
 
 unsigned short calculate_longest_max_length(const struct FormInputField const form_fields[],

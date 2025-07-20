@@ -2,9 +2,10 @@
 
 void page_layout_render(WINDOW *header_win, WINDOW *footer_win, WINDOW *content_win, int max_y,
                         int max_x, PageType page_type) {
-  // If either header, footer, or content window is NULL, return early
-  if (header_win == NULL || footer_win == NULL || content_win == NULL)
-    return;
+  // If either header, footer, or content window is NULL, return error
+  if (header_win == NULL || footer_win == NULL || content_win == NULL) {
+    render_full_page_error_exit(stdscr, 0, 0, "The window passed to page_layout_render is null");
+  }
 
   // Erase the stdscr and main menu window
   erase();           // Clear the screen

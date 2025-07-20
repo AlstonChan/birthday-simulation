@@ -21,8 +21,10 @@ const unsigned short BIRTHDAY_SIMULATION_ART_TEXT_LINE = ARRAY_SIZE(BIRTHDAY_SIM
 void art_text_center_render(WINDOW *win, int max_y, int max_x) {
   int start_y, start_x, max_text_width = 0;
 
-  if (win == NULL)
-    win = stdscr;
+  if (win == NULL) {
+    render_full_page_error_exit(
+        stdscr, 0, 0, "The window passed to art_text_center_render is null");
+  }
 
   if (max_y == 0) {
     max_y = getmaxy(win);
