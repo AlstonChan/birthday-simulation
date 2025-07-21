@@ -1,7 +1,6 @@
 #ifndef HASH_FUNCTION_H
 #define HASH_FUNCTION_H
 
-#include <stdint.h>
 #include <openssl/evp.h>
 #include <stdint.h>
 
@@ -16,7 +15,7 @@
  * @param len Length of input data in bytes, exp: 1-255
  * @return uint8_t 8-bit hash value (0-255)
  */
-uint8_t hash_8bit(const void *data, size_t len);
+uint8_t hash_8bit(const void* data, size_t len);
 
 /**
  * @brief 12-bit hash function using modified FNV-like algorithm
@@ -29,7 +28,7 @@ uint8_t hash_8bit(const void *data, size_t len);
  * @param len Length of input data in bytes
  * @return uint16_t 12-bit hash value (0-4095), stored in lower 12 bits
  */
-uint16_t hash_12bit(const void *data, size_t len);
+uint16_t hash_12bit(const void* data, size_t len);
 
 /**
  * @brief 16-bit hash function using CRC-like polynomial
@@ -42,7 +41,7 @@ uint16_t hash_12bit(const void *data, size_t len);
  * @param len Length of input data in bytes
  * @return uint16_t 16-bit hash value (0-65535)
  */
-uint16_t hash_16bit(const void *data, size_t len);
+uint16_t hash_16bit(const void* data, size_t len);
 
 enum openssl_hash_function_ids {
     BH_OPENSSL_HASH_RIPEMD160,
@@ -55,7 +54,7 @@ enum openssl_hash_function_ids {
 
 /**
  * @brief Generic wrapper for OpenSSL hash functions
- * 
+ *
  * REMEMBER TO `free()` the returned pointer after use.
  *
  *
@@ -64,8 +63,6 @@ enum openssl_hash_function_ids {
  * @param hash_id The ID of the hash function to use
  * @return unsigned char* Pointer to the 20-byte hash value, caller must free it
  */
-unsigned char *openssl_hash(const void *data, size_t len,enum openssl_hash_function_ids hash_id);
+unsigned char* openssl_hash(const void* data, size_t len, enum openssl_hash_function_ids hash_id);
 
-
-
-#endif 
+#endif

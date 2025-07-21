@@ -9,9 +9,9 @@
 
 /**
  * @brief Render the header of the application
- * 
+ *
  * @param header_win The window to render the content at.
  */
-void header_render(WINDOW *header_win);
+void header_render(WINDOW* header_win);
 
 #endif

@@ -18,15 +18,14 @@ extern const unsigned short main_menu_choices_len;
  *
  * @param win The window to display the menu in. If NULL, uses stdscr.
  */
-void main_menu_init(WINDOW *win);
-
+void main_menu_init(WINDOW* win);
 
 /**
  * @brief Gets the current menu.
  *
  * @return MENU* The current menu.
  */
-MENU *main_menu_get();
+MENU* main_menu_get();
 
 /**
  * @brief Renders the menu in the specified window.
@@ -36,7 +35,7 @@ MENU *main_menu_get();
  * @param max_x The maximum x-coordinate of the parent window (stdscr).
  * @return MENU* The rendered menu.
  */
-MENU *main_menu_render(WINDOW *win, int max_y, int max_x);
+MENU* main_menu_render(WINDOW* win, int max_y, int max_x);
 
 /**
  * @brief Erases the menu from the window. So that the window can
@@ -51,7 +50,7 @@ void main_menu_erase();
  * display it again.
  *
  */
-void main_menu_restore(WINDOW *win, int max_y, int max_x);
+void main_menu_restore(WINDOW* win, int max_y, int max_x);
 
 /**
  * @brief Destroys the menu and frees allocated memory.

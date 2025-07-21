@@ -20,12 +20,12 @@ double calculate_birthday_collision_probability(int domain_size, int sample_size
 
 /**
  * @brief Simulates the birthday paradox by running multiple random trials
- * 
+ *
  * @param domain_size The range of possible values (e.g., 365 for days in a year)
  * @param sample_size The number of random values to generate per trial (e.g., number of people)
  * @param num_runs The number of simulation trials to run
  * @return double The percentage of trials where a collision was found (0.0 to 100.0)
- * 
+ *
  * @note This function uses actual random sampling to empirically test
  *       the birthday paradox probability through simulation
  */

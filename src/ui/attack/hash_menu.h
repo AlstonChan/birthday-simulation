@@ -10,7 +10,7 @@
 #include "../menu.h"
 #include "hash_config.h"
 
-MENU *hash_menu_get();
+MENU* hash_menu_get();
 
 /**
  * @brief Initializes the has algo selection menu.
@@ -18,8 +18,7 @@ MENU *hash_menu_get();
  * @param win The window to display the menu in
  * @return true if the menu was successfully initialized, false if it was already initialized.
  */
-bool hash_menu_init(WINDOW *win);
-
+bool hash_menu_init(WINDOW* win);
 
 /**
  * @brief Renders the menu in the specified window.
@@ -29,7 +28,7 @@ bool hash_menu_init(WINDOW *win);
  * @param max_x The maximum width of the screen space that can be rendered
  * @return MENU* The rendered menu.
  */
-MENU *hash_menu_render(WINDOW *win, int max_y, int max_x);
+MENU* hash_menu_render(WINDOW* win, int max_y, int max_x);
 
 /**
  * @brief Erases the menu from the window. So that the window can
@@ -44,7 +43,7 @@ void hash_menu_erase();
  * display it again.
  *
  */
-void hash_menu_restore(WINDOW *win, int max_y, int max_x);
+void hash_menu_restore(WINDOW* win, int max_y, int max_x);
 
 /**
  * @brief Destroys the menu and frees allocated memory.

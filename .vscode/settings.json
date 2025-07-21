@@ -73,7 +73,13 @@
     "flat_map": "c",
     "flat_set": "c",
     "paradox.h": "c",
-    "footer.h": "c"
+    "footer.h": "c",
+    "form.h": "c",
+    "resize.h": "c",
+    "error.h": "c",
+    "art.h": "c",
+    "limits.h": "c",
+    "system_info.h": "c"
   },
-  "cSpell.words": ["Iinclude", "lmenuw", "lncursesw"]
+  "cSpell.words": ["Iinclude", "KECCAK", "lmenuw", "lncursesw"]
 }
