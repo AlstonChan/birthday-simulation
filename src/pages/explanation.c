@@ -1,3 +1,16 @@
+/**
+ * \file            explanation.c
+ * \brief           A documentation page for both the application and the core
+ *                  theme of this application -- birthday paradox and birthday
+ *                  attack.
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include <ctype.h>
 #include <math.h>
 #include <ncurses/ncurses.h>

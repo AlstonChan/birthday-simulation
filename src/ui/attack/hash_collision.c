@@ -1,3 +1,16 @@
+/**
+ * \file            hash_collision.c
+ * \brief           The main component for attack.c page to render the UI and execute
+ *                  the logic of creating hashs, comparing hashs, to simulate a 
+ *                  birthday attack
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "hash_collision.h"
 
 static const char* s_hash_collision_page_title = "[ Hash Collision Demonstration ]";

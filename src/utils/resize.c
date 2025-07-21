@@ -1,3 +1,17 @@
+/**
+ * \file            resize.c
+ * \brief           The core logic behind detecting the terminal size and notify
+ *                  the application via the always updated COORD. So that the 
+ *                  application can notify ncurses to resize and perform required
+ *                  screen clearing and repainting for each resize.
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "resize.h"
 
 static HANDLE s_handle_console_output = NULL;
@@ -42,7 +56,7 @@ get_console_output_handle(void) {
  *                 post](https://stackoverflow.com/questions/78082999/check-for-terminal-resizing-using-ncurses-under-windows)
  *                 for the source of this code:
  *
- * \param[in]      info COORD to return new window size
+ * \param[out]     info COORD to return new window size
  * \return         TRUE if the console window has changed size. FALSE if not.
  */
 bool

@@ -1,3 +1,15 @@
+/**
+ * \file            attack.c
+ * \brief           The birthday attack page that will show a menu of hash function to choose
+ *                  that will be used to simulate birthday attack
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "attack.h"
 
 static const char* s_attack_page_title = "[ Birthday Attack Demo ]";

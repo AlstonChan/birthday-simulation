@@ -1,3 +1,14 @@
+/**
+ * \file            main_menu.c
+ * \brief           The main menu render function for the home page
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "main_menu.h"
 
 const struct ListMenuItem main_menu_choices[] = {

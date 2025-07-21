@@ -81,7 +81,8 @@
     "limits.h": "c",
     "system_info.h": "c",
     "layout.h": "c",
-    "functional": "c"
+    "functional": "c",
+    "header.h": "c"
   },
   "cSpell.words": ["Iinclude", "KECCAK", "lmenuw", "lncursesw"]
 }

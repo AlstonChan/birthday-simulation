@@ -1,3 +1,15 @@
+/**
+ * \file            paradox_form.c
+ * \brief           The main birthday paradox function to create, render, resize
+ *                  handle input, execute logic and display results.
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "paradox_form.h"
 
 const char const* form_submit_button_text = "[ Run Simulation ]";

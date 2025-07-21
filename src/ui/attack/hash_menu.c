@@ -1,3 +1,15 @@
+/**
+ * \file            hash_menu.c
+ * \brief           The menu component for the attack page where the user can choose which
+ *                  hash function to simulate in the birthday attack interface
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "hash_menu.h"
 
 static ITEM** s_hash_menu_choices_items = NULL;

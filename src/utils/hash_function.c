@@ -1,3 +1,16 @@
+/**
+ * \file            hash_function.c
+ * \brief           Here are all the hash function that this application will use. The
+ *                  actual implementation of the toy hash function and the wrapper function
+ *                  of proper hash function like SHA-256 from OpenSSL library
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "hash_function.h"
 
 /**

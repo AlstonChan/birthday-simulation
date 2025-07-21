@@ -1,3 +1,18 @@
+/**
+ * \file            hash_config.c
+ * \brief           Defined the hash function that will be used in simulating
+ *                  birthday attack. The details of each hash function like 
+ *                  hash space, bit size, etc.. will be defined together
+ *                  in a struct and helper function makes extracting/creating
+ *                  from these hash function more easy
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "hash_config.h"
 
 const hash_config_t hash_config[] = {

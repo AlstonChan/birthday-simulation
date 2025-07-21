@@ -1,3 +1,17 @@
+/**
+ * \file            error.c
+ * \brief           A very useful utility function that will render a full screen
+ *                  error page in case for unexpected error like memory allocation
+ *                  failure. User can see what is wrong with the application before
+ *                  exiting either ther error screen or the program
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include "error.h"
 
 void

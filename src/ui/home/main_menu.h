@@ -1,3 +1,14 @@
+/**
+ * \file            main_menu.h
+ * \brief           Header file for main_menu.c
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef MAIN_MENU_H
 #define MAIN_MENU_H
 
