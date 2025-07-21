@@ -15,12 +15,16 @@ const hash_config_t hash_config[] = {
 
 const unsigned short hash_config_len = ARRAY_SIZE(hash_config);
 
+/**
+ * \brief          Get the hash config menu object
+ *
+ * \return         The list menu item, or NULL if memory allocation failed
+ */
 struct ListMenuItem*
 get_hash_config_menu() {
     struct ListMenuItem* hash_config_menu = malloc(hash_config_len * sizeof(struct ListMenuItem));
     if (!hash_config_menu) {
-        fprintf(stderr, "Memory allocation failed for hash config menu.\n");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
     for (unsigned short i = 0; i < hash_config_len; i++) {
@@ -33,8 +37,7 @@ get_hash_config_menu() {
             strlen(str_buffer) + 9; // 2 for parentheses + 1 space + "bits" + 1 for null terminator
         char* description_parentheses = malloc(description_length);
         if (!description_parentheses) {
-            fprintf(stderr, "Memory allocation failed for hash config menu description.\n");
-            exit(EXIT_FAILURE);
+            return NULL;
         }
 
         snprintf(description_parentheses, description_length, "(%s bits)", str_buffer);
@@ -44,6 +47,12 @@ get_hash_config_menu() {
     return hash_config_menu;
 }
 
+/**
+ * \brief          Get the hash config item for a specific hash function ID
+ *
+ * \param[in]      id The ID of the hash function
+ * \return         The menu item for the specified hash function
+ */
 hash_config_t
 get_hash_config_item(enum hash_function_ids id) {
     if (id < 0 || id >= hash_config_len) {
@@ -54,6 +63,15 @@ get_hash_config_item(enum hash_function_ids id) {
     return hash_config[id];
 }
 
+/**
+ * \brief          Get maximum hash hex string length for a given hash function
+ *                 It returns a uint16_t, because the maximum length of a hash function's hex string
+ *                 length in bits is definitely small enough to fit within a 16-bit unsigned integer.
+ *                 Even like sha-512, has a 512-bit output, which is less than 2^16 - 1 = 65,535.
+ *
+ * \param[in]      hash_id The ID of the hash function to get the hex length for
+ * \return         The maximum length of the hash hex string, including the null terminator
+ */
 uint16_t
 get_hash_hex_length(enum hash_function_ids hash_id) {
     hash_config_t hash_config_item = get_hash_config_item(hash_id);

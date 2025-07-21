@@ -7,11 +7,11 @@ static int s_win_rows = 15, s_win_cols = 40;
                        INTERNAL FUNCTION
 ****************************************************************/
 /**
- * @brief Render the system info like application version
- * and dependencies version. This function does not
- * refresh the window after printing
+ * \brief          Render the system info like application version
+ *                 and dependencies version. This function does not
+ *                 refresh the window after printing
  *
- * @param win The content to render the info at
+ * \param[in]      win The content to render the info at
  */
 static void
 render_info(WINDOW* win) {
@@ -36,13 +36,13 @@ render_info(WINDOW* win) {
 }
 
 /**
- * @brief Calculate the window's y and x coordinate given the stdscr maximum
- * width and height
+ * \brief          Calculate the window's y and x coordinate given the stdscr maximum
+ *                 width and height
  *
- * @param max_y stdscr's maximum row
- * @param max_x stdscr's maximum col
- * @param win_y The value to store the window's y coordinate
- * @param win_x The value to store the window's x coordinate
+ * \param[in]      max_y stdscr's maximum row
+ * \param[in]      max_x stdscr's maximum col
+ * \param[in]      win_y The value to store the window's y coordinate
+ * \param[in]      win_x The value to store the window's x coordinate
  */
 static void
 calculate_win_size(int max_y, int max_x, int* win_y, int* win_x) {
@@ -54,6 +54,17 @@ calculate_win_size(int max_y, int max_x, int* win_y, int* win_x) {
                        EXTERNAL FUNCTION
 ****************************************************************/
 
+/**
+ * \brief          Render the system information page given a window.
+ *
+ * \param[in]      content_win The window to render the system information in.
+ * \param[in]      header_win The window to render the header content, normally for
+ *                 the args of header_render
+ * \param[in]      footer_win The window to render the footer content, normally for
+ *                 the args of footer_render
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ */
 void
 render_system_info(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int max_y,
                    int max_x) {

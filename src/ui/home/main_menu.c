@@ -1,9 +1,5 @@
 #include "main_menu.h"
 
-/**
- * @brief The main menu choices for the program.
- *
- */
 const struct ListMenuItem main_menu_choices[] = {
     {"Birthday Paradox Simulation", NULL},
     {"Attack Simulation", NULL},
@@ -17,21 +13,39 @@ static ITEM** s_main_menu_choices_items = NULL;
 static MENU* s_main_menu = NULL;
 static WINDOW* s_main_menu_sub_win = NULL;
 
+/**
+ * \brief          Gets the current menu.
+ *
+ * \return         The current menu.
+ */
 MENU*
 main_menu_get() {
     return s_main_menu;
 }
 
+/**
+ * \brief          Initializes the main menu.
+ *
+ * \param[in]      win The window to display the menu in.
+ */
 void
 main_menu_init(WINDOW* win) {
     list_menu_init(win, main_menu_choices, main_menu_choices_len, &s_main_menu_choices_items,
                    &s_main_menu, &s_main_menu_sub_win);
 }
 
+/**
+ * \brief          Renders the menu in the specified window.
+ *
+ * \param[in]      win The window to render the menu in. If NULL, uses stdscr.
+ * \param[in]      max_y The maximum y-coordinate of the parent window (stdscr).
+ * \param[in]      max_x The maximum x-coordinate of the parent window (stdscr).
+ * \return         The rendered menu.
+ */
 MENU*
 main_menu_render(WINDOW* win, int max_y, int max_x) {
     if (win == NULL) {
-        win = stdscr; // Use stdscr if no window is provided
+        render_full_page_error_exit(stdscr, 0, 0, "The window passed to main_menu_render is null");
     }
 
     if (!s_main_menu) {
@@ -65,6 +79,11 @@ main_menu_render(WINDOW* win, int max_y, int max_x) {
     return s_main_menu;
 }
 
+/**
+ * \brief          Erases the menu from the window. So that the window can
+ *                 be used for other purposes.
+ *
+ */
 void
 main_menu_erase() {
     if (!s_main_menu) {
@@ -74,6 +93,15 @@ main_menu_erase() {
     unpost_menu(s_main_menu); // Erase the menu from the window
 }
 
+/**
+ * \brief          Restores the menu to the window. This is useful
+ *                 after the menu has been erased and you want to
+ *                 display it again.
+ * 
+ * \param[in]      win The window to render the menu in. If NULL, uses stdscr.
+ * \param[in]      max_y The maximum y-coordinate of the parent window (stdscr).
+ * \param[in]      max_x The maximum x-coordinate of the parent window (stdscr).
+ */
 void
 main_menu_restore(WINDOW* win, int max_y, int max_x) {
     if (!s_main_menu) {
@@ -85,6 +113,10 @@ main_menu_restore(WINDOW* win, int max_y, int max_x) {
     wrefresh(s_main_menu_sub_win);
 }
 
+/**
+ * \brief          Destroys the menu and frees allocated memory.
+ *
+ */
 void
 main_menu_destroy() {
     if (!s_main_menu) {

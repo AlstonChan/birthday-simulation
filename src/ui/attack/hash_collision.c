@@ -6,20 +6,15 @@ static const char const* s_hash_form_submit_button_text = "[ Run Simulation ]";
 static const struct FormInputField const s_hash_form_field_metadata[] = {
     {"Max Attempts", 10000, 6}};
 static const unsigned short s_hash_form_field_metadata_len = ARRAY_SIZE(s_hash_form_field_metadata);
-
-/**
- * @brief The longest field label length in the hash form.
- *
- */
 static unsigned short s_max_label_length = 0;
 
 /**
- * @brief Holds all the fields for the hash collision form. ALl fields
- * holds input data for the hash collision simulation with special case:
- * - The second last field is a button field that submits the form, that
- * it cannot be used for input.
- * - The last field is a NULL terminator field that is used to
- * terminate the array of fields.
+ * \brief          Holds all the fields for the hash collision form. ALl fields
+ *                 holds input data for the hash collision simulation with special case:
+ *                 - The second last field is a button field that submits the form, that
+ *                 it cannot be used for input.
+ *                 - The last field is a NULL terminator field that is used to
+ *                 terminate the array of fields.
  *
  */
 static FIELD** s_hash_form_field = NULL;
@@ -40,12 +35,13 @@ hash_collision_form_field_get(int index) {
 **************************************************************/
 
 /**
- * @brief Create a new hash table with the specified number of buckets.
+ * \brief          Create a new hash table with the specified number of buckets.
+ *                 You should free the returned hash table using `hash_table_destroy`
+ *                 when done.
  *
- * You should free the returned hash table using `hash_table_destroy` when done.
- *
- * @param bucket_count The number of buckets in the hash table.
- * @return A pointer to the newly created hash table, or NULL on failure.
+ * \param[in]      bucket_count The number of buckets in the hash table.
+ * \return         A pointer to the newly created hash table, or NULL on memory
+ *                 allocation failure
  */
 static hash_table_t*
 hash_table_create(size_t bucket_count) {
@@ -67,14 +63,14 @@ hash_table_create(size_t bucket_count) {
 }
 
 /**
- * @brief Compute the hash for the given input based on the specified hash function ID.
+ * \brief          Compute the hash for the given input based on the specified hash function ID.
  *
- * @param hash_id The ID of the hash function to use.
- * @param input The input data to hash, it should be a pointer to an array of bytes.
- * @param input_len The length of the input data in bytes.
- * @param output A pointer to a string where the computed hash will be stored in hexadecimal format.
- * @return true The hash was computed successfully.
- * @return false Memory allocation failed or an unsupported hash function ID was provided.
+ * \param[in]      hash_id The ID of the hash function to use.
+ * \param[in]      input The input data to hash, it should be a pointer to an array of bytes.
+ * \param[in]      input_len The length of the input data in bytes.
+ * \param[out]     output A pointer to a string where the computed hash will be stored in hexadecimal format.
+ * \return         true The hash was computed successfully.
+ * \return         false Memory allocation failed or an unsupported hash function ID was provided.
  */
 static bool
 compute_hash(enum hash_function_ids hash_id, const uint8_t* input, size_t input_len,
@@ -140,11 +136,11 @@ compute_hash(enum hash_function_ids hash_id, const uint8_t* input, size_t input_
 }
 
 /**
- * @brief Uses djb2 algorithm to compute a simple hash for the given string.
+ * \brief          Uses djb2 algorithm to compute a simple hash for the given string.
  *
- * @param str The string to hash.
- * @param bucket_count The number of buckets in the hash table.
- * @return size_t
+ * \param[in]      str The string to hash.
+ * \param[in]      bucket_count The number of buckets in the hash table.
+ * \return         size_t
  */
 static size_t
 simple_hash(const char* str, size_t bucket_count) {
@@ -157,14 +153,13 @@ simple_hash(const char* str, size_t bucket_count) {
 }
 
 /**
- * @brief Finds an entry in the hash table by its hash value.
+ * \brief          Finds an entry in the hash table by its hash value.
+ *                 This function searches for a hash value in the hash table and returns the corresponding
+ *                 hash_node_t if found, or NULL if not found.
  *
- * This function searches for a hash value in the hash table and returns the corresponding
- * hash_node_t if found, or NULL if not found.
- *
- * @param table The hash table to search in.
- * @param hash_hex The hexadecimal string representation of the hash to find.
- * @return A pointer to the hash_node_t if found, or NULL if not found.
+ * \param[in]      table The hash table to search in.
+ * \param[in]      hash_hex The hexadecimal string representation of the hash to find.
+ * \return         A pointer to the hash_node_t if found, or NULL if not found.
  */
 static hash_node_t*
 hash_table_find(hash_table_t* table, const char* hash_hex) {
@@ -181,15 +176,14 @@ hash_table_find(hash_table_t* table, const char* hash_hex) {
 }
 
 /**
- * @brief Inserts a new entry into the hash table.
+ * \brief          Inserts a new entry into the hash table.
+ *                 This function creates a new hash_node_t, initializes it with the input and hash_hex,
+ *                 and inserts it into the appropriate bucket in the hash table.
  *
- * This function creates a new hash_node_t, initializes it with the input and hash_hex,
- * and inserts it into the appropriate bucket in the hash table.
- *
- * @param table The hash table to insert into.
- * @param input The input string that generated the hash.
- * @param hash_hex The hexadecimal string representation of the hash.
- * @return true if the insertion was successful, false otherwise (e.g., memory allocation failure).
+ * \param[in]      table The hash table to insert into.
+ * \param[in]      input The input string that generated the hash.
+ * \param[in]      hash_hex The hexadecimal string representation of the hash.
+ * \return         true if the insertion was successful, false otherwise (e.g., memory allocation failure).
  */
 static bool
 hash_table_insert(hash_table_t* table, const char* input, const char* hash_hex) {
@@ -215,12 +209,12 @@ hash_table_insert(hash_table_t* table, const char* input, const char* hash_hex) 
 }
 
 /**
- * @brief Destroys the hash table and frees all its resources.
+ * \brief          Destroys the hash table and frees all its resources.
+ *                 This function iterates through each bucket in the hash table, freeing
+ *                 each linked list entry and its associated resources. Finally,
+ *                 it frees the buckets array and the hash table itself.
  *
- * This function iterates through each bucket in the hash table, freeing each linked list entry
- * and its associated resources. Finally, it frees the buckets array and the hash table itself.
- *
- * @param table The hash table to destroy.
+ * \param[in]      table The hash table to destroy.
  *
  */
 static void
@@ -256,17 +250,16 @@ hash_table_destroy(hash_table_t* table) {
 }
 
 /**
- * @brief Simulates a hash collision using the Birthday Attack algorithm.
+ * \brief          Simulates a hash collision using the Birthday Attack algorithm.
+ *                 It will first create a hash table with a size based on the maximum number of attempts.
+ *                 Then, it will generate random inputs, compute their hashes, and check for collisions.
+ *                 If a collision is found, it will store the inputs and the hash in the result structure.
+ *                 If no collision is found after the maximum number of attempts, it will return a result
+ *                 indicating no collision.
  *
- * It will first create a hash table with a size based on the maximum number of attempts.
- * Then, it will generate random inputs, compute their hashes, and check for collisions.
- * If a collision is found, it will store the inputs and the hash in the result structure.
- * If no collision is found after the maximum number of attempts, it will return a result
- * indicating no collision.
- *
- * @param hash_id The ID of the hash function to use for the simulation.
- * @param max_attempts The maximum number of attempts to find a collision before exiting.
- * @return hash_collision_simulation_result_t*
+ * \param[in]      hash_id The ID of the hash function to use for the simulation.
+ * \param[in]      max_attempts The maximum number of attempts to find a collision before exiting.
+ * \return         hash_collision_simulation_result_t*
  */
 static hash_collision_simulation_result_t*
 hash_collision_simulation_run(enum hash_function_ids hash_id, unsigned int max_attempts) {
@@ -358,12 +351,12 @@ hash_collision_simulation_run(enum hash_function_ids hash_id, unsigned int max_a
 **************************************************************/
 
 /**
- * @brief Create a sub window from the parent window for the form
+ * \brief          Create a sub window from the parent window for the form
  *
- * @param win The window that will contain the created subwin for the form. This
- * should ideally be the content win
- * @param max_y The maximum height of the screen space that can be rendered
- * @param max_x The maximum width of the screen space that can be rendered
+ * \param[in]      win The window that will contain the created subwin for the form. This
+ *                 should ideally be the content win
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
  */
 static void
 hash_form_create_sub_win(WINDOW* win, int max_y, int max_x) {
@@ -392,15 +385,11 @@ hash_form_create_sub_win(WINDOW* win, int max_y, int max_x) {
 }
 
 /**
- * @brief Take the value from the form field as arguments for simulating the
- * birthday attack. The result will be stored back to the arguments
- * provided to the function.
+ * \brief          Take the value from the form field as arguments for simulating the
+ *                 birthday attack. The result will be stored back to the arguments
+ *                 provided to the function.
  *
- * @param hash_id The hash id of the hash function to use to simulate
- * @param attempts A reference of the value of the probability of
- * hash collision of this result
- * @param results A reference of the value of the actual collision
- * occur in simulations
+ * \param[in]      hash_id The hash id of the hash function to use to simulate
  */
 static hash_collision_simulation_result_t*
 run_hash_collision_from_input(enum hash_function_ids hash_id) {
@@ -409,10 +398,10 @@ run_hash_collision_from_input(enum hash_function_ids hash_id) {
 }
 
 /**
- * @brief Render the birthday attack result given the value
+ * \brief          Render the birthday attack result given the value
  *
- * @param results The final results to render, either it is a successful hash collision
- * or no collision found
+ * \param[in]      results The final results to render, either it is a successful hash collision
+ *                 or no collision found
  */
 static void
 render_attack_result(hash_collision_simulation_result_t results) {
@@ -448,11 +437,11 @@ render_attack_result(hash_collision_simulation_result_t results) {
 }
 
 /**
- * @brief Loop over all field and validate the field. Error message will
- * be displayed at the side of the field if any
+ * \brief          Loop over all field and validate the field. Error message will
+ *                 be displayed at the side of the field if any
  *
- * @return true No error found, all field is valid
- * @return false One or more input is invalid
+ * \return         true No error found, all field is valid
+ * \return         false One or more input is invalid
  */
 static bool
 hash_form_validate_all_fields() {
@@ -486,12 +475,12 @@ hash_form_validate_all_fields() {
 }
 
 /**
- * @brief Initializes the hash collision form with the given window.
+ * \brief          Initializes the hash collision form with the given window.
  *
- * @param win The window to display the form in. This should ideally be
- * the content window.
- * @param max_y The maximum height of the screen space that can be rendered
- * @param max_x The maximum width of the screen space that can be rendered
+ * \param[in]      win The window to display the form in. This should ideally be
+ *                 the content window.
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
  */
 static void
 hash_collision_form_init(WINDOW* win, int max_y, int max_x) {
@@ -578,12 +567,13 @@ hash_collision_form_init(WINDOW* win, int max_y, int max_x) {
 }
 
 /**
- * @brief Renders the hash collision form in the given window.
+ * \brief          Renders the hash collision form in the given window.
  *
- * @param win The window to render the form in. This should ideally be
- * the content window.
- * @param max_y The maximum height of the screen space that can be rendered
- * @param max_x The maximum width of the screen space that can be rendered
+ * \param[in]      win The window to render the form in. This should ideally be
+ *                 the content window.
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ * \return         The form instance that is being rendered
  */
 static FORM*
 hash_collision_form_render(WINDOW* win, int max_y, int max_x) {
@@ -617,12 +607,13 @@ hash_collision_form_render(WINDOW* win, int max_y, int max_x) {
 }
 
 /**
- * @brief Restore the form to the window, that has previously
- * been cleared
+ * \brief          Restore the form to the window, that has previously
+ *                 been cleared
  *
- * @param win The window that should restore the form to.
- * @param max_y The maximum height of the screen space that can be rendered
- * @param max_x The maximum width of the screen space that can be rendered
+ * \param[in]      win The window that should restore the form to.
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ * \param[in]      result The results of the previous render to be restore in this frame
  */
 static void
 hash_collision_form_restore(WINDOW* win, int max_y, int max_x,
@@ -660,7 +651,7 @@ hash_collision_form_restore(WINDOW* win, int max_y, int max_x,
 }
 
 /**
- * @brief Destroys the hash collision form and frees the memory allocated for it.
+ * \brief          Destroys the hash collision form and frees the memory allocated for it.
  *
  */
 static void
@@ -685,11 +676,11 @@ hash_collision_form_destroy() {
 }
 
 /**
- * @brief Handles input for the hash collision form.
+ * \brief          Handles input for the hash collision form.
  *
- * @param hash_id The current hash id of the hash function
- * @param ch The current int character input from the key pressed
- * @param collision_result The results of the birthday attack reference
+ * \param[in]      hash_id The current hash id of the hash function
+ * \param[in]      ch The current int character input from the key pressed
+ * \param[out]     collision_result The results of the birthday attack reference
  */
 static void
 hash_form_handle_input(enum hash_function_ids hash_id, int ch,
@@ -787,12 +778,12 @@ hash_form_handle_input(enum hash_function_ids hash_id, int ch,
 }
 
 /**
- * @brief Render the current's page hash function details
+ * \brief          Render the current's page hash function details
  *
- * @param content_win The window to actually prints all the details in
- * @param current_hash_function The current hash function configuration
- * as the main details to show
- * @param max_x The maximum width of the screen space that can be rendered
+ * \param[in]      content_win The window to actually prints all the details in
+ * \param[in]      current_hash_function The current hash function configuration
+ *                 as the main details to show
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
  */
 static void
 render_page_details(WINDOW* content_win, hash_config_t current_hash_function, int max_x) {
@@ -828,6 +819,20 @@ render_page_details(WINDOW* content_win, hash_config_t current_hash_function, in
                       EXTERNAL FUNCTIONS
 **************************************************************/
 
+/**
+ * \brief          Render the hash collision page in the given window that allows
+ *                 simulation of hash function to demonstrate collisions/no collisions.
+ *
+ * \param[in]      content_win The window to render the attack page on
+ * \param[in]      header_win The window to render the header content, normally for
+ *                 the args of header_render
+ * \param[in]      footer_win The window to render the footer content, normally for
+ *                 the args of footer_render
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ * \param[in]      hash_id The ID of the hash function to simulate collisions for. This should
+ *                 be one of the enum hash_function_ids values defined in hash_config.h.
+ */
 void
 render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int max_y,
                            int max_x, enum hash_function_ids hash_id) {

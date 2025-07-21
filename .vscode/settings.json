@@ -79,7 +79,9 @@
     "error.h": "c",
     "art.h": "c",
     "limits.h": "c",
-    "system_info.h": "c"
+    "system_info.h": "c",
+    "layout.h": "c",
+    "functional": "c"
   },
   "cSpell.words": ["Iinclude", "KECCAK", "lmenuw", "lncursesw"]
 }

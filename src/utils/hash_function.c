@@ -1,5 +1,15 @@
 #include "hash_function.h"
 
+/**
+ * \brief          8-bit hash function using simple polynomial rolling hash
+ *                 It implements it with a small multiplier to create an 8-bit
+ *                 hash output. Due to the small output space (256 possible values),
+ *                 collisions are expected frequently.
+ *
+ * \param[in]      data: Pointer to input data buffer
+ * \param[in]      len: Length of input data in bytes, exp: 1-255
+ * \return         8-bit hash value (0-255)
+ */
 uint8_t
 hash_8bit(const void* data, size_t len) {
     const uint8_t* bytes = (const uint8_t*)data;
@@ -14,6 +24,17 @@ hash_8bit(const void* data, size_t len) {
     return hash;
 }
 
+/**
+ * \brief          12-bit hash function using modified FNV-like algorithm
+ *                 This function implements a modified FNV (Fowler-Noll-Vo) 
+ *                 hash algorithm truncated to 12 bits. The output space is
+ *                 4096 possible values, making it suitable for demonstrating
+ *                 birthday paradox with moderate collision rates.
+ *
+ * \param[in]      data Pointer to input data buffer
+ * \param[in]      len Length of input data in bytes
+ * \return         12-bit hash value (0-4095), stored in lower 12 bits
+ */
 uint16_t
 hash_12bit(const void* data, size_t len) {
     const uint8_t* bytes = (const uint8_t*)data;
@@ -29,6 +50,17 @@ hash_12bit(const void* data, size_t len) {
     return hash;
 }
 
+/**
+ * \brief          16-bit hash function using CRC-like polynomial
+ *                 This function implements a simplified CRC-like
+ *                 hash using polynomial arithmetic. The 16-bit output
+ *                 space (65536 values) provides a good
+ *                 balance for birthday attack demonstration.
+ *
+ * \param[in]      data Pointer to input data buffer
+ * \param[in]      len Length of input data in bytes
+ * \return         16-bit hash value (0-65535)
+ */
 uint16_t
 hash_16bit(const void* data, size_t len) {
     const uint8_t* bytes = (const uint8_t*)data;
@@ -50,6 +82,17 @@ hash_16bit(const void* data, size_t len) {
     return hash;
 }
 
+/**
+ * \brief          Generic wrapper for OpenSSL hash functions
+ *                 REMEMBER TO `free()` the returned pointer after use.
+ *
+ *
+ * \param[in]      data Pointer to input data buffer
+ * \param[in]      len Length of input data in bytes
+ * \param[in]      hash_id The ID of the hash function to use
+ * \return         Pointer to the 20-byte hash value, 
+ *                 caller must free it
+ */
 unsigned char*
 openssl_hash(const void* data, size_t len, enum openssl_hash_function_ids hash_id) {
     // 0. Set the correct hash function based on the ID

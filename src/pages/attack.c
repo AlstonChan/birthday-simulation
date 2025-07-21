@@ -1,11 +1,18 @@
 #include "attack.h"
 
-/**
- * @brief The title of the attack page.
- *
- */
 static const char* s_attack_page_title = "[ Birthday Attack Demo ]";
 
+/**
+ * \brief          Renders the birthday attack page in the given window.
+ *
+ * \param[in]      content_win The window to render the attack page on
+ * \param[in]      header_win The window to render the header content, normally for
+ *                 the args of header_render
+ * \param[in]      footer_win The window to render the footer content, normally for
+ *                 the args of footer_render
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ */
 void
 render_attack_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int max_y,
                    int max_x) {

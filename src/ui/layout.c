@@ -1,5 +1,18 @@
 #include "layout.h"
 
+/**
+ * \brief          Renders the paradox page in the given window.
+ *                 If no window is provided, it will use stdscr.
+ *
+ * \param[in]      header_win The window to render the header content, normally for
+ *                 the args of header_render
+ * \param[in]      footer_win The window to render the footer content, normally for
+ *                 the args of footer_render
+ * \param[in]      content_win The window to render the main content on
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ * \param[in]      page_type The type of page to render the content
+ */
 void
 page_layout_render(WINDOW* header_win, WINDOW* footer_win, WINDOW* content_win, int max_y,
                    int max_x, PageType page_type) {

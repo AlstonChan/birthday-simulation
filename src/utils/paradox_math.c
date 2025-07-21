@@ -5,7 +5,15 @@
 ****************************************************************/
 
 /**
- * Helper function to check if there's a collision in an array of numbers
+ * \brief          Helper function to check if there's a collision in 
+ *                 an array of numbers
+ *
+ * \param[in]      numbers An array of numbers that will be checked if
+ *                 any of the two number is the same
+ * \param[in]      size The size of the array to be checked
+ * \return         True if a collision is found, and false if no collisions
+ *                 occurred
+ * 
  */
 static bool
 has_collision(const int* numbers, int size) {
@@ -24,6 +32,20 @@ has_collision(const int* numbers, int size) {
                        EXTERNAL FUNCTION
 ****************************************************************/
 
+/**
+ * \brief          Calculates the probability of at least two people 
+ *                 having the same birthday in a group of people
+ *                 (Birthday Paradox/Problem)
+ *
+ * \param[in]      domain_size The number of possible birthdays
+ *                 (typically 365 for non-leap years)
+ * \param[in]      sample_size The number of people in the group
+ * \return         The probability (between 0.0 and 1.0) of 
+ *                 at least one birthday collision
+ *
+ * \note           The calculation uses the complement approach:
+ *                 P(collision) = 1 - P(no collision)
+ */
 double
 calculate_birthday_collision_probability(int domain_size, int sample_size) {
     // Handle edge cases
@@ -59,6 +81,22 @@ calculate_birthday_collision_probability(int domain_size, int sample_size) {
     return 1.0 - no_collision_prob;
 }
 
+/**
+ * \brief          Simulates the birthday paradox by running multiple
+ *                 random trials.
+ *
+ * \param[in]      domain_size The range of possible values (e.g., 365 
+ *                 for days in a year)
+ * \param[in]      sample_size The number of random values to generate per
+ *                 trial (e.g., number of people)
+ * \param[in]      num_runs The number of simulation trials to run
+ * \return         The percentage of trials where a collision was
+ *                 found (0.0 to 100.0). If memory allocation fails, -1.0
+ *                 will be returned
+ *
+ * \note           This function uses actual random sampling to empirically test
+ *                 the birthday paradox probability through simulation
+ */
 double
 simulate_birthday_collision(int domain_size, int sample_size, int num_runs) {
     // Seed the random number generator if it hasn't been seeded

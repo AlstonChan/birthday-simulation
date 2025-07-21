@@ -1,5 +1,15 @@
 #include "menu.h"
 
+/**
+ * \brief          Initializes the a list menu.
+ *
+ * \param[in]      win The window to display the menu in
+ * \param[in]      choices The choices for the menu.
+ * \param[in]      choices_len The number of choices in the menu.
+ * \param[out]     choices_items The ncurses menu items created from the choices.
+ * \param[out]     menu The menu to initialize.
+ * \param[out]     sub_win The sub-window for the menu.
+ */
 void
 list_menu_init(WINDOW* win, const struct ListMenuItem choices[], unsigned short choices_len,
                ITEM*** choices_items, MENU** menu, WINDOW** sub_win) {
@@ -30,6 +40,15 @@ list_menu_init(WINDOW* win, const struct ListMenuItem choices[], unsigned short 
     post_menu(*menu);                 // Post the menu to the window
 }
 
+/**
+ * \brief          Renders the menu navigation text in the specified window.
+ *
+ * \param[in]      win The window to render the navigation text in
+ * \param[in]      y The y-coordinate where the navigation text will be rendered.
+ * \param[in]      x The x-coordinate where the navigation text will be rendered. Negative
+ *                 value indicates that the text will be centered in the window.
+ * \param[in]      hide_exit_text If true, the exit text will not be rendered
+ */
 void
 list_menu_navigation_render(WINDOW* win, int y, int x, bool hide_exit_text) {
     if (win == NULL) {

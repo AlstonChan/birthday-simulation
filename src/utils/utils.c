@@ -1,5 +1,23 @@
 #include "utils.h"
 
+/**
+ * \brief          Prints a string centered within a specified area of a window.
+ *                 This function calculates the horizontal center of the given
+ *                 width and prints the provided string at that position within
+ *                 the specified window, row, and with the given color attribute.
+ *                 If no window is provided, it defaults to the standard screen.
+ *
+ * \param[in]      win The window to print in. If NULL, defaults to stdscr.
+ * \param[in]      start_y The starting row (y-coordinate) to print on. If INT_MAX, uses
+ *                 the current cursor y-position of the window.
+ * \param[in]      start_x The starting column (x-coordinate) to begin centering from.
+ *                 If INT_MAX, uses the current cursor x-position of the window.
+ * \param[in]      width The width of the area to center the string within. If 0, defaults
+ *                 to 80 columns.
+ * \param[in]      string The null-terminated string to print.
+ * \param[in]      color The color attribute to apply to the printed string 
+ *                 (e.g., A_BOLD | COLOR_PAIR(1)).
+ */
 void
 print_in_middle(WINDOW* win, unsigned int start_y, unsigned int start_x, unsigned int width,
                 const char* string, chtype color) {
@@ -48,6 +66,16 @@ print_in_middle(WINDOW* win, unsigned int start_y, unsigned int start_x, unsigne
     refresh();
 }
 
+/**
+ * \brief          Generate random input data for hash testing
+ *                 This function generates printable ASCII characters in the
+ *                 range of 32-126
+ *
+ * \param[in]      buffer Output buffer for random data
+ * \param[in]      min_len Minimum length of random data
+ * \param[in]      max_len Maximum length of random data
+ * \return         size_t Actual length of generated data
+ */
 size_t
 generate_random_input(uint8_t* buffer, size_t min_len, size_t max_len) {
     size_t len = min_len + (rand() % (max_len - min_len + 1));
@@ -55,6 +83,18 @@ generate_random_input(uint8_t* buffer, size_t min_len, size_t max_len) {
     return len;
 }
 
+/**
+ * \brief          Convert a byte array to a hexadecimal string
+ *                 This function converts a byte array to a hexadecimal 
+ *                 string representation. The output is null-terminated
+ *                 and can be used for display or logging.
+ *
+ * \param[in]      data Pointer to the byte array
+ * \param[in]      len Length of the byte array
+ * \param[in]      uppercase If true, uses uppercase letters (A-F), otherwise
+ *                 lowercase (a-f)
+ * \return         Pointer to the hexadecimal string, caller must free it
+ */
 char*
 bytes_to_hex(const uint8_t* data, size_t len, bool uppercase) {
     if (!data || len == 0) {
@@ -75,6 +115,14 @@ bytes_to_hex(const uint8_t* data, size_t len, bool uppercase) {
     return hex;
 }
 
+/**
+ * \brief          Initialize color pairs for ncurses
+ *                 This function initializes color pairs used in the application.
+ *                 It should be called after initscr() and before any other ncurses
+ *                 functions.
+ * \return         1 if the terminal does not support colours, 0 if the colors pair
+ *                 has successfully initialize
+ */
 uint8_t
 init_color_pairs() {
     if (has_colors() == FALSE) { // Check if the terminal supports colors
@@ -93,6 +141,16 @@ init_color_pairs() {
     return 0;
 }
 
+/**
+ * \brief          Perform a binary search on a sorted array
+ *                 This function performs a binary search on a sorted array
+ *                 to find the target value.
+ *
+ * \param[in]      arr The sorted array to search in
+ * \param[in]      size The size of the array
+ * \param[in]      target The value to search for
+ * \return         true if the target is found, false otherwise
+ */
 bool
 binary_search(unsigned short arr[], unsigned short size, unsigned short target) {
     unsigned short left = 0, right = size - 1;
@@ -118,6 +176,13 @@ binary_search(unsigned short arr[], unsigned short size, unsigned short target) 
     return false;
 }
 
+/**
+ * \brief          Check if a number is prime
+ *                 This function checks if a given number is prime.
+ *
+ * \param[in]      n The number to check
+ * \return         true if the number is prime, false otherwise
+ */
 bool
 is_prime(unsigned int n) {
     if (n < 2) {
@@ -138,6 +203,13 @@ is_prime(unsigned int n) {
     return true;
 }
 
+/**
+ * \brief          Find the next prime number greater than or equal to n
+ *                 This function finds the next prime number that is greater than or equal to n.
+ *
+ * \param[in]      n The starting number
+ * \return         The next prime number greater than or equal to n
+ */
 unsigned int
 next_prime(unsigned int n) {
     if (n < 2) {

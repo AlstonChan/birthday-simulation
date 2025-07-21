@@ -1,5 +1,14 @@
 #include "form.h"
 
+/**
+ * \brief          Calculates the longest max_length from the paradox_fields array.
+ * \param[in]      form_fields The array of form input fields.
+ * \param[in]      form_fields_len The length of the form_fields array.
+ * \param[in]      padding Whether to add a padding to the longest max_length. The padding
+ *                 will return the longest max_length + the extra width of the field.
+ *
+ * \return         The longest max_length value.
+ */
 unsigned short
 calculate_longest_max_length(const struct FormInputField const form_fields[],
                              uint8_t form_fields_len, bool padding) {
@@ -18,6 +27,14 @@ calculate_longest_max_length(const struct FormInputField const form_fields[],
     return longest;
 }
 
+/**
+ * \brief          Create a button field object
+ *
+ * \param[in]      label The string label for the button.
+ * \param[in]      frow The row where the button will be placed.
+ * \param[in]      fcol The column where the button will be placed.
+ * \return         The created button field.
+ */
 FIELD*
 create_button_field(const char* label, unsigned short frow, unsigned short fcol) {
     unsigned short button_width = strlen(label);
@@ -36,6 +53,13 @@ create_button_field(const char* label, unsigned short frow, unsigned short fcol)
     return button_field;
 }
 
+/**
+ * \brief          Calculates the maximum value based on the length of the field.
+ * \example        If max_length is 3, max_value is 999
+ *
+ * \param[in]      length The length of the field.
+ * \return         The maximum value based on the length of the field.
+ */
 int
 calculate_form_max_value(int length) {
     if (length <= 0) {
@@ -47,6 +71,16 @@ calculate_form_max_value(int length) {
     return (int)pow(10, length) - 1;
 }
 
+/**
+ * \brief          Updates the highlighting of the fields in the form based on the current field.
+ *
+ * \param[in]      current_form The current form to update.
+ * \param[in]      form_field_count The number of fields in the form. This includes both input fields and
+ *                 buttons.
+ * \param[in]      form_button_indexes The indexes of the button fields in the form. The indexes
+ *                 MUST be sorted in ascending order.
+ * \param[in]      form_button_indexes_len The length of the button indexes array.
+ */
 void
 update_field_highlighting(FORM* current_form, unsigned short form_field_count,
                           unsigned short form_button_indexes[],
@@ -94,6 +128,17 @@ update_field_highlighting(FORM* current_form, unsigned short form_field_count,
     form_driver(current_form, REQ_VALIDATION); // Force form refresh
 }
 
+/**
+ * \brief          Displays an error message for a specific field in the form on the right side
+ *
+ * \param[in]      sub_win The sub-window where the form is displayed.
+ * \param[in]      field The field to display the error for.
+ * \param[in]      field_index The index of the field in the form's field array.
+ * \param[in]      max_label_length The maximum length of the field label of the form.
+ * \param[in]      max_field_length The maximum length of the field value of the form.
+ * \param[in]      max_field_value The maximum value allowed for the current field based on its max_length.
+ * \param[in]      y_padding Whether to apply BH_FORM_Y_PADDING to the error message.
+ */
 void
 display_field_error(WINDOW* sub_win, FIELD* field, int field_index, unsigned short max_label_length,
                     unsigned short max_field_length, int max_field_value, bool y_padding) {
@@ -142,6 +187,16 @@ display_field_error(WINDOW* sub_win, FIELD* field, int field_index, unsigned sho
     }
 }
 
+/**
+ * \brief          Clears the error message for a specific field in the form created by
+ *                 display_field_error.
+ *
+ * \param[in]      sub_win The sub-window where the form is displayed.
+ * \param[in]      field_index The index of the field in the form's field array.
+ * \param[in]      max_label_length The maximum length of the field label of the form.
+ * \param[in]      max_field_length The maximum length of the field value of the form.
+ *
+ */
 void
 clear_field_error(WINDOW* sub_win, int field_index, unsigned short max_label_length,
                   unsigned short max_field_length) {

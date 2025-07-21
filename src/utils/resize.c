@@ -7,12 +7,12 @@ static HANDLE s_handle_console_output = NULL;
 ****************************************************************/
 
 /**
- * @brief Get the console output handle object.
- * See [Console Handles
- * documentation](https://learn.microsoft.com/en-us/windows/console/console-handles)
- * for more details.
+ * \brief          Get the console output handle object.
+ *                 See [Console Handles
+ *                 documentation](https://learn.microsoft.com/en-us/windows/console/console-handles)
+ *                 for more details.
  *
- * @return HANDLE
+ * \return         The actual console handle of the terminal
  */
 static HANDLE
 get_console_output_handle(void) {
@@ -35,6 +35,16 @@ get_console_output_handle(void) {
                        EXTERNAL FUNCTION
 ****************************************************************/
 
+/**
+ * \brief          Check if the console window has been resized.
+ *                 See this
+ *                 [stackoverflow
+ *                 post](https://stackoverflow.com/questions/78082999/check-for-terminal-resizing-using-ncurses-under-windows)
+ *                 for the source of this code:
+ *
+ * \param[in]      info COORD to return new window size
+ * \return         TRUE if the console window has changed size. FALSE if not.
+ */
 bool
 check_console_window_resize_event(COORD* info) {
     // We hold the old screen size between calls to this function

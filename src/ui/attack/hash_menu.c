@@ -4,6 +4,8 @@ static ITEM** s_hash_menu_choices_items = NULL;
 static MENU* s_hash_menu = NULL;
 static WINDOW* s_hash_menu_sub_win = NULL;
 
+static const int hash_menu_window_rows = 40; ///< The number of rows for the hash menu window
+
 MENU*
 hash_menu_get() {
     if (!s_hash_menu) {
@@ -20,8 +22,12 @@ hash_menu_window_cols() {
     return MENU_PADDING_Y + hash_config_len + MENU_PADDING_Y;
 }
 
-const int hash_menu_window_rows = 40; ///< The number of rows for the hash menu window
-
+/**
+ * \brief          Initializes the has algo selection menu.
+ *
+ * \param[in]      win The window to display the menu in
+ * \return         true if the menu was successfully initialized, false if it was already initialized.
+ */
 bool
 hash_menu_init(WINDOW* win) {
     if (win == NULL) {
@@ -29,6 +35,10 @@ hash_menu_init(WINDOW* win) {
     }
 
     struct ListMenuItem* hash_menu_choices = get_hash_config_menu();
+    if (hash_menu_choices == NULL) {
+        render_full_page_error_exit(stdscr, 0, 0,
+                                    "Memory allocation fails for get_hash_config_menu");
+    }
 
     // Resize the window for the menu BEFORE creating the sub-window
     // as the size of the sub-window depends on the main window size
@@ -42,6 +52,14 @@ hash_menu_init(WINDOW* win) {
     return true;
 }
 
+/**
+ * \brief          Renders the menu in the specified window.
+ *
+ * \param[in]      win The window to render the menu in
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ * \return         The rendered menu.
+ */
 MENU*
 hash_menu_render(WINDOW* win, int max_y, int max_x) {
     if (win == NULL) {
@@ -74,6 +92,11 @@ hash_menu_render(WINDOW* win, int max_y, int max_x) {
     return s_hash_menu;
 }
 
+/**
+ * \brief          Erases the menu from the window. So that the window can
+ *                 be used for other purposes.
+ *
+ */
 void
 hash_menu_erase() {
     if (!s_hash_menu) {
@@ -83,6 +106,15 @@ hash_menu_erase() {
     unpost_menu(s_hash_menu); // Erase the menu from the window
 }
 
+/**
+ * \brief          Restores the menu to the window. This is useful
+ *                 after the menu has been erased and you want to
+ *                 display it again.
+ * 
+ * \param[in]      win The window to render the menu in
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ */
 void
 hash_menu_restore(WINDOW* win, int max_y, int max_x) {
     if (!s_hash_menu) {
@@ -106,6 +138,10 @@ hash_menu_restore(WINDOW* win, int max_y, int max_x) {
     wrefresh(win);
 }
 
+/**
+ * \brief          Destroys the menu and frees allocated memory.
+ *
+ */
 void
 hash_menu_destroy() {
     if (!s_hash_menu) {

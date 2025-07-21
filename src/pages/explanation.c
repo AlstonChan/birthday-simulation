@@ -10,12 +10,12 @@
 static const char const* s_explanation_page_title = "[ Birthday Paradox Information ]";
 
 /**
- * @brief Renders the explanation page in the given window.
- * If no window is provided, it will use stdscr.
+ * \brief          Renders the explanation page in the given window.
+ *                 If no window is provided, it will use stdscr.
  *
- * @param win The window to render the explanation page in. If NULL, uses stdscr.
- * @param max_y The maximum y-coordinate of the parent window (stdscr).
- * @param max_x The maximum x-coordinate of the parent window (stdscr).
+ * \param[in]      win The window to render the explanation page in. If NULL, uses stdscr.
+ * \param[in]      max_y The maximum y-coordinate of the parent window (stdscr).
+ * \param[in]      max_x The maximum x-coordinate of the parent window (stdscr).
  */
 void
 render_explanation_page(WINDOW* win, int max_y, int max_x) {

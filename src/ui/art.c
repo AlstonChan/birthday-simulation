@@ -1,9 +1,8 @@
 #include "art.h"
 
 /**
- * @brief ASCII art text for the birthday simulation.
- *
- * "BIRTHDAY SIMULATION" in a stylized format.
+ * \brief          ASCII art text for the birthday simulation.
+ *                "BIRTHDAY SIMULATION" in a stylized format.
  */
 const char* const BIRTHDAY_SIMULATION_ART_TEXT[] = {
     "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄",
@@ -13,11 +12,18 @@ const char* const BIRTHDAY_SIMULATION_ART_TEXT[] = {
     "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀"};
 
 /**
- * @brief The number of lines in the birthday simulation art text.
+ * \brief          The number of lines in the birthday simulation art text.
  *
  */
 const unsigned short BIRTHDAY_SIMULATION_ART_TEXT_LINE = ARRAY_SIZE(BIRTHDAY_SIMULATION_ART_TEXT);
 
+/**
+ * \brief          Print the birthday simulation art text in the center of the window.
+ *
+ * \param[in]      win The window to render the content at. Defaults to stdscr if NULL
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ */
 void
 art_text_center_render(WINDOW* win, int max_y, int max_x) {
     int start_y, start_x, max_text_width = 0;

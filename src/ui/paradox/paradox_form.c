@@ -5,11 +5,6 @@ const char const* form_submit_button_text = "[ Run Simulation ]";
 const struct FormInputField paradox_form_field_metadata[] = {
     {"Domain Size (days)", 365, 5}, {"Sample Count (people)", 23, 9}, {"Simulation Runs", 1000, 5}};
 const unsigned short paradox_form_field_metadata_len = ARRAY_SIZE(paradox_form_field_metadata);
-
-/**
- * @brief The longest field label length in the paradox form.
- *
- */
 static unsigned short max_label_length = 0;
 
 static FIELD** paradox_form_field = NULL;
@@ -41,12 +36,12 @@ paradox_form_sub_win_get() {
 ****************************************************************/
 
 /**
- * @brief Create a sub window from the parent window for the form
+ * \brief          Create a sub window from the parent window for the form
  *
- * @param win The window that will contain the created subwin for the form. This
- * should ideally be the content win
- * @param max_y The maximum height of the screen space that can be rendered
- * @param max_x The maximum width of the screen space that can be rendered
+ * \param[in]      win The window that will contain the created subwin for the form. This
+ *                 should ideally be the content win
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
  */
 static void
 paradox_form_create_sub_win(WINDOW* win, int max_y, int max_x) {
@@ -78,14 +73,14 @@ paradox_form_create_sub_win(WINDOW* win, int max_y, int max_x) {
 }
 
 /**
- * @brief Take the value from the form field as arguments for calculating the
- * collision and simulation. The result will be stored back to the arguments
- * provided to the function.
+ * \brief          Take the value from the form field as arguments for calculating the
+ *                 collision and simulation. The result will be stored back to the arguments
+ *                 provided to the function.
  *
- * @param collision_probability A reference of the value of the probability of
- * hash collision of this result
- * @param simulated_runs_results A reference of the value of the actual collision
- * occur in simulations
+ * \param[in]      collision_probability A reference of the value of the probability of
+ *                 hash collision of this result
+ * \param[in]      simulated_runs_results A reference of the value of the actual collision
+ *                 occur in simulations
  */
 static void
 run_simulation_from_input(double* collision_probability, double* simulated_runs_results) {
@@ -96,16 +91,22 @@ run_simulation_from_input(double* collision_probability, double* simulated_runs_
     *collision_probability = calculate_birthday_collision_probability(domain_size, sample_count);
     *simulated_runs_results =
         simulate_birthday_collision(domain_size, sample_count, simulation_runs);
+
+    if (*simulated_runs_results == -1.0) {
+        render_full_page_error_exit(
+            stdscr, 0, 0,
+            "Memory allocation for simulate_birthday_collision fails at run_simulation_from_input");
+    }
 }
 
 /**
- * @brief Render the simulation result given the value in the arguments
+ * \brief          Render the simulation result given the value in the arguments
  *
- * @param win The window that it will render the content on, which also contain
- * the sub win that holds the form. It will assume that the subwin is at the top
- * of the window and will render the content {BH_FORM_Y_PADDING} under it
- * @param collision_probability The result of the collision probability to render
- * @param simulated_runs_results The result of the simulations to render
+ * \param[in]      win The window that it will render the content on, which also contain
+ *                 the sub win that holds the form. It will assume that the subwin is at the top
+ *                 of the window and will render the content {BH_FORM_Y_PADDING} under it
+ * \param[in]      collision_probability The result of the collision probability to render
+ * \param[in]      simulated_runs_results The result of the simulations to render
  */
 static void
 render_simulation_result(WINDOW* win, double collision_probability, double simulated_runs_results) {
@@ -132,11 +133,11 @@ render_simulation_result(WINDOW* win, double collision_probability, double simul
 }
 
 /**
- * @brief Loop over all field and validate the field. Error message will
- * be displayed at the side of the field if any
+ * \brief          Loop over all field and validate the field. Error message will
+ *                 be displayed at the side of the field if any
  *
- * @return true No error found, all field is valid
- * @return false One or more input is invalid
+ * \return         true No error found, all field is valid
+ * \return         false One or more input is invalid
  */
 static bool
 paradox_form_validate_all_fields() {
@@ -169,6 +170,14 @@ paradox_form_validate_all_fields() {
                        EXTERNAL FUNCTION
 ****************************************************************/
 
+/**
+ * \brief          Initializes the paradox form with the given window.
+ *
+ * \param[in]      win The window to display the form in. This should ideally be
+ *                 the content window.
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ */
 void
 paradox_form_init(WINDOW* win, int max_y, int max_x) {
     if (win == NULL) {
@@ -247,6 +256,14 @@ paradox_form_init(WINDOW* win, int max_y, int max_x) {
     paradox_form_create_sub_win(win, max_y, max_x);
 }
 
+/**
+ * \brief          Renders the paradox form in the given window.
+ *
+ * \param[in]      win The window to render the form in. This should ideally be
+ * the content window.
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ */
 FORM*
 paradox_form_render(WINDOW* win, int max_y, int max_x) {
     if (win == NULL) {
@@ -282,6 +299,16 @@ paradox_form_render(WINDOW* win, int max_y, int max_x) {
     return paradox_form;
 }
 
+/**
+ * \brief          Restore the form to the window, that has previously
+ *                 been cleared
+ *
+ * \param[in]      win The window that should restore the form to.
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ * \param[in]      collision_probability The previous result of to render
+ * \param[in]      simulated_runs_results The previous result of to render
+ */
 void
 paradox_form_restore(WINDOW* win, int max_y, int max_x, double collision_probability,
                      double simulated_runs_results) {
@@ -317,6 +344,10 @@ paradox_form_restore(WINDOW* win, int max_y, int max_x, double collision_probabi
     wrefresh(paradox_form_sub_win);
 }
 
+/**
+ * \brief          Destroys the paradox form and frees the memory allocated for it.
+ *
+ */
 void
 paradox_form_destroy() {
     if (!paradox_form) {
@@ -338,6 +369,16 @@ paradox_form_destroy() {
     paradox_form_sub_win = NULL;
 }
 
+/**
+ * \brief          Handles input for the paradox form.
+ *
+ * \param[in]      win The window that the form previously initialize and render in.
+ * \param[in]      ch The current int character input from the key pressed
+ * \param[out]      collision_probability The variable reference to store the results of
+ *                 collision probability
+ * \param[out]      simulated_runs_results The variable reference to store the results of
+ *                 simulations
+ */
 void
 paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
                           double* simulated_runs_results) {

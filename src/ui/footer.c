@@ -1,5 +1,12 @@
 #include "footer.h"
 
+/**
+ * \brief          Render the footer of the application
+ *
+ * \param[in]      footer_win The window to render the content at.
+ * \param[in]      max_y The maximum height of the screen space that can be rendered
+ * \param[in]      max_x The maximum width of the screen space that can be rendered
+ */
 void
 footer_render(WINDOW* footer_win, int max_y, int max_x) {
     if (footer_win == NULL) {

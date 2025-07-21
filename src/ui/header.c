@@ -1,5 +1,10 @@
 #include "header.h"
 
+/**
+ * \brief          Render the header of the application
+ *
+ * \param[in]      header_win The window to render the content at.
+ */
 void
 header_render(WINDOW* header_win) {
     if (header_render == NULL) {

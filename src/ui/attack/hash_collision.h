@@ -20,20 +20,6 @@
 #include "../header.h"
 #include "../layout.h"
 
-/**
- * @brief Render the hash collision page in the given window that allows
- * simulation of hash function to demonstrate collisions/no collisions.
- *
- * @param content_win The window to render the attack page on
- * @param header_win The window to render the header content, normally for
- * the args of header_render
- * @param footer_win The window to render the footer content, normally for
- * the args of footer_render
- * @param max_y The maximum height of the screen space that can be rendered
- * @param max_x The maximum width of the screen space that can be rendered
- * @param hash_id The ID of the hash function to simulate collisions for. This should
- * be one of the enum hash_function_ids values defined in hash_config.h.
- */
 void render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win,
                                 int max_y, int max_x, enum hash_function_ids hash_id);
 
