@@ -74,12 +74,14 @@ calculate_win_size(int max_y, int max_x, int* win_y, int* win_x) {
  *                 the args of header_render
  * \param[in]      footer_win The window to render the footer content, normally for
  *                 the args of footer_render
- * \param[in]      max_y The maximum height of the screen space that can be rendered
- * \param[in]      max_x The maximum width of the screen space that can be rendered
+ * \param[out]     max_y The maximum height of the screen space that can be rendered. The
+ *                 value will be updated when a resize happens
+ * \param[out]     max_x The maximum width of the screen space that can be rendered. The
+ *                 value will be updated when a resize happens
  */
 void
-render_system_info(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int max_y,
-                   int max_x) {
+render_system_info(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int* max_y,
+                   int* max_x) {
     if (content_win == NULL || header_win == NULL || footer_win == NULL) {
         render_full_page_error_exit(stdscr, 0, 0,
                                     "The window passed to render_system_info is null");
@@ -92,7 +94,7 @@ render_system_info(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, 
     }
 
     int win_y, win_x;
-    calculate_win_size(max_y, max_x, &win_y, &win_x);
+    calculate_win_size(*max_y, *max_x, &win_y, &win_x);
 
     werase(content_win);                          // Clear the window before rendering
     wresize(content_win, s_win_rows, s_win_cols); // Resize the window for the system info
@@ -122,10 +124,10 @@ render_system_info(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, 
 
             refresh();
 
-            max_y = win_size.Y;
-            max_x = win_size.X;
+            *max_y = win_size.Y;
+            *max_x = win_size.X;
 
-            calculate_win_size(max_y, max_x, &win_y, &win_x);
+            calculate_win_size(*max_y, *max_x, &win_y, &win_x);
 
             mvwin(content_win, win_y, win_x);
             box(content_win, 0, 0);
@@ -133,7 +135,7 @@ render_system_info(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, 
 
             header_render(header_win);
             mvwin(footer_win, win_size.Y - 2, 0);
-            footer_render(footer_win, win_size.Y - 2, max_x);
+            footer_render(footer_win, win_size.Y - 2, *max_x);
 
             wrefresh(content_win);
         }

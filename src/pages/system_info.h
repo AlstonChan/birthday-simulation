@@ -22,7 +22,7 @@
 #include "../utils/resize.h"
 #include "version.h"
 
-void render_system_info(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int max_y,
-                        int max_x);
+void render_system_info(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int* max_y,
+                        int* max_x);
 
 #endif

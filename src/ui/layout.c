@@ -22,13 +22,15 @@
  * \param[in]      footer_win The window to render the footer content, normally for
  *                 the args of footer_render
  * \param[in]      content_win The window to render the main content on
- * \param[in]      max_y The maximum height of the screen space that can be rendered
- * \param[in]      max_x The maximum width of the screen space that can be rendered
+ * \param[out]     max_y The maximum height of the screen space that can be rendered. The
+ *                 value will be updated when a resize happens
+ * \param[out]     max_x The maximum width of the screen space that can be rendered. The
+ *                 value will be updated when a resize happens
  * \param[in]      page_type The type of page to render the content
  */
 void
-page_layout_render(WINDOW* header_win, WINDOW* footer_win, WINDOW* content_win, int max_y,
-                   int max_x, PageType page_type) {
+page_layout_render(WINDOW* header_win, WINDOW* footer_win, WINDOW* content_win, int* max_y,
+                   int* max_x, PageType page_type) {
     // If either header, footer, or content window is NULL, return error
     if (header_win == NULL || footer_win == NULL || content_win == NULL) {
         render_full_page_error_exit(stdscr, 0, 0,
@@ -48,7 +50,7 @@ page_layout_render(WINDOW* header_win, WINDOW* footer_win, WINDOW* content_win, 
     }
 
     header_render(header_win);
-    footer_render(footer_win, max_y, max_x);
+    footer_render(footer_win, *max_y, *max_x);
 
     switch (page_type) {
         case PARADOX_WIN:
@@ -60,7 +62,8 @@ page_layout_render(WINDOW* header_win, WINDOW* footer_win, WINDOW* content_win, 
                                max_x); // Render the attack page
             break;
         case EXPLANATION_WIN:
-            render_explanation_page(content_win, max_y, max_x); // Render the explanation page
+            render_explanation_page(content_win, header_win, footer_win, max_y,
+                                    max_x); // Render the explanation page
             break;
         case SYSTEM_INFO_WIN:
             render_system_info(content_win, header_win, footer_win, max_y,
@@ -76,7 +79,7 @@ page_layout_render(WINDOW* header_win, WINDOW* footer_win, WINDOW* content_win, 
         nodelay(stdscr, TRUE); // Restore nodelay to true
     }
 
-    main_menu_restore(content_win, max_y, max_x); // Restore the menu to the content window
+    main_menu_restore(content_win, *max_y, *max_x); // Restore the menu to the content window
 
     werase(header_win);   // Clear the header window
     wrefresh(header_win); // Refresh the header window
@@ -85,5 +88,5 @@ page_layout_render(WINDOW* header_win, WINDOW* footer_win, WINDOW* content_win, 
     wrefresh(content_win);
 
     // Render the footer
-    footer_render(footer_win, max_y, max_x);
+    footer_render(footer_win, *max_y, *max_x);
 }

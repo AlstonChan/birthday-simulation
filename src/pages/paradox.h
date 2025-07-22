@@ -23,13 +23,12 @@
 #include "../ui/error.h"
 #include "../ui/footer.h"
 #include "../ui/header.h"
+#include "../ui/layout.h"
 #include "../ui/paradox/paradox_form.h"
 #include "../utils/resize.h"
 #include "../utils/utils.h"
 
-#define CONTENT_WIN_PADDING 6
-
-void render_paradox_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int max_y,
-                         int max_x);
+void render_paradox_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int* max_y,
+                         int* max_x);
 
 #endif

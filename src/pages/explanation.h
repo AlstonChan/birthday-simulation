@@ -12,9 +12,21 @@
 #ifndef EXPLANATION_H
 #define EXPLANATION_H
 
-#include <ncurses/form.h>
+#include <ctype.h>
+#include <math.h>
 #include <ncurses/ncurses.h>
+#include <stdlib.h>
+#include <string.h>
+#include <windows.h>
 
-void render_explanation_page(WINDOW* win, int max_y, int max_x);
+#include "../ui/error.h"
+#include "../ui/footer.h"
+#include "../ui/header.h"
+#include "../ui/layout.h"
+#include "../utils/resize.h"
+#include "../utils/utils.h"
+
+void render_explanation_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win,
+                             int* max_y, int* max_x);
 
 #endif

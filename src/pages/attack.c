@@ -22,12 +22,14 @@ static const char* s_attack_page_title = "[ Birthday Attack Demo ]";
  *                 the args of header_render
  * \param[in]      footer_win The window to render the footer content, normally for
  *                 the args of footer_render
- * \param[in]      max_y The maximum height of the screen space that can be rendered
- * \param[in]      max_x The maximum width of the screen space that can be rendered
+ * \param[out]     max_y The maximum height of the screen space that can be rendered. The
+ *                 value will be updated when a resize happens
+ * \param[out]     max_x The maximum width of the screen space that can be rendered. The
+ *                 value will be updated when a resize happens
  */
 void
-render_attack_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int max_y,
-                   int max_x) {
+render_attack_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int* max_y,
+                   int* max_x) {
     if (content_win == NULL || header_win == NULL || footer_win == NULL) {
         render_full_page_error_exit(stdscr, 0, 0,
                                     "The window passed to render_attack_page is null");
@@ -42,23 +44,23 @@ render_attack_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, 
     // Clear the window before rendering
     werase(content_win);
 
-    hash_menu_restore(content_win, max_y,
-                      max_x); // Restore the menu to the content window if it was erased
+    hash_menu_restore(content_win, *max_y,
+                      *max_x); // Restore the menu to the content window if it was erased
 
     bool hash_menu_init_status = hash_menu_init(content_win); // Initialize the hash menu
-    MENU* hash_menu = hash_menu_init_status ? hash_menu_render(content_win, max_y, max_x)
+    MENU* hash_menu = hash_menu_init_status ? hash_menu_render(content_win, *max_y, *max_x)
                                             : hash_menu_get(); // Render the hash menu
 
-    unsigned short title_len = strlen(s_attack_page_title);
-    mvwprintw(content_win, 0, (max_x - title_len) / 2, s_attack_page_title);
+    // unsigned short title_len = strlen(s_attack_page_title);
+    // mvwprintw(content_win, 0, (*max_x - title_len) / 2, s_attack_page_title);
 
     COORD win_size;
 
     bool is_done = false;
     int char_input;
     while ((char_input = wgetch(content_win)) != KEY_F(2) && !is_done) {
-        int selected_item_index =
-            item_index(current_item(hash_menu)); // Get the selected item index
+        int selected_item_index = item_index(current_item(hash_menu));
+        int current_frame_y = *max_y, current_frame_x = *max_x;
 
         switch (char_input) {
             case KEY_DOWN:
@@ -86,10 +88,17 @@ render_attack_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, 
                                            selected_item_index);
 
                 // Back to menu after exiting the hash collision page
-                hash_menu_restore(content_win, max_y, max_x);
+                hash_menu_restore(content_win, *max_y, *max_x);
         }
 
-        if (check_console_window_resize_event(&win_size)) {
+        bool frame_has_resized = false;
+        if (current_frame_y != *max_y || current_frame_x != *max_x) {
+            win_size.Y = *max_y;
+            win_size.X = *max_x;
+            frame_has_resized = true;
+        }
+
+        if (check_console_window_resize_event(&win_size) || frame_has_resized) {
             int resize_result = resize_term(win_size.Y, win_size.X);
             if (resize_result != OK) {
                 render_full_page_error(
@@ -103,19 +112,25 @@ render_attack_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, 
             clear();
             refresh();
 
-            max_y = win_size.Y;
-            max_x = win_size.X;
+            if (!frame_has_resized) {
+                *max_y = win_size.Y;
+                *max_x = win_size.X;
+            }
 
             hash_menu_erase();
-            hash_menu_restore(content_win, max_y, max_x);
+            hash_menu_restore(content_win, *max_y, *max_x);
 
             header_render(header_win);
             mvwin(footer_win, win_size.Y - 2, 0);
-            footer_render(footer_win, win_size.Y - 2, max_x);
+            footer_render(footer_win, win_size.Y - 2, *max_x);
 
-            mvwprintw(content_win, 0, (max_x - title_len) / 2, s_attack_page_title);
+            // mvwprintw(content_win, 0, (*max_x - title_len) / 2, s_attack_page_title);
 
             wrefresh(content_win);
+
+            if (frame_has_resized) {
+                frame_has_resized = false;
+            }
         }
     }
 

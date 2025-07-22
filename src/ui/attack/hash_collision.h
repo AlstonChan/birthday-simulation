@@ -32,7 +32,7 @@
 #include "../layout.h"
 
 void render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win,
-                                int max_y, int max_x, enum hash_function_ids hash_id);
+                                int* max_y, int* max_x, enum hash_function_ids hash_id);
 
 typedef struct HashCollisionSimulationResult {
     enum hash_function_ids id;  ///< The ID of the hash function

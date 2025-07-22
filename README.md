@@ -1,6 +1,6 @@
 # Birthday Simulation
 
-This is a CLI application written in C that shows how birthday paradox works, prove how birthday attack can finds collision in less than half of the hash space count.
+This is a TUI (Terminal User Interface) application written in C that shows how birthday paradox works, prove how birthday attack can finds collision in less than half of the hash space count.
 
 ## Getting Started
 

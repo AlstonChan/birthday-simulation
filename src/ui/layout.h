@@ -38,7 +38,7 @@ typedef enum {
     SYSTEM_INFO_WIN = 3,
 } PageType;
 
-void page_layout_render(WINDOW* header_win, WINDOW* footer_win, WINDOW* content_win, int max_y,
-                        int max_x, PageType page_type);
+void page_layout_render(WINDOW* header_win, WINDOW* footer_win, WINDOW* content_win, int* max_y,
+                        int* max_x, PageType page_type);
 
 #endif

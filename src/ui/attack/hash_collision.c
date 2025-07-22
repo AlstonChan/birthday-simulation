@@ -841,14 +841,16 @@ render_page_details(WINDOW* content_win, hash_config_t current_hash_function, in
  *                 the args of header_render
  * \param[in]      footer_win The window to render the footer content, normally for
  *                 the args of footer_render
- * \param[in]      max_y The maximum height of the screen space that can be rendered
- * \param[in]      max_x The maximum width of the screen space that can be rendered
+ * \param[out]     max_y The maximum height of the screen space that can be rendered. The
+ *                 value will be updated when a resize happens
+ * \param[out]     max_x The maximum width of the screen space that can be rendered. The
+ *                 value will be updated when a resize happens
  * \param[in]      hash_id The ID of the hash function to simulate collisions for. This should
  *                 be one of the enum hash_function_ids values defined in hash_config.h.
  */
 void
-render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int max_y,
-                           int max_x, enum hash_function_ids hash_id) {
+render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int* max_y,
+                           int* max_x, enum hash_function_ids hash_id) {
     if (content_win == NULL || header_win == NULL || footer_win == NULL) {
         render_full_page_error_exit(stdscr, 0, 0,
                                     "The window passed to render_hash_collision_page is null");
@@ -863,22 +865,22 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
 
     // Clear the window before rendering
     werase(content_win);
-    wresize(content_win, max_y - BH_LAYOUT_PADDING, max_x);
+    wresize(content_win, *max_y - BH_LAYOUT_PADDING, *max_x);
     mvwin(content_win, 4, 0);
     box(content_win, 0, 0);
 
     COORD win_size;
 
     unsigned short title_len = strlen(s_hash_collision_page_title);
-    mvwprintw(content_win, 0, (max_x - title_len) / 2, s_hash_collision_page_title);
+    mvwprintw(content_win, 0, (*max_x - title_len) / 2, s_hash_collision_page_title);
 
     hash_config_t current_hash_function = get_hash_config_item(hash_id);
 
-    render_page_details(content_win, current_hash_function, max_x);
+    render_page_details(content_win, current_hash_function, *max_x);
 
-    hash_collision_form_init(content_win, max_y, max_x); // Initialize the form fields
+    hash_collision_form_init(content_win, *max_y, *max_x); // Initialize the form fields
     FORM* s_hash_collision_form = hash_collision_form_render(
-        content_win, max_y - BH_LAYOUT_PADDING, max_x); // Render the form in the window
+        content_win, *max_y - BH_LAYOUT_PADDING, *max_x); // Render the form in the window
 
     pos_form_cursor(s_hash_collision_form);
 
@@ -918,19 +920,19 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
             wclear(content_win);
             refresh();
 
-            max_y = win_size.Y;
-            max_x = win_size.X;
+            *max_y = win_size.Y;
+            *max_x = win_size.X;
 
-            wresize(content_win, max_y - BH_LAYOUT_PADDING, max_x);
+            wresize(content_win, *max_y - BH_LAYOUT_PADDING, *max_x);
             box(content_win, 0, 0);
-            render_page_details(content_win, current_hash_function, max_x);
+            render_page_details(content_win, current_hash_function, *max_x);
 
             header_render(header_win);
             mvwin(footer_win, win_size.Y - 2, 0);
-            footer_render(footer_win, win_size.Y - 2, max_x);
-            hash_collision_form_restore(content_win, max_y, max_x, *result);
+            footer_render(footer_win, win_size.Y - 2, *max_x);
+            hash_collision_form_restore(content_win, *max_y, *max_x, *result);
 
-            mvwprintw(content_win, 0, (max_x - title_len) / 2, s_hash_collision_page_title);
+            mvwprintw(content_win, 0, (*max_x - title_len) / 2, s_hash_collision_page_title);
 
             wrefresh(content_win);
         }
