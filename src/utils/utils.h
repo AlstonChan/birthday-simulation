@@ -44,4 +44,6 @@ bool is_prime(unsigned int n);
 
 unsigned int next_prime(unsigned int n);
 
+void error_exit();
+
 #endif

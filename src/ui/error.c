@@ -115,5 +115,5 @@ render_full_page_error(WINDOW* win, int max_y, int max_x, char* message) {
 void
 render_full_page_error_exit(WINDOW* win, int max_y, int max_x, char* message) {
     _full_page_error(win, max_y, max_x, message);
-    exit(1);
+    error_exit();
 }

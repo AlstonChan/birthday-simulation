@@ -237,3 +237,12 @@ next_prime(unsigned int n) {
     }
     return n;
 }
+
+/**
+ * \brief          End the ncurses mode before exiting with error
+ */
+void
+error_exit() {
+    endwin();
+    exit(1);
+}
