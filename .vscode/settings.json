@@ -82,7 +82,10 @@
     "system_info.h": "c",
     "layout.h": "c",
     "functional": "c",
-    "header.h": "c"
+    "header.h": "c",
+    "source_location": "c",
+    "charconv": "c",
+    "xmemory": "c"
   },
   "cSpell.words": ["Iinclude", "KECCAK", "lmenuw", "lncursesw"]
 }

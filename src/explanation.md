@@ -1,0 +1,9 @@
+**Godfather ipsum dolor sit amet. Only don't tell me you're innocent. Because it insults my intelligence and makes me very angry. If anything in this life is certain, if history has taught us anything, it is that you can kill anyone. I want your answer and the money by noon tomorrow. And one more thing. Don't you contact me again, ever. From now on, you deal with Turnbull. Very well. You want to do business with me. I will do business with** you.
+
+Why do you hurt me, Michael? I've always been loyal to you. Leave the gun. Take the cannoli. What's the matter with you? Is this what you've become, a Hollywood finocchio who cries like a _woman? "Oh, what do I do? What do I do?" What is that nonsense? Ridiculous! It's an old habit. I spent my whole life trying not to be careless. Women and children can afford to be careless, but not men._
+
+Do me this favor. I won't forget it. Ask your friends in the neighborhood about me. They'll tell you I know how to return a favor. When they come... they come at what you love. Never let anyone know what you are thinking. I'm gonna make him an offer he can't refuse.
+
+That's my family Kay, that's not me. Friends and money - oil and water. We're both part of the same hypocrisy, senator, but never think it applies to my family. It's not personal. It's business. I know it was you, Fredo. You broke my heart. You broke my heart!
+
+What's wrong with being a lawyer? Sonny, please don't do anything. Please don't do anything. My father taught me many things here - he taught me in this room. He taught me: keep your friends close, but your enemies closer. What's the matter with you, huh? What am I going to do? Am I going to make that baby an orphan before he's born? I have a sentimental weakness for my children and I spoil them, as you can see. They talk when they should listen.
