@@ -134,6 +134,15 @@ render_line(WINDOW* pad, const char* line) {
                 continue;
             }
 
+            // Handle line ---
+            if (word[i] == '-' && word[i + 1] == '-' && word[i + 2] == '-') {
+                for (size_t i = 0; i < pad_width; i++) {
+                    waddch(pad, '-');
+                }
+                i += 4; // +4 to skip the \n after the line
+                continue;
+            }
+
             waddch(pad, word[i]);
             char_x_pos++;
             i++;
@@ -179,7 +188,9 @@ render_explanation_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_
                                     "The application failed to load the page content");
     }
 
-    WINDOW* content_pad = newpad(5000, *max_x - BH_FORM_X_PADDING - BH_FORM_X_PADDING);
+    // 500 is a magic number that is randomly chosen, since the content most likely
+    // will not exceed 500 lines
+    WINDOW* content_pad = newpad(500, *max_x - BH_FORM_X_PADDING - BH_FORM_X_PADDING);
     mvwin(content_pad, BH_LAYOUT_PADDING, BH_FORM_X_PADDING);
 
     bool nodelay_modified = false;
@@ -228,7 +239,7 @@ render_explanation_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_
     while ((ch = wgetch(content_win)) != KEY_F(2)) {
         switch (ch) {
             case KEY_DOWN:
-                if (pad_y < *max_y - BH_LAYOUT_PADDING) {
+                if (pad_y < 500) {
                     pad_y++;
                 }
                 break;

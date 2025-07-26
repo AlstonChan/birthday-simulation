@@ -1,9 +1,38 @@
-**Godfather ipsum dolor sit amet. Only don't tell me you're innocent. Because it insults my intelligence and makes me very angry. If anything in this life is certain, if history has taught us anything, it is that you can kill anyone. I want your answer and the money by noon tomorrow. And one more thing. Don't you contact me again, ever. From now on, you deal with Turnbull. Very well. You want to do business with me. I will do business with** you.
+This terminal application aims to provide a simple, educational, and interactive way to explore the concepts of the **Birthday Paradox** and **Birthday Attacks** two closely related phenomena rooted in probability and cryptography.
 
-Why do you hurt me, Michael? I've always been loyal to you. Leave the gun. Take the cannoli. What's the matter with you? Is this what you've become, a Hollywood finocchio who cries like a _woman? "Oh, what do I do? What do I do?" What is that nonsense? Ridiculous! It's an old habit. I spent my whole life trying not to be careless. Women and children can afford to be careless, but not men._
+---
 
-Do me this favor. I won't forget it. Ask your friends in the neighborhood about me. They'll tell you I know how to return a favor. When they come... they come at what you love. Never let anyone know what you are thinking. I'm gonna make him an offer he can't refuse.
+**1. Birthday Paradox Simulation**
 
-That's my family Kay, that's not me. Friends and money - oil and water. We're both part of the same hypocrisy, senator, but never think it applies to my family. It's not personal. It's business. I know it was you, Fredo. You broke my heart. You broke my heart!
+This page demonstrates the **Birthday Paradox**, a famous probability puzzle which states that in a group of just 23 people, there's a surprisingly high chance (over 50%) that two people share the same birthday. However, this paradox isn't just limited to birthdays, it applies to any scenario involving random collisions.
 
-What's wrong with being a lawyer? Sonny, please don't do anything. Please don't do anything. My father taught me many things here - he taught me in this room. He taught me: keep your friends close, but your enemies closer. What's the matter with you, huh? What am I going to do? Am I going to make that baby an orphan before he's born? I have a sentimental weakness for my children and I spoil them, as you can see. They talk when they should listen.
+In this simulation, you can adjust:
+
+- **Domain Size** - the number of unique values (e.g., 365 days in a year)
+- **Sample Count** - the number of samples taken (e.g., number of people)
+- **Simulation Runs** - how many times to repeat the experiment to compute average outcomes
+
+The goal is to help you develop an intuition about how quickly collisions occur as sample size increases relative to the domain.
+
+**Use Case:** This principle is widely used in probability theory, data analysis, and even cryptographic risk estimation.
+
+---
+
+**2. Birthday Attack Demo**
+
+This page is a hands-on demo of the **Birthday Attack**, an actual cryptographic attack that exploits the birthday paradox to find hash collisions faster than brute force.
+
+You can experiment with the following options:
+
+- **Custom Hash Functions**: Lightweight toy hash functions with 8-bit, 12-bit, and 16-bit output sizes. You will always see a hash collision if the max attempts are high enough.
+- **Real-World Hashes**: Explore cryptographic hashes from the SHA family like **SHA-1**, **SHA-256**, and others (RIPEMD-160). You won't find a hash collision even if you tune the max attempts to a very high number even with birthday attack.
+
+The tool runs a simulation that repeatedly hashes inputs until a collision is found - two different inputs that produce the same hash output.
+
+**Use Case:** Understanding how feasible it is to find collisions in smaller hashes helps people appreciate why modern cryptography uses long hash outputs, and how hash collisions pose a real-world risk to digital signatures and data integrity.
+
+---
+
+**Why This Matters**
+
+Both concepts show how randomness, probability, and hashing interact. Whether you're studying security, building robust applications, or just curious about the math behind it, this simulator offers a direct and visual way to deepen your understanding.
