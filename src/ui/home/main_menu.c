@@ -137,10 +137,10 @@ main_menu_destroy() {
     main_menu_erase();      // Erase the menu from the window
     free_menu(s_main_menu); // Free the memory allocated for the menu
 
-    for (unsigned short i = 0; i < ARRAY_SIZE(main_menu_choices); ++i) {
+    for (unsigned short i = 0; i < main_menu_choices_len; ++i) {
         free_item(s_main_menu_choices_items[i]); // Free the memory allocated for each item
     }
-    free(s_main_menu_choices_items[ARRAY_SIZE(main_menu_choices)]); // Free the NULL terminator
+    free(s_main_menu_choices_items[main_menu_choices_len]); // Free the NULL terminator
 
     s_main_menu = NULL;               // Set the menu pointer to NULL
     s_main_menu_choices_items = NULL; // Set the items pointer to NULL

@@ -677,7 +677,7 @@ hash_collision_form_destroy() {
     free_form(s_hash_collision_form);
 
     // Free the fields
-    for (unsigned short i = 0; i < s_hash_form_field_metadata_len + 2; ++i) {
+    for (unsigned short i = 0; i < s_hash_form_field_metadata_len; ++i) {
         free_field(s_hash_form_field[i]);
     }
     free_field(s_hash_form_field[s_hash_form_field_metadata_len]); // Free the submit button field
@@ -899,9 +899,8 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
     result->collision_input_2 = NULL;
     result->collision_hash_hex = NULL;
 
-    bool is_done = false;
     int char_input;
-    while ((char_input = wgetch(content_win)) != KEY_F(2) && !is_done) {
+    while ((char_input = wgetch(content_win)) != KEY_F(2)) {
         hash_form_handle_input(hash_id, char_input,
                                &result); // Handle user input for the form
 
@@ -912,7 +911,7 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
                     content_win, 0, 0,
                     "Unable to resize the UI to the terminal new size. Resize failure.");
             }
-            // mvwprintw(stdscr, 0, 0, "%d-%d", win_size.Y, win_size.X); // For debugging purpose only
+            mvwprintw(stdscr, 0, 0, "%d-%d", win_size.Y, win_size.X); // For debugging purpose only
 
             wclear(footer_win);
 
@@ -930,7 +929,7 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
             header_render(header_win);
             mvwin(footer_win, win_size.Y - 2, 0);
             footer_render(footer_win, win_size.Y - 2, *max_x);
-            hash_collision_form_restore(content_win, *max_y, *max_x, *result);
+            // hash_collision_form_restore(content_win, *max_y, *max_x, *result);
 
             mvwprintw(content_win, 0, (*max_x - title_len) / 2, s_hash_collision_page_title);
 
@@ -938,6 +937,7 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
         }
     }
 
+    free(result);
     hash_collision_form_destroy(); // Clean up the form resources
 
     curs_set(0); // Hide the cursor

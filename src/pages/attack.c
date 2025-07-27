@@ -56,9 +56,8 @@ render_attack_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, 
 
     COORD win_size;
 
-    bool is_done = false;
     int char_input;
-    while ((char_input = wgetch(content_win)) != KEY_F(2) && !is_done) {
+    while ((char_input = wgetch(content_win)) != KEY_F(2)) {
         int selected_item_index = item_index(current_item(hash_menu));
         int current_frame_y = *max_y, current_frame_x = *max_x;
 
