@@ -19,6 +19,24 @@ static const char const* s_explanation_page_title = "[ Birthday Paradox Informat
                        INTERNAL FUNCTION
 ****************************************************************/
 
+static char*
+get_executable_dir() {
+    static char path[MAX_PATH];
+    GetModuleFileNameA(NULL, path, MAX_PATH);
+    char* last_slash = strrchr(path, '\\');
+    if (last_slash) {
+        *last_slash = '\0'; // truncate to directory
+    }
+    return path;
+}
+
+static FILE*
+open_explanation_md() {
+    char fullpath[MAX_PATH];
+    snprintf(fullpath, sizeof(fullpath), "%s\\explanation.md", get_executable_dir());
+    return fopen(fullpath, "r");
+}
+
 /**
  * \brief          Read the file content given a pointer to the file and save the file
  *                 content in lines in an array.
@@ -183,7 +201,7 @@ render_explanation_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_
     COORD win_size;
     FILE* ptr_content_file;
 
-    if ((ptr_content_file = fopen("./src/explanation.md", "r")) == NULL) {
+    if ((ptr_content_file = open_explanation_md()) == NULL) {
         render_full_page_error_exit(content_win, 0, 0,
                                     "The application failed to load the page content");
     }
