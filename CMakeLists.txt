@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.19)
 
 project(Birthday_Simulation LANGUAGES C VERSION 1.0.0)
 message("CMAKE_PROJECT_VERSION = ${CMAKE_PROJECT_VERSION}")
@@ -7,7 +7,6 @@ add_compile_definitions(
     PROJECT_VERSION_MAJOR=${Birthday_Simulation_VERSION_MAJOR}
     PROJECT_VERSION_MINOR=${Birthday_Simulation_VERSION_MINOR}
     PROJECT_VERSION_PATCH=${Birthday_Simulation_VERSION_PATCH}
-    NCURSES_STATIC # Common macro for static ncurses builds
 )
 
 configure_file(
@@ -21,7 +20,18 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Explicitly set to prefer static libraries.
 # This affects find_package and general linking behavior.
-set(BUILD_SHARED_LIBS OFF)
+option(USE_STATIC_LIBS "Use static linking for dependencies" ON)
+
+if(USE_STATIC_LIBS)
+    set(BUILD_SHARED_LIBS OFF)
+    add_compile_definitions(NCURSES_STATIC)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -Bstatic -Wl,-Bdynamic")
+    set(OPENSSL_USE_STATIC_LIBS TRUE)
+else()
+    set(BUILD_SHARED_LIBS ON)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".dll" ".dylib")
+endif()
 
 # Recursively gather all source files in src/
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.c)
@@ -30,38 +40,30 @@ add_executable(Birthday_Simulation ${SOURCES})
 
 target_include_directories(Birthday_Simulation PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
-# --- Define Library Paths for Static Linking ---
-# IMPORTANT: Adjust 'C:/msys64' if your MSYS2 installation is elsewhere.
-set(MSYS2_UCRT64_LIB_DIR "C:/msys64/ucrt64/lib")
-set(MSYS2_UCRT64_BIN_DIR "C:/msys64/ucrt64/bin") # We will try to exclude this from linker search
-
-set(PTHREAD_STATIC_LIB "${MSYS2_UCRT64_LIB_DIR}/libwinpthread.a")
-set(NCURSESW_STATIC_LIB "${MSYS2_UCRT64_LIB_DIR}/libncursesw.a")
-set(FORMW_STATIC_LIB "${MSYS2_UCRT64_LIB_DIR}/libformw.a")
-set(MENUW_STATIC_LIB "${MSYS2_UCRT64_LIB_DIR}/libmenuw.a")
-
-# --- OpenSSL Libraries (Using find_package with static preference) ---
-set(OPENSSL_USE_STATIC_LIBS TRUE)
-find_package(OpenSSL REQUIRED COMPONENTS Crypto SSL)
-
-# --- Link Libraries ---
-# For static linking, the order is CRUCIAL.
-# Libraries that depend on others should come *before* their dependencies in the list.
-target_link_libraries(Birthday_Simulation PRIVATE
-    "${MENUW_STATIC_LIB}"
-    "${FORMW_STATIC_LIB}"
-    "${NCURSESW_STATIC_LIB}"
-    OpenSSL::SSL
-    OpenSSL::Crypto
-    "${PTHREAD_STATIC_LIB}"
+set(CMAKE_PREFIX_PATH
+    "C:/msys64/ucrt64"
+    "/ucrt64"
+    "/usr/local"
 )
 
-# --- Force Linker to Prefer Static and Exclude DLL Paths ---
-# This is an attempt to explicitly tell the linker to prefer static archives
-# and to avoid searching in the /bin directory for shared libraries.
-# NOTE: This is highly compiler/linker dependent and might not work for all setups,
-# but it's worth a try if the above isn't sufficient.
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -L${MSYS2_UCRT64_LIB_DIR} -Bstatic -Wl,-Bdynamic")
+find_package(OpenSSL REQUIRED)
+find_library(NCURSESW_STATIC_LIB ncursesw PATHS /usr/lib /usr/local/lib)
+find_library(FORMW_STATIC_LIB formw PATHS /usr/lib /usr/local/lib)
+find_library(MENUW_STATIC_LIB menuw PATHS /usr/lib /usr/local/lib)
+find_library(PTHREAD_STATIC_LIB pthread PATHS /usr/lib /usr/local/lib)
+
+# --- Link Libraries ---
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(NCURSES REQUIRED ncursesw formw menuw)
+
+target_link_libraries(Birthday_Simulation PRIVATE
+    ${MENUW_STATIC_LIB}
+    ${FORMW_STATIC_LIB}
+    ${NCURSESW_STATIC_LIB}
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    ${PTHREAD_STATIC_LIB} # if pkg-config doesn't find pthread
+)
 
 # Custom output directory
 set_target_properties(Birthday_Simulation PROPERTIES
