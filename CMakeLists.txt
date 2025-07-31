@@ -9,12 +9,6 @@ add_compile_definitions(
     PROJECT_VERSION_PATCH=${Birthday_Simulation_VERSION_PATCH}
 )
 
-configure_file(
-    ${CMAKE_SOURCE_DIR}/src/explanation.md
-    ${CMAKE_BINARY_DIR}/explanation.md
-    COPYONLY
-)
-
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
@@ -33,12 +27,25 @@ else()
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".dll" ".dylib")
 endif()
 
+# Embed the markdown file content
+include(${CMAKE_SOURCE_DIR}/EmbedMarkdown.cmake)
+
+set(MARKDOWN_FILE "${CMAKE_SOURCE_DIR}/src/explanation.md")
+set(GENERATED_C "${CMAKE_BINARY_DIR}/explanation_embedded.c")
+set(GENERATED_H "${CMAKE_BINARY_DIR}/explanation_embedded.h")
+
+embed_markdown("${MARKDOWN_FILE}" "${GENERATED_C}" "${GENERATED_H}" "explanation_embedded")
+configure_file(
+    ${CMAKE_SOURCE_DIR}/src/explanation.md
+    ${CMAKE_BINARY_DIR}/explanation.md
+    COPYONLY
+)
+
 # Recursively gather all source files in src/
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.c)
+add_executable(Birthday_Simulation ${SOURCES} "${GENERATED_C}")
 
-add_executable(Birthday_Simulation ${SOURCES})
-
-target_include_directories(Birthday_Simulation PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(Birthday_Simulation PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR})
 
 set(CMAKE_PREFIX_PATH
     "C:/msys64/ucrt64"

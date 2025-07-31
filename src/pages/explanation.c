@@ -38,6 +38,71 @@ open_explanation_md() {
 }
 
 /**
+ * \brief          Read all lines from an embedded string and return an array of lines.
+ *
+ * \param[in]      input_str The embedded C string
+ * \param[out]     ptr_line_count The number of lines parsed
+ * \return         An array of strings (one per line), or NULL on failure
+ */
+char**
+load_all_lines_from_embedded(const char* input_str, size_t* ptr_line_count) {
+    // The number of lines that can be stored initially
+    size_t capacity = 100;
+    size_t count = 0;
+
+    char** lines = malloc(capacity * sizeof(char*));
+    if (!lines) {
+        return NULL;
+    }
+
+    const char* start = input_str;
+    while (*start) {
+        // Find end of line
+        const char* end = strchr(start, '\n');
+        size_t len = end ? (size_t)(end - start) : strlen(start);
+
+        // Allocate space and copy the line
+        if (count >= capacity) {
+            capacity *= 2;
+            char** new_lines = realloc(lines, capacity * sizeof(char*));
+            if (!new_lines) {
+                free(lines);
+                return NULL;
+            }
+            lines = new_lines;
+        }
+
+        // +2: one for potential '\n', one for '\0'
+        lines[count] = malloc(len + (end ? 2 : 1));
+        if (!lines[count]) {
+            for (size_t i = 0; i < count; ++i) {
+                free(lines[i]);
+            }
+            free(lines);
+            return NULL;
+        }
+
+        strncpy(lines[count], start, len);
+        if (end) {
+            lines[count][len] = '\n';
+            lines[count][len + 1] = '\0';
+        } else {
+            lines[count][len] = '\0';
+        }
+
+        count++;
+
+        if (!end) {
+            break; // No more newlines
+        }
+        start = end + 1; // Move to next line
+    }
+
+    *ptr_line_count = count;
+    return lines;
+}
+
+/**
  * \brief          Read the file content given a pointer to the file and save the file
  *                 content in lines in an array.
  *
@@ -106,8 +171,13 @@ render_line(WINDOW* pad, const char* line) {
     char* word = strtok(buffer, " ");
     int char_x_pos = 0;
 
-    bool in_bold = false;
-    bool in_italic = false;
+    bool in_bold = false, in_italic = false;
+
+    if (word == NULL) {
+        waddch(pad, '\n');
+        free(buffer);
+        return true;
+    }
 
     while (word != NULL) {
         int word_len = strlen(word);
@@ -199,12 +269,12 @@ render_explanation_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_
     }
 
     COORD win_size;
-    FILE* ptr_content_file;
+    // FILE* ptr_content_file;
 
-    if ((ptr_content_file = open_explanation_md()) == NULL) {
-        render_full_page_error_exit(content_win, 0, 0,
-                                    "The application failed to load the page content");
-    }
+    // if ((ptr_content_file = open_explanation_md()) == NULL) {
+    //     render_full_page_error_exit(content_win, 0, 0,
+    //                                 "The application failed to load the page content");
+    // }
 
     // 500 is a magic number that is randomly chosen, since the content most likely
     // will not exceed 500 lines
@@ -219,12 +289,12 @@ render_explanation_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_
 
     // Be aware that a single line can only ever holds 1024 character
     size_t total_lines = 0;
-    char** all_lines = load_all_lines(ptr_content_file, &total_lines);
+    char** all_lines = load_all_lines_from_embedded(explanation_embedded, &total_lines);
     if (all_lines == NULL) {
         render_full_page_error_exit(content_win, 0, 0,
                                     "Memory allocation failed when loading the page content");
     }
-    fclose(ptr_content_file);
+    // fclose(ptr_content_file);
 
     for (size_t i = 0; i < total_lines; ++i) {
         if (!render_line(content_pad, all_lines[i])) {

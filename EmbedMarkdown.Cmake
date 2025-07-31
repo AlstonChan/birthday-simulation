@@ -1,0 +1,7 @@
+function(embed_markdown INPUT OUTPUT_C OUTPUT_H VAR_NAME)
+    file(READ "${INPUT}" CONTENTS)
+    string(REPLACE "\"" "\\\"" ESCAPED "${CONTENTS}")
+    string(REPLACE "\n" "\\n\"\n\"" ESCAPED "${ESCAPED}")
+    file(WRITE "${OUTPUT_H}" "extern const char *${VAR_NAME};\n")
+    file(WRITE "${OUTPUT_C}" "const char *${VAR_NAME} = \"${ESCAPED}\";\n")
+endfunction()

@@ -29,6 +29,7 @@
 #include "../ui/layout.h"
 #include "../utils/resize.h"
 #include "../utils/utils.h"
+#include "explanation_embedded.h"
 
 void render_explanation_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win,
                              int* max_y, int* max_x);
