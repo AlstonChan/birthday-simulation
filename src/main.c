@@ -144,6 +144,7 @@ main() {
             wclear(footer_win);
 
             main_menu_restore(content_win, win_size.Y, win_size.X);
+            mvwin(footer_win, win_size.Y - 2, 0);
             footer_render(footer_win, win_size.Y, win_size.X);
 
             refresh();

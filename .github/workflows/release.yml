@@ -8,6 +8,8 @@ on:
 jobs:
   release:
     runs-on: windows-latest
+    permissions:
+      contents: write
 
     defaults:
       run:
@@ -77,16 +79,6 @@ jobs:
           sed -i "s/VERSION [0-9]*\.[0-9]*\.[0-9]*/VERSION $new_version/" "$file"
           echo "new_version=$new_version" >> $GITHUB_OUTPUT
 
-      - name: Commit version bump and tag
-        if: steps.bump.outputs.skip != 'true'
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add CMakeLists.txt
-          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
-          git tag "v${{ steps.version.outputs.new_version }}"
-          git push origin main --tags
-
       - name: Build with CMake (ucrt64)
         if: steps.bump.outputs.skip != 'true'
         run: |
@@ -109,6 +101,16 @@ jobs:
         if: steps.bump.outputs.skip != 'true'
         run: |
           sha256sum "${{ steps.artifact.outputs.exe_name }}" > checksum.txt
+
+      - name: Commit version bump and tag
+        if: steps.bump.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add CMakeLists.txt
+          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
+          git tag "v${{ steps.version.outputs.new_version }}"
+          git push origin main --tags
 
       - name: Create GitHub Release
         if: steps.bump.outputs.skip != 'true'
