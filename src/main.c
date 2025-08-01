@@ -14,7 +14,10 @@
 #include <ncurses/ncurses.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #include "ui/error.h"
 #include "ui/footer.h"
@@ -26,8 +29,7 @@
 int
 main() {
     setlocale(LC_ALL, ""); // Set the locale to the user's default (utf-8)
-
-    initscr(); // Initialize ncurses
+    initscr();             // Initialize ncurses
 
     cbreak();              // Disable line buffering
     noecho();              // Don't echo user input
@@ -39,6 +41,14 @@ main() {
         render_full_page_error(stdscr, 0, 0, "Your terminal does not supports colours");
         return 1;
     }
+
+#if _WIN32
+    if (GetConsoleOutputCP() != 65001) {
+        render_full_page_error(
+            stdscr, 0, 0, "Your terminal does not supports UTF-8. Exit error screen to continue.");
+        clear();
+    }
+#endif
 
     COORD win_size;
 

@@ -133,12 +133,12 @@ render_simulation_result(WINDOW* win, double collision_probability, double simul
     uint8_t starting_rows = form_win_y + BH_FORM_Y_PADDING;
     uint8_t starting_cols = BH_FORM_X_PADDING + 1;
 
-    mvwprintw(win, starting_rows, starting_cols, "Estimated chance of a collision:       ");
-    mvwprintw(win, starting_rows, starting_cols, "Estimated chance of a collision: %.2f%%",
+    mvwprintw(win, starting_rows, starting_cols, "Estimated chance of a collision:         ");
+    mvwprintw(win, starting_rows, starting_cols, "Estimated chance of a collision: %.2f%%  ",
               collision_probability * 100);
 
-    mvwprintw(win, starting_rows + 1, starting_cols, "Simulated runs results:       ");
-    mvwprintw(win, starting_rows + 1, starting_cols, "Simulated runs results: %.2f%%",
+    mvwprintw(win, starting_rows + 1, starting_cols, "Simulated runs results:         ");
+    mvwprintw(win, starting_rows + 1, starting_cols, "Simulated runs results: %.2f%%  ",
               simulated_runs_results);
 
     wrefresh(win);

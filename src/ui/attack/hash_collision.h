@@ -18,7 +18,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #include "hash_config.h"
 

@@ -15,7 +15,10 @@
 #include <ncurses/form.h>
 #include <ncurses/ncurses.h>
 #include <string.h>
+
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #include "../ui/attack/hash_collision.h"
 #include "../ui/attack/hash_config.h"

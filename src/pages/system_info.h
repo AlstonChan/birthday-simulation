@@ -14,7 +14,10 @@
 
 #include <ncurses/ncurses.h>
 #include <openssl/crypto.h>
+
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #include "../ui/error.h"
 #include "../ui/footer.h"

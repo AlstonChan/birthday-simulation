@@ -272,6 +272,8 @@ render_explanation_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_
     // FILE* ptr_content_file;
 
     // if ((ptr_content_file = open_explanation_md()) == NULL) {
+    //     mvwin(content_win, 0, 0);
+    //     wresize(content_win, *max_y, *max_x);
     //     render_full_page_error_exit(content_win, 0, 0,
     //                                 "The application failed to load the page content");
     // }
@@ -291,6 +293,8 @@ render_explanation_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_
     size_t total_lines = 0;
     char** all_lines = load_all_lines_from_embedded(explanation_embedded, &total_lines);
     if (all_lines == NULL) {
+        mvwin(content_win, 0, 0);
+        wresize(content_win, *max_y, *max_x);
         render_full_page_error_exit(content_win, 0, 0,
                                     "Memory allocation failed when loading the page content");
     }
@@ -298,6 +302,8 @@ render_explanation_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_
 
     for (size_t i = 0; i < total_lines; ++i) {
         if (!render_line(content_pad, all_lines[i])) {
+            mvwin(content_win, 0, 0);
+            wresize(content_win, *max_y, *max_x);
             render_full_page_error_exit(content_win, 0, 0,
                                         "Unable to render the content line correctly");
         }
@@ -345,6 +351,8 @@ render_explanation_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_
         if (check_console_window_resize_event(&win_size)) {
             int resize_result = resize_term(win_size.Y, win_size.X);
             if (resize_result != OK) {
+                mvwin(content_win, 0, 0);
+                wresize(content_win, *max_y, *max_x);
                 render_full_page_error(
                     content_win, 0, 0,
                     "Unable to resize the UI to the terminal new size. Resize failure.");
