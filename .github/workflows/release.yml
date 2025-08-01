@@ -33,20 +33,23 @@ jobs:
 
       - name: Get latest commit message
         id: commit
-        run: echo "msg=$(git log -1 --pretty=format:'%s%n%b')" >> $GITHUB_OUTPUT
+        run: |
+          echo "msg=$(git log -1 --pretty=format:%s%n%b)" >> "$GITHUB_OUTPUT"
 
       - name: Determine version bump
         id: bump
         run: |
           COMMIT_MSG="${{ steps.commit.outputs.msg }}"
+
           if [[ "$COMMIT_MSG" == *"BREAKING CHANGE"* ]]; then
-            echo "level=major" >> $GITHUB_OUTPUT
+            echo "level=major" >> "$GITHUB_OUTPUT"
           elif [[ "$COMMIT_MSG" == feat:* ]]; then
-            echo "level=minor" >> $GITHUB_OUTPUT
+            echo "level=minor" >> "$GITHUB_OUTPUT"
           elif [[ "$COMMIT_MSG" == fix:* ]]; then
-            echo "level=patch" >> $GITHUB_OUTPUT
+            echo "level=patch" >> "$GITHUB_OUTPUT"
           else
-            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Exit if no bump needed
         if: steps.bump.outputs.skip == 'true'
