@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
-project(Birthday_Simulation LANGUAGES C VERSION 1.0.0)
+project(Birthday_Simulation LANGUAGES C VERSION 1.0.1)
 message("CMAKE_PROJECT_VERSION = ${CMAKE_PROJECT_VERSION}")
 
 add_compile_definitions(
