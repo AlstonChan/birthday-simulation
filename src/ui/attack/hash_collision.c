@@ -310,7 +310,7 @@ hash_collision_simulation_run(enum hash_function_ids hash_id, unsigned int max_a
 
     // Birthday Attack simulation core logic
     for (unsigned int attempt = 0; attempt < max_attempts; ++attempt) {
-        result->attempts_made = attempt;
+        result->attempts_made = attempt + 1;
 
         // Step 1: Generate a random input
         uint8_t current_input[32];
