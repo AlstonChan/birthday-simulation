@@ -5,7 +5,9 @@
       "includePath": [
         "${workspaceFolder}/**",
         "C:/msys64/ucrt64/include",
-        "C:/msys64/ucrt64/include/ncursesw"
+        "C:/msys64/ucrt64/include/ncursesw",
+        "C:/msys64/ucrt64/include/glib-2.0",
+        "C:/msys64/ucrt64/lib/glib-2.0/include"
       ],
       "defines": ["_DEBUG", "UNICODE", "_UNICODE", "NCURSES_STATIC"],
       "windowsSdkVersion": "10.0.22621.0",

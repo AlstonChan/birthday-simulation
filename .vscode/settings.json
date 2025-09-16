@@ -85,7 +85,11 @@
     "header.h": "c",
     "source_location": "c",
     "charconv": "c",
-    "xmemory": "c"
+    "xmemory": "c",
+    "attack.h": "c",
+    "ctype.h": "c",
+    "hash_collision_table.h": "c",
+    "codecvt": "c"
   },
   "cSpell.words": ["Iinclude", "KECCAK", "lmenuw", "lncursesw"]
 }

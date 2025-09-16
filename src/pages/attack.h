@@ -21,6 +21,7 @@
 #endif
 
 #include "../ui/attack/hash_collision.h"
+#include "../ui/attack/hash_collision_compute.h"
 #include "../ui/attack/hash_config.h"
 #include "../ui/attack/hash_menu.h"
 #include "../ui/error.h"

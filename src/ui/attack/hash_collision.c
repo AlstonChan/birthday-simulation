@@ -43,225 +43,6 @@ hash_collision_form_field_get(int index) {
                        INTERNAL FUNCTION
 ****************************************************************/
 
-/**************************************************************
-                      HASH TABLE FUNCTIONS
-**************************************************************/
-
-/**
- * \brief          Create a new hash table with the specified number of buckets.
- *                 You should free the returned hash table using `hash_table_destroy`
- *                 when done.
- *
- * \param[in]      bucket_count The number of buckets in the hash table.
- * \return         A pointer to the newly created hash table, or NULL on memory
- *                 allocation failure
- */
-static hash_table_t*
-hash_table_create(size_t bucket_count) {
-    // First, allocate memory for the hash table structure
-    hash_table_t* table = malloc(sizeof(hash_table_t));
-    if (!table) {
-        return NULL;
-    }
-
-    // Then, allocate memory for the hash_node_t pointers in the buckets array
-    table->buckets = calloc(bucket_count, sizeof(hash_node_t*));
-    if (!table->buckets) {
-        free(table);
-        return NULL;
-    }
-
-    table->bucket_count = bucket_count;
-    return table;
-}
-
-/**
- * \brief          Compute the hash for the given input based on the specified hash function ID.
- *
- * \param[in]      hash_id The ID of the hash function to use.
- * \param[in]      input The input data to hash, it should be a pointer to an array of bytes.
- * \param[in]      input_len The length of the input data in bytes.
- * \param[out]     output A pointer to a string where the computed hash will be stored in hexadecimal format.
- * \return         true The hash was computed successfully.
- * \return         false Memory allocation failed or an unsupported hash function ID was provided.
- */
-static bool
-compute_hash(enum hash_function_ids hash_id, const uint8_t* input, size_t input_len,
-             char** output) {
-    size_t hash_hex_len = get_hash_hex_length(hash_id);
-    *output = malloc(hash_hex_len);
-    if (!output) {
-        return false;
-    }
-
-    switch (hash_id) {
-        case HASH_CONFIG_8BIT: {
-            uint8_t result = hash_8bit(input, input_len);
-            sprintf(*output, "%02X", result);
-        } break;
-        case HASH_CONFIG_12BIT: {
-            uint16_t result = hash_12bit(input, input_len);
-            sprintf(*output, "%03X", result);
-        } break;
-        case HASH_CONFIG_16BIT: {
-            uint16_t result = hash_16bit(input, input_len);
-            sprintf(*output, "%04X", result);
-        } break;
-        case HASH_CONFIG_RIPEMD160:
-        case HASH_CONFIG_SHA1:
-        case HASH_CONFIG_SHA3_256:
-        case HASH_CONFIG_SHA256:
-        case HASH_CONFIG_SHA512:
-        case HASH_CONFIG_SHA384: {
-            int openssl_id;
-
-            // First, assign the OpenSSL ID based on the hash_id
-            switch (hash_id) {
-                case HASH_CONFIG_RIPEMD160: openssl_id = BH_OPENSSL_HASH_RIPEMD160; break;
-                case HASH_CONFIG_SHA1: openssl_id = BH_OPENSSL_HASH_SHA1; break;
-                case HASH_CONFIG_SHA3_256: openssl_id = BH_OPENSSL_HASH_SHA3_256; break;
-                case HASH_CONFIG_SHA256: openssl_id = BH_OPENSSL_HASH_SHA256; break;
-                case HASH_CONFIG_SHA512: openssl_id = BH_OPENSSL_HASH_SHA512; break;
-                case HASH_CONFIG_SHA384: openssl_id = BH_OPENSSL_HASH_SHA384; break;
-                default: free(*output); return false;
-            }
-
-            // Then, compute the hash using OpenSSL given the OpenSSL ID
-            unsigned char* digest = openssl_hash(input, input_len, openssl_id);
-            if (!digest) {
-                free(*output);
-                return false;
-            }
-
-            size_t bin_len = hash_hex_len - 1;          // Exclude null terminator
-            *output = bytes_to_hex(digest, bin_len, 1); // Convert to hex string
-            (*output)[hash_hex_len - 1] = '\0';         // Null-terminate the string
-            if (!*output) {
-                free(digest);
-                return false; // Memory allocation failed in bytes_to_hex
-            }
-
-            free(digest); // Free the binary digest after conversion
-        } break;
-    }
-
-    return true;
-}
-
-/**
- * \brief          Uses djb2 algorithm to compute a simple hash for the given string.
- *
- * \param[in]      str The string to hash.
- * \param[in]      bucket_count The number of buckets in the hash table.
- * \return         size_t
- */
-static size_t
-simple_hash(const char* str, size_t bucket_count) {
-    size_t hash = 5381;
-    int c;
-    while ((c = *str++)) {               // Loops auto terminates at null character
-        hash = ((hash << 5) + hash) + c; // Multiply by 33 and add the current character
-    }
-    return hash % bucket_count;
-}
-
-/**
- * \brief          Finds an entry in the hash table by its hash value.
- *                 This function searches for a hash value in the hash table and returns the corresponding
- *                 hash_node_t if found, or NULL if not found.
- *
- * \param[in]      table The hash table to search in.
- * \param[in]      hash_hex The hexadecimal string representation of the hash to find.
- * \return         A pointer to the hash_node_t if found, or NULL if not found.
- */
-static hash_node_t*
-hash_table_find(hash_table_t* table, const char* hash_hex) {
-    size_t bucket = simple_hash(hash_hex, table->bucket_count);
-    hash_node_t* entry = table->buckets[bucket];
-
-    while (entry) {
-        if (strcmp(entry->hash_hex, hash_hex) == 0) {
-            return entry; // Found the entry with the matching hash
-        }
-        entry = entry->next; // Move to the next node in the linked list to continue searching
-    }
-    return NULL;
-}
-
-/**
- * \brief          Inserts a new entry into the hash table.
- *                 This function creates a new hash_node_t, initializes it with the input and hash_hex,
- *                 and inserts it into the appropriate bucket in the hash table.
- *
- * \param[in]      table The hash table to insert into.
- * \param[in]      input The input string that generated the hash.
- * \param[in]      hash_hex The hexadecimal string representation of the hash.
- * \return         true if the insertion was successful, false otherwise (e.g., memory allocation failure).
- */
-static bool
-hash_table_insert(hash_table_t* table, const char* input, const char* hash_hex) {
-    size_t bucket = simple_hash(hash_hex, table->bucket_count);
-
-    hash_node_t* entry = malloc(sizeof(hash_node_t));
-    if (!entry) {
-        return false;
-    }
-
-    entry->input = strdup(input);
-    entry->hash_hex = strdup(hash_hex);
-    if (!entry->input || !entry->hash_hex) {
-        free(entry->input);
-        free(entry->hash_hex);
-        free(entry);
-        return false;
-    }
-
-    entry->next = table->buckets[bucket];
-    table->buckets[bucket] = entry;
-    return true;
-}
-
-/**
- * \brief          Destroys the hash table and frees all its resources.
- *                 This function iterates through each bucket in the hash table, freeing
- *                 each linked list entry and its associated resources. Finally,
- *                 it frees the buckets array and the hash table itself.
- *
- * \param[in]      table The hash table to destroy.
- *
- */
-static void
-hash_table_destroy(hash_table_t* table) {
-    // No table to destroy, return early
-    if (!table) {
-        return;
-    }
-
-    // Loop over each bucket in the hash table
-    for (size_t i = 0; i < table->bucket_count; i++) {
-        // Gets the head of the linked list for this bucket
-        hash_node_t* entry = table->buckets[i];
-
-        // If the bucket is empty, continue to the next bucket
-        while (entry) {
-            // Get the next entry before freeing the current one
-            hash_node_t* next = entry->next;
-
-            // Free the current entry's resources
-            free(entry->input);
-            free(entry->hash_hex);
-            free(entry);
-
-            // Move to the next entry in the linked list
-            entry = next;
-        }
-    }
-
-    // Finally, free the hash table's buckets array and the table itself
-    free(table->buckets);
-    free(table);
-}
-
 /**
  * \brief          Simulates a hash collision using the Birthday Attack algorithm.
  *                 It will first create a hash table with a size based on the maximum number of attempts.
@@ -270,32 +51,20 @@ hash_table_destroy(hash_table_t* table) {
  *                 If no collision is found after the maximum number of attempts, it will return a result
  *                 indicating no collision.
  *
- * \param[in]      hash_id The ID of the hash function to use for the simulation.
  * \param[in]      max_attempts The maximum number of attempts to find a collision before exiting.
+ * \param[in]      thread_pool The thread pool to use for running the hash collision simulation.
+ *                 This allows for concurrent execution of the simulation.
+ * \param[out]     ctx The context of the birthday attack simulation shared between all worker threads and
+ *                 contains the results of the birthday attack reference
+ * 
  * \return         hash_collision_simulation_result_t*
  */
-static hash_collision_simulation_result_t*
-hash_collision_simulation_run(enum hash_function_ids hash_id, unsigned int max_attempts) {
+static void
+hash_collision_simulation_run(unsigned int max_attempts, GThreadPool* thread_pool,
+                              hash_collision_context_t* ctx) {
     if (max_attempts <= 0) {
         max_attempts = 10000; // Default to 10,000 attempts for negative or zero attempts
     }
-
-    // Initialize result structure
-    hash_collision_simulation_result_t* result = malloc(sizeof(hash_collision_simulation_result_t));
-    if (!result) {
-        render_full_page_error_exit(
-            stdscr, 0, 0, "Memory allocation failed for hash collision simulation result.");
-    }
-
-    // Initialize result fields
-    result->id = hash_id;
-    result->attempts_made = 0;
-    result->collision_found = false;
-    result->collision_input_1 = NULL;
-    result->collision_input_2 = NULL;
-    result->collision_hash_hex = NULL;
-
-    uint16_t hash_hex_len = get_hash_hex_length(hash_id);
 
     // The desired table size is 1.3 times the maximum attempts so that
     // the load factor (n / table_size) should ideally stay under 0.75.
@@ -304,59 +73,36 @@ hash_collision_simulation_run(enum hash_function_ids hash_id, unsigned int max_a
     hash_table_t* table = hash_table_create(table_size);
 
     if (!table) {
-        free(result);
         render_full_page_error_exit(stdscr, 0, 0, "Memory allocation failed for hash table.");
     }
 
-    // Birthday Attack simulation core logic
-    for (unsigned int attempt = 0; attempt < max_attempts; ++attempt) {
-        result->attempts_made = attempt + 1;
+    ctx->shared_table = table;
+    ctx->result->attempts_made = 0;
+    g_mutex_init(ctx->table_mutex);
+    g_mutex_init(ctx->result_mutex);
+    *ctx->collision_found = false;
 
-        // Step 1: Generate a random input
-        uint8_t current_input[32];
-        size_t input_len = generate_random_input(current_input, 4, 31);
+    // Divide work among threads
+    int num_threads = g_thread_pool_get_max_threads(thread_pool);
+    unsigned int attempts_per_thread = max_attempts / num_threads;
+    unsigned int remaining_attempts = max_attempts % num_threads;
 
-        // Step 2: Compute the hash of this input
-        char* hash_hex = malloc(hash_hex_len);
-        bool compute_success = compute_hash(hash_id, current_input, input_len, &hash_hex);
-        if (!compute_success) {
-            free(hash_hex);
-            free(result);
-            render_full_page_error_exit(stdscr, 0, 0, "compute_hash was unsuccessful");
+    // Submit work to thread pool
+    for (int i = 0; i < num_threads; i++) {
+        WorkerData* worker_data = g_new(WorkerData, 1);
+        worker_data->ctx = ctx;
+        worker_data->attempts_to_make = attempts_per_thread + (i == 0 ? remaining_attempts : 0);
+        worker_data->worker_id = i;
+
+        GError* error = NULL;
+        g_thread_pool_push(thread_pool, worker_data, &error);
+
+        if (error) {
+            g_printerr("Failed to submit work: %s\n", error->message);
+            g_error_free(error);
+            g_free(worker_data);
         }
-
-        // Step 3: Birthday Attack Core - Check if this hash already exists
-        hash_node_t* existing = hash_table_find(table, hash_hex);
-
-        if (existing) {
-            // Collision found. BIRTHDAY ATTACK SUCCESS: Same hash with different inputs!
-            result->collision_found = true;
-            result->collision_input_1 = strdup(existing->input);
-            result->collision_input_2 = strdup(bytes_to_hex(current_input, input_len, true));
-            result->collision_hash_hex = strdup(hash_hex);
-
-            // Free the hash hex before exiting the loop
-            free(hash_hex);
-            break;
-        } else {
-            // No collision, insert the new hash into the table
-            bool insert_success =
-                hash_table_insert(table, bytes_to_hex(current_input, input_len, true), hash_hex);
-            if (!insert_success) {
-                free(hash_hex);
-                free(result);
-                render_full_page_error_exit(stdscr, 0, 0,
-                                            "Hash insertion into the hash table failed.");
-            }
-        }
-
-        // Free the hash hex after each attempt
-        free(hash_hex);
     }
-
-    // Cleanup: Free the hash table and its entries
-    hash_table_destroy(table);
-    return result;
 }
 
 /**************************************************************
@@ -402,12 +148,15 @@ hash_form_create_sub_win(WINDOW* win, int max_y, int max_x) {
  *                 birthday attack. The result will be stored back to the arguments
  *                 provided to the function.
  *
- * \param[in]      hash_id The hash id of the hash function to use to simulate
+ * \param[in]      thread_pool The thread pool to use for running the hash collision simulation.
+ *                 This allows for concurrent execution of the simulation.
+ * \param[out]     ctx The context of the birthday attack simulation shared between all worker threads and
+ *                 contains the results of the birthday attack reference
  */
-static hash_collision_simulation_result_t*
-run_hash_collision_from_input(enum hash_function_ids hash_id) {
+static void
+run_hash_collision_from_input(GThreadPool* thread_pool, hash_collision_context_t* ctx) {
     unsigned int attempts = atoi(field_buffer(hash_collision_form_field_get(0), 0));
-    return hash_collision_simulation_run(hash_id, attempts);
+    return hash_collision_simulation_run(attempts, thread_pool, ctx);
 }
 
 /**
@@ -691,13 +440,14 @@ hash_collision_form_destroy() {
 /**
  * \brief          Handles input for the hash collision form.
  *
- * \param[in]      hash_id The current hash id of the hash function
  * \param[in]      ch The current int character input from the key pressed
- * \param[out]     collision_result The results of the birthday attack reference
+ * \param[out]     ctx The context of the birthday attack simulation shared between all worker threads and
+ *                 contains the results of the birthday attack reference
+ * \param[in]      thread_pool The thread pool to use for running the hash collision simulation.
+ *                 This allows for concurrent execution of the simulation.
  */
 static void
-hash_form_handle_input(enum hash_function_ids hash_id, int ch,
-                       hash_collision_simulation_result_t** collision_result) {
+hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* thread_pool) {
     FIELD* current = current_field(s_hash_collision_form);
     int current_index = field_index(current);
     unsigned short longest_max_length_pad = calculate_longest_max_length(
@@ -771,13 +521,7 @@ hash_form_handle_input(enum hash_function_ids hash_id, int ch,
             } else if (current_index == s_hash_form_field_metadata_len) {
                 bool all_field_valid = hash_form_validate_all_fields();
                 if (all_field_valid) {
-                    // We must free the collision_result every time before we reassign a
-                    // new result to it. This is because all the result struct assign to
-                    // it is created with malloc, which is heap memory struct, and must
-                    // manually freeing it to avoid memory leak.
-                    free(*collision_result);
-                    *collision_result = run_hash_collision_from_input(hash_id);
-                    render_attack_result(**collision_result);
+                    run_hash_collision_from_input(thread_pool, ctx);
                 }
             }
         } break;
@@ -847,10 +591,12 @@ render_page_details(WINDOW* content_win, hash_config_t current_hash_function, in
  *                 value will be updated when a resize happens
  * \param[in]      hash_id The ID of the hash function to simulate collisions for. This should
  *                 be one of the enum hash_function_ids values defined in hash_config.h.
+ * \param[in]      thread_pool The thread pool to use for running the hash collision simulation.
+ *                 This allows for concurrent execution of the simulation.
  */
 void
 render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, int* max_y,
-                           int* max_x, enum hash_function_ids hash_id) {
+                           int* max_x, enum hash_function_ids hash_id, GThreadPool* thread_pool) {
     if (content_win == NULL || header_win == NULL || footer_win == NULL) {
         render_full_page_error_exit(stdscr, 0, 0,
                                     "The window passed to render_hash_collision_page is null");
@@ -892,17 +638,54 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
     }
 
     // Initialize result fields
-    result->id = hash_id;
     result->attempts_made = -1;
     result->collision_found = false;
     result->collision_input_1 = NULL;
     result->collision_input_2 = NULL;
     result->collision_hash_hex = NULL;
 
+    // Initialize context state
+    hash_collision_context_t* ctx = malloc(sizeof(hash_collision_context_t));
+    if (!ctx) {
+        render_full_page_error_exit(
+            stdscr, 0, 0, "Memory allocation failed for hash collision simulation context.");
+    }
+
+    *ctx = (hash_collision_context_t){.hash_id = hash_id,
+                                      .shared_table = g_new(hash_table_t, 1),
+                                      .table_mutex = g_new(GMutex, 1),
+                                      .result_mutex = g_new(GMutex, 1),
+                                      .collision_found = g_new(bool, 1),
+                                      .result = result};
+
     int char_input;
     while ((char_input = wgetch(content_win)) != KEY_F(2)) {
-        hash_form_handle_input(hash_id, char_input,
-                               &result); // Handle user input for the form
+        hash_form_handle_input(char_input, ctx, thread_pool);
+
+        // If the user has initiated a simulation run, check if the thread pool has
+        // finished processing all tasks
+        unsigned int max_attempts = atoi(field_buffer(hash_collision_form_field_get(0), 0));
+        bool has_results_to_check = g_atomic_int_get(&result->attempts_made) != -1;
+        bool all_tasks_completed = g_atomic_int_get(&result->attempts_made) >= max_attempts - 1;
+
+        if (has_results_to_check && (all_tasks_completed || result->collision_found)) {
+            render_attack_result(*ctx->result);
+            result->attempts_made = -1; // Reset to indicate no ongoing simulation
+            result->collision_found = false;
+            result->collision_input_1 = NULL;
+            result->collision_input_2 = NULL;
+            result->collision_hash_hex = NULL;
+
+            // Cleanup mutexes
+            g_mutex_clear(ctx->table_mutex);
+            g_mutex_clear(ctx->result_mutex);
+            g_free(ctx->table_mutex);
+            g_free(ctx->result_mutex);
+            g_free(ctx->collision_found);
+
+            // Cleanup: Free the hash table and its entries
+            hash_table_destroy(ctx->shared_table);
+        }
 
         if (check_console_window_resize_event(&win_size)) {
             int resize_result = resize_term(win_size.Y, win_size.X);
@@ -911,7 +694,7 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
                     content_win, 0, 0,
                     "Unable to resize the UI to the terminal new size. Resize failure.");
             }
-            mvwprintw(stdscr, 0, 0, "%d-%d", win_size.Y, win_size.X); // For debugging purpose only
+            // mvwprintw(stdscr, 0, 0, "%d-%d", win_size.Y, win_size.X); // For debugging purpose only
 
             wclear(footer_win);
 

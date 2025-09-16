@@ -54,23 +54,52 @@ set(CMAKE_PREFIX_PATH
 )
 
 find_package(OpenSSL REQUIRED)
-find_library(NCURSESW_STATIC_LIB ncursesw PATHS /usr/lib /usr/local/lib)
-find_library(FORMW_STATIC_LIB formw PATHS /usr/lib /usr/local/lib)
-find_library(MENUW_STATIC_LIB menuw PATHS /usr/lib /usr/local/lib)
-find_library(PTHREAD_STATIC_LIB pthread PATHS /usr/lib /usr/local/lib)
 
-# --- Link Libraries ---
+# --- Find GLib using pkg-config ---
 find_package(PkgConfig REQUIRED)
+
+# Find GLib-2.0
+pkg_check_modules(GLIB2 REQUIRED glib-2.0)
+
+# Find ncurses libraries
 pkg_check_modules(NCURSES REQUIRED ncursesw formw menuw)
 
-target_link_libraries(Birthday_Simulation PRIVATE
-    ${MENUW_STATIC_LIB}
-    ${FORMW_STATIC_LIB}
-    ${NCURSESW_STATIC_LIB}
-    OpenSSL::SSL
-    OpenSSL::Crypto
-    ${PTHREAD_STATIC_LIB} # if pkg-config doesn't find pthread
-)
+# Fallback manual library finding for static linking if needed
+if(USE_STATIC_LIBS)
+    find_library(NCURSESW_STATIC_LIB ncursesw PATHS /usr/lib /usr/local/lib)
+    find_library(FORMW_STATIC_LIB formw PATHS /usr/lib /usr/local/lib)
+    find_library(MENUW_STATIC_LIB menuw PATHS /usr/lib /usr/local/lib)
+    find_library(PTHREAD_STATIC_LIB pthread PATHS /usr/lib /usr/local/lib)
+endif()
+
+# --- Link Libraries ---
+if(USE_STATIC_LIBS AND NCURSESW_STATIC_LIB AND FORMW_STATIC_LIB AND MENUW_STATIC_LIB)
+    # Use manually found static libraries
+    target_link_libraries(Birthday_Simulation PRIVATE
+        ${MENUW_STATIC_LIB}
+        ${FORMW_STATIC_LIB}
+        ${NCURSESW_STATIC_LIB}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        ${GLIB2_STATIC_LIBRARIES}
+        ${PTHREAD_STATIC_LIB}
+    )
+else()
+    # Use pkg-config found libraries
+    target_link_libraries(Birthday_Simulation PRIVATE
+        ${NCURSES_LIBRARIES}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        ${GLIB2_LIBRARIES}
+    )
+endif()
+
+# Add GLib include directories and compile flags
+target_include_directories(Birthday_Simulation PRIVATE ${GLIB2_INCLUDE_DIRS})
+target_compile_options(Birthday_Simulation PRIVATE ${GLIB2_CFLAGS_OTHER})
+
+# Add library directories for GLib
+target_link_directories(Birthday_Simulation PRIVATE ${GLIB2_LIBRARY_DIRS})
 
 # Custom output directory
 set_target_properties(Birthday_Simulation PROPERTIES
