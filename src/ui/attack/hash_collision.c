@@ -116,6 +116,38 @@ hash_collision_simulation_run(unsigned int max_attempts, GThreadPool* thread_poo
 **************************************************************/
 
 /**
+ * \brief          Update the progress bar in the hash collision form sub window.
+ *
+ * \param[in]      progress The current progress value (number of attempts made).
+ * \param[in]      total The total value (maximum number of attempts).
+ * \param[in]      is_final Whether this is the final update (true) or an intermediate update (false).
+ */
+static void
+hash_progress_bar_update(int progress, int total, bool is_final) {
+    uint8_t starting_y = s_hash_form_field_metadata_len + 1 + 2 + 3 + 1;
+
+    // Clear the row first
+    for (int col = BH_FORM_X_PADDING; col <= COLS - BH_FORM_X_PADDING; col++) {
+        mvwaddch(s_hash_collision_form_sub_win, starting_y, col, ' ');
+    }
+
+    int percentage = (progress * 100) / total;
+
+    if (is_final) {
+        if (progress >= total) {
+            mvwprintw(s_hash_collision_form_sub_win, starting_y, BH_FORM_X_PADDING,
+                      "Progress: %d%% (%d/%d)", percentage, progress, total);
+        } else {
+            mvwprintw(s_hash_collision_form_sub_win, starting_y, BH_FORM_X_PADDING,
+                      "Run %d times (%d%% of total %d)", progress, percentage, total);
+        }
+    } else {
+        mvwprintw(s_hash_collision_form_sub_win, starting_y, BH_FORM_X_PADDING,
+                  "Progress: %d%% (%d/%d)", percentage, progress, total);
+    }
+}
+
+/**
  * \brief          Create a sub window from the parent window for the form
  *
  * \param[in]      win The window that will contain the created subwin for the form. This
@@ -698,6 +730,7 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
                 is_btn_highlighted = false; // Reset the flag
             }
 
+            hash_progress_bar_update(result->attempts_made, max_attempts, true);
             render_attack_result(*ctx->result);
 
             result->attempts_made = -1; // Reset to indicate no ongoing simulation
@@ -732,6 +765,8 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
             }
 
             // Update the intermediate result display
+            hash_progress_bar_update(result->attempts_made, max_attempts, false);
+            wrefresh(s_hash_collision_form_sub_win);
         }
 
         if (check_console_window_resize_event(&win_size)) {
