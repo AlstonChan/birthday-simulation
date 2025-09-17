@@ -50,6 +50,8 @@ unsigned short calculate_longest_max_length(const struct FormInputField const fo
                                             uint8_t form_fields_len, bool padding);
 
 FIELD* create_button_field(const char* label, unsigned short frow, unsigned short fcol);
+void update_button_field_is_running(FIELD* button_field, const char* label,
+                                    const char* running_label, bool is_running);
 
 int calculate_form_max_value(int length);
 

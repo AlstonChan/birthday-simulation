@@ -65,6 +65,30 @@ create_button_field(const char* label, unsigned short frow, unsigned short fcol)
 }
 
 /**
+ * \brief          Update the button field to indicate whether it is in a running state or not.
+ *
+ * \param[in]      button_field The button field to update.
+ * \param[in]      label The label to display when the button is not running.
+ * \param[in]      running_label The label to display when the button is running.
+ * \param[in]      is_running Whether the button is in a running state (true) or not (false).
+ */
+void
+update_button_field_is_running(FIELD* button_field, const char* label, const char* running_label,
+                               bool is_running) {
+    if (button_field == NULL) {
+        return;
+    }
+
+    if (is_running) {
+        set_field_buffer(button_field, 0, running_label);
+        set_field_back(button_field, A_BOLD | COLOR_PAIR(BH_WARNING_COLOR_PAIR));
+    } else {
+        set_field_buffer(button_field, 0, label);
+        set_field_back(button_field, A_BOLD | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
+    }
+}
+
+/**
  * \brief          Calculates the maximum value based on the length of the field.
  * \example        If max_length is 3, max_value is 999
  *

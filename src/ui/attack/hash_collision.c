@@ -15,6 +15,7 @@
 
 static const char* s_hash_collision_page_title = "[ Hash Collision Demonstration ]";
 static const char const* s_hash_form_submit_button_text = "[ Run Simulation ]";
+static const char const* s_hash_form_submit_button_running_text = "[ Running... ]";
 
 static const struct FormInputField const s_hash_form_field_metadata[] = {
     {"Max Attempts", 10000, 6}};
@@ -33,6 +34,11 @@ static unsigned short s_max_label_length = 0;
 static FIELD** s_hash_form_field = NULL;
 static FORM* s_hash_collision_form = NULL;
 static WINDOW* s_hash_collision_form_sub_win = NULL;
+
+// This variable temporarily tracks if the button is highlighted before calling
+// update_button_field_is_running to set the button to running state. So this
+// is used ONLY in this scope
+static bool is_btn_highlighted = false;
 
 static FIELD*
 hash_collision_form_field_get(int index) {
@@ -169,8 +175,8 @@ static void
 render_attack_result(hash_collision_simulation_result_t results) {
     uint8_t starting_y = s_hash_form_field_metadata_len + 1 + 2;
 
-    // Clear the sub-window from starting_y to starting_y + 5
-    for (unsigned short row = starting_y; row < starting_y + 6; ++row) {
+    // Clear the sub-window from starting_y to starting_y + 4
+    for (unsigned short row = starting_y; row < starting_y + 4; ++row) {
         for (int col = BH_FORM_X_PADDING; col <= COLS - BH_FORM_X_PADDING; col++) {
             mvwaddch(s_hash_collision_form_sub_win, row, col, ' ');
         }
@@ -482,8 +488,10 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
                                       (unsigned short[]){s_hash_form_field_metadata_len}, 1);
 
             if (current_index < s_hash_form_field_metadata_len) {
+                is_btn_highlighted = false;
                 pos_form_cursor(s_hash_collision_form);
             } else {
+                is_btn_highlighted = true;
                 set_field_buffer(hash_collision_form_field_get(s_hash_form_field_metadata_len), 0,
                                  s_hash_form_submit_button_text);
                 pos_form_cursor(s_hash_collision_form);
@@ -519,9 +527,15 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
                     calculate_form_max_value(s_hash_form_field_metadata[current_index].max_length),
                     true);
             } else if (current_index == s_hash_form_field_metadata_len) {
-                bool all_field_valid = hash_form_validate_all_fields();
-                if (all_field_valid) {
-                    run_hash_collision_from_input(thread_pool, ctx);
+                bool has_results_to_check = g_atomic_int_get(&ctx->result->attempts_made) != -1;
+
+                // We are not going to run another simulation if there are still
+                // pending simulation running
+                if (!has_results_to_check) {
+                    bool all_field_valid = hash_form_validate_all_fields();
+                    if (all_field_valid) {
+                        run_hash_collision_from_input(thread_pool, ctx);
+                    }
                 }
             }
         } break;
@@ -666,10 +680,26 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
         // finished processing all tasks
         unsigned int max_attempts = atoi(field_buffer(hash_collision_form_field_get(0), 0));
         bool has_results_to_check = g_atomic_int_get(&result->attempts_made) != -1;
-        bool all_tasks_completed = g_atomic_int_get(&result->attempts_made) >= max_attempts - 1;
+        bool all_tasks_completed = g_atomic_int_get(&result->attempts_made) >= max_attempts;
 
         if (has_results_to_check && (all_tasks_completed || result->collision_found)) {
+            update_button_field_is_running(
+                hash_collision_form_field_get(s_hash_form_field_metadata_len),
+                s_hash_form_submit_button_text, s_hash_form_submit_button_running_text, false);
+
+            if (is_btn_highlighted) {
+                update_field_highlighting(s_hash_collision_form, s_hash_form_field_metadata_len + 1,
+                                          (unsigned short[]){s_hash_form_field_metadata_len}, 1);
+
+                set_field_buffer(hash_collision_form_field_get(s_hash_form_field_metadata_len), 0,
+                                 s_hash_form_submit_button_text);
+                pos_form_cursor(s_hash_collision_form);
+
+                is_btn_highlighted = false; // Reset the flag
+            }
+
             render_attack_result(*ctx->result);
+
             result->attempts_made = -1; // Reset to indicate no ongoing simulation
             result->collision_found = false;
             result->collision_input_1 = NULL;
@@ -685,6 +715,23 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
 
             // Cleanup: Free the hash table and its entries
             hash_table_destroy(ctx->shared_table);
+
+            ctx->shared_table = g_new(hash_table_t, 1);
+            ctx->table_mutex = g_new(GMutex, 1);
+            ctx->result_mutex = g_new(GMutex, 1);
+            ctx->collision_found = g_new(bool, 1);
+        } else if (has_results_to_check) {
+            // if button is not in running state, set it to running state
+            if (strcmp(
+                    field_buffer(hash_collision_form_field_get(s_hash_form_field_metadata_len), 0),
+                    s_hash_form_submit_button_running_text)
+                != 0) {
+                update_button_field_is_running(
+                    hash_collision_form_field_get(s_hash_form_field_metadata_len),
+                    s_hash_form_submit_button_text, s_hash_form_submit_button_running_text, true);
+            }
+
+            // Update the intermediate result display
         }
 
         if (check_console_window_resize_event(&win_size)) {
