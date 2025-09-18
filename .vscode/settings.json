@@ -89,7 +89,8 @@
     "attack.h": "c",
     "ctype.h": "c",
     "hash_collision_table.h": "c",
-    "codecvt": "c"
+    "codecvt": "c",
+    "expected": "c"
   },
   "cSpell.words": ["Iinclude", "KECCAK", "lmenuw", "lncursesw"]
 }

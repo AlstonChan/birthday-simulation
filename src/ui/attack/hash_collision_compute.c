@@ -205,3 +205,101 @@ create_hash_attack_pool(int num_threads) {
 
     return pool;
 }
+
+/****************************************************************
+                        HELPER FUNCTION
+****************************************************************/
+
+/**
+ * \brief          Perform a deep copy of a hash_collision_simulation_result_t structure.
+ *
+ *                 This function copies all scalar fields directly and duplicates any dynamically
+ *                 allocated strings so that the destination structure owns its own independent
+ *                 copies. The caller is responsible for later freeing the strings inside \p dest
+ *                 using clear_result_hash_collision_simulation_result().
+ *
+ * \param[out]     dest Pointer to the destination structure that will receive the copy.
+ * \param[in]      src Pointer to the source structure to copy from.
+ */
+void
+deep_copy_hash_collision_simulation_result(hash_collision_simulation_result_t* dest,
+                                           const hash_collision_simulation_result_t* src) {
+    dest->attempts_made = src->attempts_made;
+    dest->collision_found = src->collision_found;
+
+    // Deep copy each string safely
+    dest->collision_input_1 = src->collision_input_1 ? strdup(src->collision_input_1) : NULL;
+    dest->collision_input_2 = src->collision_input_2 ? strdup(src->collision_input_2) : NULL;
+    dest->collision_hash_hex = src->collision_hash_hex ? strdup(src->collision_hash_hex) : NULL;
+}
+
+/**
+ * \brief          Release memory held by a hash_collision_simulation_result_t instance.
+ *
+ *                 Frees all dynamically allocated string members inside the structure. Optionally frees
+ *                 the structure itself if \p free_struct is TRUE. If the structure is not freed, its
+ *                 fields are reset to safe default values so it can be reused.
+ *
+ * \param[in,out]  res          Pointer to the result structure to clear.
+ * \param[in]      free_struct  TRUE to free the structure itself, FALSE to only clear
+ *                              its internal data and reset fields.
+ */
+void
+clear_result_hash_collision_simulation_result(hash_collision_simulation_result_t* res,
+                                              bool free_struct) {
+    free(res->collision_input_1);
+    free(res->collision_input_2);
+    free(res->collision_hash_hex);
+
+    if (free_struct) {
+        free(res);
+    } else {
+        res->attempts_made = -1;
+        res->collision_input_1 = NULL;
+        res->collision_input_2 = NULL;
+        res->collision_hash_hex = NULL;
+        res->collision_found = false;
+    }
+}
+
+/**
+ * \brief          Clean up a hash_collision_context_t instance and its resources.
+ *
+ *                 This function clears the simulation result (if present), destroys mutexes,
+ *                 frees dynamically allocated synchronization primitives and flags, and destroys
+ *                 the shared hash table. If \p free_struct is TRUE, the context structure itself
+ *                 is also freed; otherwise its pointer fields are set to NULL for safe reuse.
+ *
+ * \param[in,out]  ctx Pointer to the context structure to clear.
+ * \param[in]      free_struct TRUE to free the context structure itself,
+ *                             FALSE to only release its internal resources.
+ */
+void
+clear_result_hash_collision_context(hash_collision_context_t* ctx, bool free_struct) {
+    if (ctx->result) {
+        clear_result_hash_collision_simulation_result(ctx->result, free_struct);
+    }
+
+    // Cleanup mutexes
+    g_mutex_clear(ctx->table_mutex);
+    g_mutex_clear(ctx->result_mutex);
+
+    // free the mutexes
+    g_free(ctx->table_mutex);
+    g_free(ctx->result_mutex);
+
+    // free the collision found flag
+    g_free(ctx->collision_found);
+
+    // Cleanup: Free the hash table and its entries
+    hash_table_destroy(ctx->shared_table);
+
+    if (free_struct) {
+        free(ctx);
+    } else {
+        ctx->result_mutex = NULL;
+        ctx->table_mutex = NULL;
+        ctx->collision_found = NULL;
+        ctx->shared_table = NULL;
+    }
+}

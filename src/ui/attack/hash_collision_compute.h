@@ -48,4 +48,10 @@ typedef struct {
     unsigned int worker_id;
 } WorkerData;
 
+void deep_copy_hash_collision_simulation_result(hash_collision_simulation_result_t* dest,
+                                                const hash_collision_simulation_result_t* src);
+void clear_result_hash_collision_simulation_result(hash_collision_simulation_result_t* res,
+                                                   bool free_struct);
+void clear_result_hash_collision_context(hash_collision_context_t* ctx, bool free_struct);
+
 #endif

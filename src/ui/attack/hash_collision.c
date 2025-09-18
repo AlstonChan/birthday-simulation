@@ -82,6 +82,11 @@ hash_collision_simulation_run(unsigned int max_attempts, GThreadPool* thread_poo
         render_full_page_error_exit(stdscr, 0, 0, "Memory allocation failed for hash table.");
     }
 
+    ctx->shared_table = g_new(hash_table_t, 1);
+    ctx->table_mutex = g_new(GMutex, 1);
+    ctx->result_mutex = g_new(GMutex, 1);
+    ctx->collision_found = g_new(bool, 1);
+
     ctx->shared_table = table;
     ctx->result->attempts_made = 0;
     g_mutex_init(ctx->table_mutex);
@@ -124,6 +129,10 @@ hash_collision_simulation_run(unsigned int max_attempts, GThreadPool* thread_poo
  */
 static void
 hash_progress_bar_update(int progress, int total, bool is_final) {
+    if (progress < 0 || total <= 0 || progress > total) {
+        return; // Invalid parameters
+    }
+
     uint8_t starting_y = s_hash_form_field_metadata_len + 1 + 2 + 3 + 1;
 
     // Clear the row first
@@ -212,6 +221,12 @@ render_attack_result(hash_collision_simulation_result_t results) {
         for (int col = BH_FORM_X_PADDING; col <= COLS - BH_FORM_X_PADDING; col++) {
             mvwaddch(s_hash_collision_form_sub_win, row, col, ' ');
         }
+    }
+
+    unsigned int attempts = atoi(field_buffer(hash_collision_form_field_get(0), 0));
+    if (results.attempts_made < attempts && !results.collision_found) {
+        // No results to display
+        return;
     }
 
     if (results.collision_found) {
@@ -683,12 +698,23 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
             stdscr, 0, 0, "Memory allocation failed for hash collision simulation result.");
     }
 
+    // This prev_result stores the previous result after freeing the content and the result
+    // pointer memory. This data is to be used for restoring the form after a resize event
+    // only.
+    hash_collision_simulation_result_t prev_result;
+
     // Initialize result fields
     result->attempts_made = -1;
     result->collision_found = false;
     result->collision_input_1 = NULL;
     result->collision_input_2 = NULL;
     result->collision_hash_hex = NULL;
+
+    prev_result.attempts_made = -1;
+    prev_result.collision_found = false;
+    prev_result.collision_input_1 = NULL;
+    prev_result.collision_input_2 = NULL;
+    prev_result.collision_hash_hex = NULL;
 
     // Initialize context state
     hash_collision_context_t* ctx = malloc(sizeof(hash_collision_context_t));
@@ -726,33 +752,12 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
                 set_field_buffer(hash_collision_form_field_get(s_hash_form_field_metadata_len), 0,
                                  s_hash_form_submit_button_text);
                 pos_form_cursor(s_hash_collision_form);
-
-                is_btn_highlighted = false; // Reset the flag
             }
 
             hash_progress_bar_update(result->attempts_made, max_attempts, true);
             render_attack_result(*ctx->result);
-
-            result->attempts_made = -1; // Reset to indicate no ongoing simulation
-            result->collision_found = false;
-            result->collision_input_1 = NULL;
-            result->collision_input_2 = NULL;
-            result->collision_hash_hex = NULL;
-
-            // Cleanup mutexes
-            g_mutex_clear(ctx->table_mutex);
-            g_mutex_clear(ctx->result_mutex);
-            g_free(ctx->table_mutex);
-            g_free(ctx->result_mutex);
-            g_free(ctx->collision_found);
-
-            // Cleanup: Free the hash table and its entries
-            hash_table_destroy(ctx->shared_table);
-
-            ctx->shared_table = g_new(hash_table_t, 1);
-            ctx->table_mutex = g_new(GMutex, 1);
-            ctx->result_mutex = g_new(GMutex, 1);
-            ctx->collision_found = g_new(bool, 1);
+            deep_copy_hash_collision_simulation_result(&prev_result, result);
+            clear_result_hash_collision_context(ctx, false);
         } else if (has_results_to_check) {
             // if button is not in running state, set it to running state
             if (strcmp(
@@ -794,16 +799,18 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
             header_render(header_win);
             mvwin(footer_win, win_size.Y - 2, 0);
             footer_render(footer_win, win_size.Y - 2, *max_x);
-            // hash_collision_form_restore(content_win, *max_y, *max_x, *result);
+            hash_collision_form_restore(content_win, *max_y, *max_x, prev_result);
+            hash_progress_bar_update(prev_result.attempts_made, max_attempts, true);
 
             mvwprintw(content_win, 0, (*max_x - title_len) / 2, s_hash_collision_page_title);
-
             wrefresh(content_win);
         }
     }
 
-    free(result);
-    hash_collision_form_destroy(); // Clean up the form resources
+    // Cleanup
+    clear_result_hash_collision_context(ctx, true);
+    clear_result_hash_collision_simulation_result(&prev_result, false);
+    hash_collision_form_destroy();
 
     curs_set(0); // Hide the cursor
     if (nodelay_modified) {
