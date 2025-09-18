@@ -2,6 +2,10 @@
 
 This is a TUI (Terminal User Interface) application written in C that shows how birthday paradox works, prove how birthday attack can finds collision in less than half of the hash space count.
 
+You can download the executable from [GitHub release](https://github.com/AlstonChan/birthday-simulation/releases/latest).
+
+![Application preview](./preview.png)
+
 ## Getting Started
 
 To run, build or develop the application, you should start from here.

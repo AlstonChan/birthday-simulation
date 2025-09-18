@@ -17,3 +17,8 @@ Makefile
 
 # Build folders
 build/
+
+# Doxygen output
+/docs/
+html/
+latex/
