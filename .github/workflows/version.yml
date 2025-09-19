@@ -1,0 +1,182 @@
+name: Version Analysis
+
+on:
+  workflow_call:
+    outputs:
+      should_release:
+        description: "Whether a release should be created"
+        value: ${{ jobs.analyze.outputs.should_release }}
+      version_level:
+        description: "Version bump level (major/minor/patch)"
+        value: ${{ jobs.analyze.outputs.version_level }}
+      new_version:
+        description: "New version number"
+        value: ${{ jobs.analyze.outputs.new_version }}
+      release_notes:
+        description: "Generated release notes"
+        value: ${{ jobs.analyze.outputs.release_notes }}
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.analyze.outputs.should_release }}
+      version_level: ${{ steps.analyze.outputs.level }}
+      new_version: ${{ steps.version.outputs.new_version }}
+      release_notes: ${{ steps.release_notes.outputs.notes }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history to analyze commits
+
+      - name: Analyze commits since last release
+        id: analyze
+        run: |
+          # Get the latest tag, or use empty string if no tags exist
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          # Get commit range
+          if [ -n "$LATEST_TAG" ]; then
+            COMMIT_RANGE="${LATEST_TAG}..HEAD"
+          else
+            # If no tags exist, check all commits
+            COMMIT_RANGE="HEAD"
+          fi
+
+          echo "Analyzing commits in range: $COMMIT_RANGE"
+
+          # Get all commit messages in the range
+          if [ -n "$LATEST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"%s%n%b" "$COMMIT_RANGE")
+          else
+            COMMITS=$(git log --pretty=format:"%s%n%b")
+          fi
+
+          echo "Commits to analyze:"
+          echo "$COMMITS"
+
+          # Initialize flags
+          HAS_BREAKING=false
+          HAS_FEAT=false
+          HAS_FIX=false
+
+          # Analyze each commit
+          while IFS= read -r line; do
+            if [[ "$line" == *"BREAKING CHANGE"* ]] || [[ "$line" == *"!"* && "$line" =~ ^[a-zA-Z]+(\(.+\))?!: ]]; then
+              HAS_BREAKING=true
+            fi
+            
+            if echo "$line" | grep -qE "^feat(\(.+\))?: "; then
+              HAS_FEAT=true
+            fi
+            
+            if echo "$line" | grep -qE "^fix(\(.+\))?: "; then
+              HAS_FIX=true
+            fi
+            
+            # Also check for merge commits that might contain conventional commits
+            if echo "$line" | grep -qE "^Merge pull request.*feat(\(.+\))?: "; then
+              HAS_FEAT=true
+            fi
+            
+            if echo "$line" | grep -qE "^Merge pull request.*fix(\(.+\))?: "; then
+              HAS_FIX=true
+            fi
+            
+            if echo "$line" | grep -qE "^Merge pull request.*BREAKING CHANGE"; then
+              HAS_BREAKING=true
+            fi
+          done <<< "$COMMITS"
+
+          # Determine version bump level
+          if [ "$HAS_BREAKING" = true ]; then
+            echo "level=major" >> "$GITHUB_OUTPUT"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "Found breaking changes"
+          elif [ "$HAS_FEAT" = true ]; then
+            echo "level=minor" >> "$GITHUB_OUTPUT"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "Found new features"
+          elif [ "$HAS_FIX" = true ]; then
+            echo "level=patch" >> "$GITHUB_OUTPUT"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "Found bug fixes"
+          else
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            echo "No releasable changes found"
+          fi
+
+      - name: Calculate new version
+        if: steps.analyze.outputs.should_release == 'true'
+        id: version
+        run: |
+          file="CMakeLists.txt"
+          version_line=$(grep -E 'project\(.*VERSION [0-9]+\.[0-9]+\.[0-9]+' "$file")
+          current_version=$(echo "$version_line" | grep -oP 'VERSION \K[0-9]+\.[0-9]+\.[0-9]+')
+          IFS='.' read -r major minor patch <<< "$current_version"
+
+          case "${{ steps.analyze.outputs.level }}" in
+            major)
+              ((major+=1)); minor=0; patch=0 ;;
+            minor)
+              ((minor+=1)); patch=0 ;;
+            patch)
+              ((patch+=1)) ;;
+          esac
+
+          new_version="$major.$minor.$patch"
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+          echo "Calculated new version: $new_version (was: $current_version)"
+
+      - name: Generate release notes
+        if: steps.analyze.outputs.should_release == 'true'
+        id: release_notes
+        run: |
+          # Get the latest tag, or use empty string if no tags exist
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          # Get commit range
+          if [ -n "$LATEST_TAG" ]; then
+            COMMIT_RANGE="${LATEST_TAG}..HEAD"
+            NOTES_HEADER="## Changes since $LATEST_TAG"
+          else
+            COMMIT_RANGE="HEAD"
+            NOTES_HEADER="## Initial Release"
+          fi
+
+          # Start building release notes
+          RELEASE_NOTES="$NOTES_HEADER"$'\n\n'
+
+          # Generate categorized changelog
+          if [ -n "$LATEST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"%s" "$COMMIT_RANGE")
+          else
+            COMMITS=$(git log --pretty=format:"%s")
+          fi
+
+          # Features
+          FEAT_COMMITS=$(echo "$COMMITS" | grep -E "^feat(\(.+\))?: " | sed 's/^feat[^:]*: /- /' || true)
+          if [ -n "$FEAT_COMMITS" ]; then
+            RELEASE_NOTES+="### ✨ New Features"$'\n'"$FEAT_COMMITS"$'\n\n'
+          fi
+
+          # Bug fixes
+          FIX_COMMITS=$(echo "$COMMITS" | grep -E "^fix(\(.+\))?: " | sed 's/^fix[^:]*: /- /' || true)
+          if [ -n "$FIX_COMMITS" ]; then
+            RELEASE_NOTES+="### 🐛 Bug Fixes"$'\n'"$FIX_COMMITS"$'\n\n'
+          fi
+
+          # Other changes
+          OTHER_COMMITS=$(echo "$COMMITS" | grep -vE "^(feat|fix)(\(.+\))?: " | head -10 | sed 's/^/- /' || true)
+          if [ -n "$OTHER_COMMITS" ]; then
+            RELEASE_NOTES+="### 🔧 Other Changes"$'\n'"$OTHER_COMMITS"
+          fi
+
+          # Output release notes (handle multiline)
+          {
+            echo 'notes<<EOF'
+            echo "$RELEASE_NOTES"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
