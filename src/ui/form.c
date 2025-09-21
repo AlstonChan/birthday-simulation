@@ -60,6 +60,40 @@ calculate_form_max_value(int length) {
     return (int)pow(10, length) - 1;
 }
 
+/**
+ * \brief          Returns an array containing all the indices of button fields (array B) in the merged array
+ * 
+ * \param[in]      len_a Length of input fields array (array A)
+ * \param[in]      len_b Length of button fields array (array B) 
+ * \param[out]     button_indices Pointer to store the array of button indices
+ * 
+ * \return         Number of button indices (same as len_b), or -1 on error
+ */
+int
+get_button_field_indices(int len_a, int len_b, unsigned short** button_indices) {
+    if (len_a < 0 || len_b < 0 || !button_indices) {
+        return -1;
+    }
+
+    if (len_b == 0) {
+        *button_indices = NULL;
+        return 0;
+    }
+
+    // Allocate array for button indices
+    *button_indices = malloc(len_b * sizeof(unsigned short));
+    if (!*button_indices) {
+        return -1;
+    }
+
+    // Fill array with sequential indices starting after input fields
+    for (unsigned short i = 0; i < len_b; i++) {
+        (*button_indices)[i] = len_a + i;
+    }
+
+    return len_b;
+}
+
 /****************************************************************
                         BUTTON FUNCTIONS
 ****************************************************************/
@@ -121,37 +155,34 @@ update_button_field_is_running(FIELD* button_field, const char* label, const cha
 /**
  * \brief          Updates the highlighting of the fields in the form based on the current field.
  *
- * \param[in]      current_form The current form to update.
- * \param[in]      form_field_count The number of fields in the form. This includes both input fields and
- *                 buttons.
- * \param[in]      form_button_indexes The indexes of the button fields in the form. The indexes
- *                 MUST be sorted in ascending order.
- * \param[in]      form_button_indexes_len The length of the button indexes array.
+ * \param[in]      manager The form manager instance
  */
 void
-update_field_highlighting(FORM* current_form, unsigned short form_field_count,
-                          unsigned short form_button_indexes[],
-                          unsigned short form_button_indexes_len) {
-    if (current_form == NULL || form_field_count == 0 || form_button_indexes == NULL) {
+update_field_highlighting(form_manager_t* manager) {
+    if (manager == NULL) {
         return;
     }
 
-    FIELD** fields = form_fields(current_form);
-    FIELD* current = current_field(current_form);
+    FIELD** fields = form_fields(manager->form);
+    FIELD* current = current_field(manager->form);
     int current_index = field_index(current);
 
     // Show or hide cursor based on whether we're on the button
-    bool is_button = binary_search(form_button_indexes, form_button_indexes_len, current_index);
+    unsigned short* button_indices;
+    int num_buttons =
+        get_button_field_indices(manager->input_count, manager->button_count, &button_indices);
+
+    bool is_button = binary_search(button_indices, num_buttons, current_index);
     if (is_button) {
         curs_set(0); // Hide cursor on button
     } else {
         curs_set(1); // Show cursor on input fields
     }
 
-    for (unsigned short i = 0; i < form_field_count + 1; ++i) {
+    for (unsigned short i = 0; i < manager->total_field_count + 1; ++i) {
         // If the field is the current one, highlight it
         if (fields[i] == current) {
-            bool is_button = binary_search(form_button_indexes, form_button_indexes_len, i);
+            bool is_button = binary_search(button_indices, num_buttons, i);
             if (is_button) {
                 // Button selected - invert colors
                 set_field_back(fields[i], A_REVERSE | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
@@ -161,7 +192,7 @@ update_field_highlighting(FORM* current_form, unsigned short form_field_count,
             }
         } else {
             // If the field is not the current one, set normal colors
-            bool is_button = binary_search(form_button_indexes, form_button_indexes_len, i);
+            bool is_button = binary_search(button_indices, num_buttons, i);
             if (is_button) {
                 // Button not selected - normal button colors
                 set_field_back(fields[i], A_NORMAL | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
@@ -172,7 +203,7 @@ update_field_highlighting(FORM* current_form, unsigned short form_field_count,
         }
     }
 
-    form_driver(current_form, REQ_VALIDATION); // Force form refresh
+    form_driver(manager->form, REQ_VALIDATION); // Force form refresh
 }
 
 /**
@@ -258,15 +289,21 @@ clear_field_error(WINDOW* sub_win, int field_index, unsigned short max_label_len
 /****************************************************************
                          FORM MANAGERS
 ****************************************************************/
-
 /**
  * \brief          Create form manager
+ *
+ * \param[in]      input_metadata Array of input field metadata structures
+ * \param[in]      input_metadata_len Number of input fields in the metadata array
+ * \param[in]      button_metadata Array of button metadata structures
+ * \param[in]      button_metadata_len Number of buttons in the metadata array
+ *
+ * \return         Pointer to newly created form manager on success, NULL on failure
  */
 form_manager_t*
-create_paradox_form_manager(const struct FormInputField const input_metadata[],
-                            unsigned short input_metadata_len,
-                            const struct FormButton const button_metadata[],
-                            unsigned short button_metadata_len) {
+create_form_manager(const struct FormInputField const input_metadata[],
+                    unsigned short input_metadata_len,
+                    const struct FormButton const button_metadata[],
+                    unsigned short button_metadata_len) {
     form_manager_t* manager = malloc(sizeof(form_manager_t));
     if (!manager) {
         return NULL;
@@ -275,7 +312,7 @@ create_paradox_form_manager(const struct FormInputField const input_metadata[],
     unsigned short total_field_count = input_metadata_len + button_metadata_len;
 
     // Allocate arrays
-    manager->fields = malloc(sizeof(FIELD*) * (total_field_count + 1)); // +1 for NULL terminator
+    manager->fields = calloc((total_field_count + 2), sizeof(FIELD*)); // +1 for NULL terminator
     manager->trackers = malloc(sizeof(field_tracker_t) * input_metadata_len);
 
     manager->input_count = input_metadata_len;
@@ -312,6 +349,11 @@ create_paradox_form_manager(const struct FormInputField const input_metadata[],
 
 /**
  * \brief          Find tracker for a given field
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to find the tracker for
+ *
+ * \return         Pointer to field tracker on success, NULL if not found
  */
 field_tracker_t*
 find_field_tracker(form_manager_t* manager, FIELD* field) {
@@ -329,6 +371,11 @@ find_field_tracker(form_manager_t* manager, FIELD* field) {
 
 /**
  * \brief          Check if field has space for another character
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to check
+ *
+ * \return         true if field has space for another character, false otherwise
  */
 bool
 field_has_space_for_char(form_manager_t* manager, FIELD* field) {
@@ -346,6 +393,9 @@ field_has_space_for_char(form_manager_t* manager, FIELD* field) {
 
 /**
  * \brief          Increment field character count
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to increment character count for
  */
 void
 increment_field_length(form_manager_t* manager, FIELD* field) {
@@ -362,6 +412,9 @@ increment_field_length(form_manager_t* manager, FIELD* field) {
 
 /**
  * \brief          Decrement field character count
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to decrement character count for
  */
 void
 decrement_field_length(form_manager_t* manager, FIELD* field) {
@@ -376,7 +429,10 @@ decrement_field_length(form_manager_t* manager, FIELD* field) {
 }
 
 /**
- * \brief          Reset field character count (useful when setting field buffer directly)
+ * \brief          Reset field character count
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to reset character count for
  */
 void
 reset_field_length(form_manager_t* manager, FIELD* field) {
@@ -405,6 +461,11 @@ reset_field_length(form_manager_t* manager, FIELD* field) {
 
 /**
  * \brief          Get current length of field by checking what is visible on screen
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to get visible length for
+ *
+ * \return         Length of visible text in field, 0 on error
  */
 unsigned short
 get_field_length_on_screen(form_manager_t* manager, FIELD* field) {
@@ -446,6 +507,11 @@ get_field_length_on_screen(form_manager_t* manager, FIELD* field) {
 
 /**
  * \brief          Get current length of field
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to get current length for
+ *
+ * \return         Current length of field, -1 on error
  */
 int
 get_field_current_length(form_manager_t* manager, FIELD* field) {
@@ -458,7 +524,12 @@ get_field_current_length(form_manager_t* manager, FIELD* field) {
 }
 
 /**
- * \brief          Handle field switching (call this when changing active field)
+ * \brief          Handle field switching, should call this when changing 
+ *                 active field
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      old_field The previously active field
+ * \param[in]      new_field The newly active field
  */
 void
 on_field_change(form_manager_t* manager, FIELD* old_field, FIELD* new_field) {
@@ -474,9 +545,11 @@ on_field_change(form_manager_t* manager, FIELD* old_field, FIELD* new_field) {
 
 /**
  * \brief          Cleanup form manager
+ *
+ * \param[in]      manager The form manager instance to free
  */
 void
-free_paradox_form_manager(form_manager_t* manager) {
+free_form_manager(form_manager_t* manager) {
     if (!manager) {
         return;
     }
@@ -501,8 +574,9 @@ free_paradox_form_manager(form_manager_t* manager) {
     free(manager->trackers);
 
     // Free sub window and form pointers
-    free(manager->sub_win);
-    free(manager->form);
+    if (manager->sub_win) {
+        delwin(manager->sub_win);
+    }
 
     free(manager);
 }

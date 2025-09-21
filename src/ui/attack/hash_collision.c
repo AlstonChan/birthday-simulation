@@ -13,41 +13,35 @@
 
 #include "hash_collision.h"
 
+#define ACTION_SUBMIT 1
+
 static const char* s_hash_collision_page_title = "[ Hash Collision Demonstration ]";
-static const char const* s_hash_form_submit_button_text = "[ Run Simulation ]";
-static const char const* s_hash_form_submit_button_running_text = "[ Running... ]";
+
+static const struct FormButton const s_hash_form_buttons_metadata[] = {
+    {"[ Run Simulation ]", "[ Running... ]", ACTION_SUBMIT},
+};
+static const unsigned short s_hash_form_buttons_metadata_len =
+    ARRAY_SIZE(s_hash_form_buttons_metadata);
 
 static const struct FormInputField const s_hash_form_field_metadata[] = {
     {"Max Attempts", 10000, 6}};
 static const unsigned short s_hash_form_field_metadata_len = ARRAY_SIZE(s_hash_form_field_metadata);
-static unsigned short s_max_label_length = 0;
 
-/**
- * \brief          Holds all the fields for the hash collision form. ALl fields
- *                 holds input data for the hash collision simulation with special case:
- *                 - The second last field is a button field that submits the form, that
- *                 it cannot be used for input.
- *                 - The last field is a NULL terminator field that is used to
- *                 terminate the array of fields.
- *
- */
-static FIELD** s_hash_form_field = NULL;
-static FORM* s_hash_collision_form = NULL;
-static WINDOW* s_hash_collision_form_sub_win = NULL;
+static form_manager_t* manager = NULL;
 
 // This variable temporarily tracks if the button is highlighted before calling
 // update_button_field_is_running to set the button to running state. So this
 // is used ONLY in this scope
 static bool is_btn_highlighted = false;
 
+/****************************************************************
+ INTERNAL FUNCTION
+ ****************************************************************/
+
 static FIELD*
 hash_collision_form_field_get(int index) {
-    return s_hash_form_field[index];
+    return manager->fields[index];
 }
-
-/****************************************************************
-                       INTERNAL FUNCTION
-****************************************************************/
 
 /**
  * \brief          Simulates a hash collision using the Birthday Attack algorithm.
@@ -137,22 +131,22 @@ hash_progress_bar_update(int progress, int total, bool is_final) {
 
     // Clear the row first
     for (int col = BH_FORM_X_PADDING; col <= COLS - BH_FORM_X_PADDING; col++) {
-        mvwaddch(s_hash_collision_form_sub_win, starting_y, col, ' ');
+        mvwaddch(manager->sub_win, starting_y, col, ' ');
     }
 
     int percentage = (progress * 100) / total;
 
     if (is_final) {
         if (progress >= total) {
-            mvwprintw(s_hash_collision_form_sub_win, starting_y, BH_FORM_X_PADDING,
-                      "Progress: %d%% (%d/%d)", percentage, progress, total);
+            mvwprintw(manager->sub_win, starting_y, BH_FORM_X_PADDING, "Progress: %d%% (%d/%d)",
+                      percentage, progress, total);
         } else {
-            mvwprintw(s_hash_collision_form_sub_win, starting_y, BH_FORM_X_PADDING,
+            mvwprintw(manager->sub_win, starting_y, BH_FORM_X_PADDING,
                       "Run %d times (%d%% of total %d)", progress, percentage, total);
         }
     } else {
-        mvwprintw(s_hash_collision_form_sub_win, starting_y, BH_FORM_X_PADDING,
-                  "Progress: %d%% (%d/%d)", percentage, progress, total);
+        mvwprintw(manager->sub_win, starting_y, BH_FORM_X_PADDING, "Progress: %d%% (%d/%d)",
+                  percentage, progress, total);
     }
 }
 
@@ -171,23 +165,23 @@ hash_form_create_sub_win(WINDOW* win, int max_y, int max_x) {
                                     "The window passed to hash_form_create_sub_win is null");
     }
 
-    if (s_hash_collision_form_sub_win) {
-        delwin(s_hash_collision_form_sub_win);
-        s_hash_collision_form_sub_win = NULL;
+    if (manager->sub_win) {
+        delwin(manager->sub_win);
+        manager->sub_win = NULL;
     }
 
     const int sub_win_rows_count = s_hash_form_field_metadata_len + 12;
     const int sub_win_cols_count = max_x - BH_FORM_X_PADDING - BH_FORM_X_PADDING;
 
     // Create a sub-window for the form with extra space for the button
-    s_hash_collision_form_sub_win = derwin(win, sub_win_rows_count, sub_win_cols_count, 9, 1);
-    keypad(s_hash_collision_form_sub_win, TRUE);
+    manager->sub_win = derwin(win, sub_win_rows_count, sub_win_cols_count, 9, 1);
+    keypad(manager->sub_win, TRUE);
 
-    set_form_win(s_hash_collision_form, win);
-    set_form_sub(s_hash_collision_form, s_hash_collision_form_sub_win);
+    set_form_win(manager->form, win);
+    set_form_sub(manager->form, manager->sub_win);
 
-    unpost_form(s_hash_collision_form); // Safeguard against state issues
-    post_form(s_hash_collision_form);
+    unpost_form(manager->form); // Safeguard against state issues
+    post_form(manager->form);
 }
 
 /**
@@ -219,7 +213,7 @@ render_attack_result(hash_collision_simulation_result_t results) {
     // Clear the sub-window from starting_y to starting_y + 4
     for (unsigned short row = starting_y; row < starting_y + 4; ++row) {
         for (int col = BH_FORM_X_PADDING; col <= COLS - BH_FORM_X_PADDING; col++) {
-            mvwaddch(s_hash_collision_form_sub_win, row, col, ' ');
+            mvwaddch(manager->sub_win, row, col, ' ');
         }
     }
 
@@ -231,24 +225,24 @@ render_attack_result(hash_collision_simulation_result_t results) {
 
     if (results.collision_found) {
         // Display the results of the collision simulation
-        wattron(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
-        mvwprintw(s_hash_collision_form_sub_win, starting_y, BH_FORM_X_PADDING,
-                  "Collision Found at attempt %d!", results.attempts_made);
-        wattroff(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
-        mvwprintw(s_hash_collision_form_sub_win, starting_y + 1, BH_FORM_X_PADDING, "Input 1: %s",
+        wattron(manager->sub_win, A_BOLD | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
+        mvwprintw(manager->sub_win, starting_y, BH_FORM_X_PADDING, "Collision Found at attempt %d!",
+                  results.attempts_made);
+        wattroff(manager->sub_win, A_BOLD | COLOR_PAIR(BH_SUCCESS_COLOR_PAIR));
+        mvwprintw(manager->sub_win, starting_y + 1, BH_FORM_X_PADDING, "Input 1: %s",
                   results.collision_input_1);
-        mvwprintw(s_hash_collision_form_sub_win, starting_y + 2, BH_FORM_X_PADDING, "Input 2: %s",
+        mvwprintw(manager->sub_win, starting_y + 2, BH_FORM_X_PADDING, "Input 2: %s",
                   results.collision_input_2);
-        mvwprintw(s_hash_collision_form_sub_win, starting_y + 3, BH_FORM_X_PADDING, "Hash   : %s",
+        mvwprintw(manager->sub_win, starting_y + 3, BH_FORM_X_PADDING, "Hash   : %s",
                   results.collision_hash_hex);
     } else {
-        wattron(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_ERROR_COLOR_PAIR));
-        mvwprintw(s_hash_collision_form_sub_win, starting_y, BH_FORM_X_PADDING,
+        wattron(manager->sub_win, A_BOLD | COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+        mvwprintw(manager->sub_win, starting_y, BH_FORM_X_PADDING,
                   "No Collision Found after %d attempts.", results.attempts_made);
-        wattroff(s_hash_collision_form_sub_win, A_BOLD | COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+        wattroff(manager->sub_win, A_BOLD | COLOR_PAIR(BH_ERROR_COLOR_PAIR));
     }
 
-    wrefresh(s_hash_collision_form_sub_win);
+    wrefresh(manager->sub_win);
 }
 
 /**
@@ -266,24 +260,24 @@ hash_form_validate_all_fields() {
 
     for (unsigned short i = 0; i < s_hash_form_field_metadata_len; ++i) {
         FIELD* field = hash_collision_form_field_get(i);
-        int result = form_driver(s_hash_collision_form, REQ_VALIDATION);
+        int result = form_driver(manager->form, REQ_VALIDATION);
 
         if (result == E_INVALID_FIELD) {
             display_field_error(
-                s_hash_collision_form_sub_win, field, i, s_max_label_length, longest_max_length_pad,
+                manager->sub_win, field, i, manager->max_label_length, longest_max_length_pad,
                 calculate_form_max_value(s_hash_form_field_metadata[i].max_length), true);
             all_valid = false;
         } else {
-            clear_field_error(s_hash_collision_form_sub_win, i, s_max_label_length,
+            clear_field_error(manager->sub_win, i, manager->max_label_length,
                               longest_max_length_pad);
         }
     }
 
     if (all_valid) {
-        set_current_field(s_hash_collision_form,
+        set_current_field(manager->form,
                           hash_collision_form_field_get(s_hash_form_field_metadata_len));
     } else {
-        set_current_field(s_hash_collision_form, hash_collision_form_field_get(0));
+        set_current_field(manager->form, hash_collision_form_field_get(0));
     }
 
     return all_valid;
@@ -304,80 +298,89 @@ hash_collision_form_init(WINDOW* win, int max_y, int max_x) {
                                     "The window passed to hash_collision_form_init is null");
     }
 
-    if (s_hash_collision_form != NULL) {
+    if (manager && manager->form != NULL) {
         render_full_page_error_exit(
             win, 0, 0,
             "The hash collision form has already been initialized and another "
             "attempt to initialize is not permitted");
     }
 
-    // Allocate memory for the form fields
-    s_hash_form_field =
-        (FIELD**)calloc((size_t)(s_hash_form_field_metadata_len + 2), sizeof(FIELD*));
-
-    // Find the longest label length for the fields
-    for (unsigned short i = 0; i < s_hash_form_field_metadata_len; ++i) {
-        unsigned short label_length = strlen(s_hash_form_field_metadata[i].label);
-        if (label_length > s_max_label_length) {
-            s_max_label_length = label_length;
-        }
+    manager = create_form_manager(s_hash_form_field_metadata, s_hash_form_field_metadata_len,
+                                  s_hash_form_buttons_metadata, s_hash_form_buttons_metadata_len);
+    if (!manager) {
+        render_full_page_error_exit(win, 0, 0,
+                                    "Unable to allocate memory for collision form manager");
+        return;
     }
 
-    // Get the longest max_length from the fields
-    unsigned short max_field_length = calculate_longest_max_length(
-        s_hash_form_field_metadata, s_hash_form_field_metadata_len, false);
+    for (unsigned short i = 0; i < manager->input_count; ++i) {
+        const struct FormInputField* metadata = &s_hash_form_field_metadata[i];
 
-    for (unsigned short i = 0; i < s_hash_form_field_metadata_len; ++i) {
-        s_hash_form_field[i] = new_field(1, max_field_length + 1, i,
-                                         BH_FORM_X_PADDING + BH_FORM_FIELD_BRACKET_PADDING
-                                             + s_max_label_length + BH_FORM_FIELD_BRACKET_PADDING,
-                                         0, 0);
+        manager->fields[i] =
+            new_field(1,                             // Field height
+                      manager->max_field_length + 1, // Field width
+                      i,                             // Field y-position
+                      BH_FORM_X_PADDING + BH_FORM_FIELD_BRACKET_PADDING + manager->max_label_length
+                          + BH_FORM_FIELD_BRACKET_PADDING, // Field x-position
+                      0,                                   // number of offscreen rows
+                      0                                    // number of additional working buffers
+            );
+
+        if (!manager->fields[i]) {
+            // Cleanup on failure
+            for (int j = 0; j < i; j++) {
+                free_field(manager->fields[j]);
+            }
+            free(manager->fields);
+            free(manager->trackers);
+            free(manager);
+
+            render_full_page_error_exit(win, 0, 0,
+                                        "Unable to allocate memory for collision form field");
+            return;
+        }
 
         // Convert the default value to string
-        char* string_buffer =
-            (char*)malloc(sizeof(char) * s_hash_form_field_metadata[i].max_length + 1);
+        char* string_buffer = (char*)malloc(sizeof(char) * metadata->max_length + 1);
         if (!string_buffer) {
             render_full_page_error_exit(
                 stdscr, 0, 0, "Memory allocation failed for hash collision form default value");
         }
 
-        snprintf(string_buffer, s_hash_form_field_metadata[i].max_length + 1, "%hu",
-                 s_hash_form_field_metadata[i].default_value);
+        snprintf(string_buffer, metadata->max_length + 1, "%hu", metadata->default_value);
 
         // Make the field visible and editable
-        field_opts_on(s_hash_form_field[i], O_STATIC);    // Keep field static size
-        field_opts_off(s_hash_form_field[i], O_AUTOSKIP); // Don't auto skip to next field
-        set_field_back(s_hash_form_field[i],
+        field_opts_on(manager->fields[i], O_STATIC);    // Keep field static size
+        field_opts_off(manager->fields[i], O_AUTOSKIP); // Don't auto skip to next field
+        set_field_back(manager->fields[i],
                        A_NORMAL); // Set normal background for all fields initially
-        set_field_buffer(s_hash_form_field[i], 0,
-                         string_buffer);                    // Set the default value for the field
-        set_field_just(s_hash_form_field[i], JUSTIFY_LEFT); // Left justify the content
-
-        free(string_buffer);
+        set_field_buffer(manager->fields[i], 0,
+                         string_buffer);                  // Set the default value for the field
+        set_field_just(manager->fields[i], JUSTIFY_LEFT); // Left justify the content
 
         // Set maximum field length
-        set_max_field(s_hash_form_field[i], max_field_length);
+        set_max_field(manager->fields[i], manager->max_field_length);
 
         // Set the field type to numeric
-        int max_value = calculate_form_max_value(s_hash_form_field_metadata[i].max_length);
-        set_field_type(s_hash_form_field[i], TYPE_INTEGER, 0, (long)1, (long)max_value);
+        int max_value = calculate_form_max_value(metadata->max_length);
+        set_field_type(manager->fields[i], TYPE_INTEGER, 0, (long)1, (long)max_value);
+
+        // Initialize tracker
+        manager->trackers[i].field = manager->fields[i];
+        manager->trackers[i].current_length = strlen(string_buffer);
+        manager->trackers[i].max_length = metadata->max_length;
+        manager->trackers[i].field_index = i;
+
+        free(string_buffer);
     }
 
     // Create the submit button field
-    s_hash_form_field[s_hash_form_field_metadata_len] =
-        create_button_field(s_hash_form_submit_button_text, // Button label
+    manager->fields[manager->input_count] =
+        create_button_field(s_hash_form_buttons_metadata[0].label, // Button label
                             s_hash_form_field_metadata_len + 1, BH_FORM_X_PADDING);
 
-    // Add a NULL terminator to the field array
-    s_hash_form_field[s_hash_form_field_metadata_len + 1] = NULL;
-
     // Create the form
-    s_hash_collision_form = new_form(s_hash_form_field);
-
-    set_current_field(s_hash_collision_form, s_hash_form_field[0]);
-    update_field_highlighting(s_hash_collision_form, s_hash_form_field_metadata_len + 1,
-                              (unsigned short[]){s_hash_form_field_metadata_len}, 1);
-
+    manager->form = new_form(manager->fields);
     hash_form_create_sub_win(win, max_y, max_x);
 }
 
@@ -397,28 +400,27 @@ hash_collision_form_render(WINDOW* win, int max_y, int max_x) {
                                     "The window passed to hash_collision_form_render is null");
     }
 
-    if (s_hash_collision_form == NULL) {
+    if (manager->form == NULL) {
         hash_collision_form_init(win, max_y, max_x); // Initialize the form if not already done
     }
 
     // Set the label for the field
-    for (unsigned short i = 0; i < s_hash_form_field_metadata_len; ++i) {
-        mvwprintw(s_hash_collision_form_sub_win, i, BH_FORM_X_PADDING,
-                  s_hash_form_field_metadata[i].label);
-        mvwprintw(s_hash_collision_form_sub_win, i, BH_FORM_X_PADDING + s_max_label_length, ": [");
-        mvwprintw(s_hash_collision_form_sub_win, i,
-                  BH_FORM_X_PADDING + s_max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1
-                      + calculate_longest_max_length(s_hash_form_field_metadata,
-                                                     s_hash_form_field_metadata_len, true)
-                      + BH_FORM_FIELD_BRACKET_PADDING,
+    for (unsigned short i = 0; i < manager->input_count; ++i) {
+        mvwprintw(manager->sub_win, i, BH_FORM_X_PADDING, s_hash_form_field_metadata[i].label);
+        mvwprintw(manager->sub_win, i, BH_FORM_X_PADDING + manager->max_label_length, ": [");
+        mvwprintw(manager->sub_win, i,
+                  BH_FORM_X_PADDING + manager->max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1
+                      + (manager->max_field_length + 1) + BH_FORM_FIELD_BRACKET_PADDING,
                   "]");
     }
 
-    form_driver(s_hash_collision_form, REQ_END_LINE);
+    set_current_field(manager->form, manager->fields[0]);
+    update_field_highlighting(manager);
+    form_driver(manager->form, REQ_END_LINE);
 
     wrefresh(win);
 
-    return s_hash_collision_form;
+    return manager->form;
 }
 
 /**
@@ -433,7 +435,7 @@ hash_collision_form_render(WINDOW* win, int max_y, int max_x) {
 static void
 hash_collision_form_restore(WINDOW* win, int max_y, int max_x,
                             hash_collision_simulation_result_t result) {
-    if (!s_hash_collision_form) {
+    if (!manager->form) {
         return;
     }
 
@@ -449,20 +451,20 @@ hash_collision_form_restore(WINDOW* win, int max_y, int max_x,
     hash_collision_form_render(win, max_y, max_x);
 
     // Manually restore field buffers
-    for (int i = 0; s_hash_form_field[i] != NULL; ++i) {
-        const char* buf = field_buffer(s_hash_form_field[i], 0);
-        set_field_buffer(s_hash_form_field[i], 0, buf); // Force internal repaint
+    for (int i = 0; manager->fields[i] != NULL; ++i) {
+        const char* buf = field_buffer(manager->fields[i], 0);
+        set_field_buffer(manager->fields[i], 0, buf); // Force internal repaint
     }
 
     // Force redraw current field again
-    set_current_field(s_hash_collision_form, s_hash_form_field[0]);
-    form_driver(s_hash_collision_form, REQ_FIRST_FIELD);
+    set_current_field(manager->form, manager->fields[0]);
+    form_driver(manager->form, REQ_FIRST_FIELD);
 
     if (result.attempts_made != -1) {
         render_attack_result(result);
     }
 
-    wrefresh(s_hash_collision_form_sub_win);
+    wrefresh(manager->sub_win);
 }
 
 /**
@@ -471,23 +473,8 @@ hash_collision_form_restore(WINDOW* win, int max_y, int max_x,
  */
 static void
 hash_collision_form_destroy() {
-    if (s_hash_collision_form == NULL) {
-        return; // If the form is already destroyed, do nothing
-    }
-
-    unpost_form(s_hash_collision_form);
-    free_form(s_hash_collision_form);
-
-    // Free the fields
-    for (unsigned short i = 0; i < s_hash_form_field_metadata_len; ++i) {
-        free_field(s_hash_form_field[i]);
-    }
-    free_field(s_hash_form_field[s_hash_form_field_metadata_len]); // Free the submit button field
-    free(s_hash_form_field[s_hash_form_field_metadata_len + 1]);   // Free the NULL terminator
-
-    s_hash_form_field = NULL;
-    s_hash_collision_form = NULL;
-    s_hash_collision_form_sub_win = NULL;
+    free_form_manager(manager);
+    manager = NULL;
 }
 
 /**
@@ -501,78 +488,102 @@ hash_collision_form_destroy() {
  */
 static void
 hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* thread_pool) {
-    FIELD* current = current_field(s_hash_collision_form);
-    int current_index = field_index(current);
-    unsigned short longest_max_length_pad = calculate_longest_max_length(
-        s_hash_form_field_metadata, s_hash_form_field_metadata_len, true);
+    FIELD* active_field = current_field(manager->form);
+    int current_index = field_index(active_field);
+
+    int field_max_length = manager->trackers[current_index].max_length;
+    int longest_max_length_pad = manager->max_field_length + 1;
+    bool is_active_field_input = current_index < manager->input_count;
 
     switch (ch) {
         case KEY_UP:
         case KEY_DOWN: {
-            int result = form_driver(s_hash_collision_form, REQ_VALIDATION);
-            if (ch == KEY_DOWN) {
-                form_driver(s_hash_collision_form, REQ_NEXT_FIELD);
-            } else {
-                form_driver(s_hash_collision_form, REQ_PREV_FIELD);
-            }
-            form_driver(s_hash_collision_form, REQ_END_LINE);
-
-            current = current_field(s_hash_collision_form);
-            current_index = field_index(current);
+            int result = form_driver(manager->form, REQ_VALIDATION);
 
             if (result == E_INVALID_FIELD) {
                 display_field_error(
-                    s_hash_collision_form_sub_win, current, current_index, s_max_label_length,
+                    manager->sub_win, active_field, current_index, manager->max_label_length,
                     longest_max_length_pad,
                     calculate_form_max_value(s_hash_form_field_metadata[current_index].max_length),
                     false);
             } else {
-                clear_field_error(s_hash_collision_form_sub_win, current_index, s_max_label_length,
+                clear_field_error(manager->sub_win, current_index, manager->max_label_length,
                                   longest_max_length_pad);
+
+                FIELD* old_field = active_field;
+                if (ch == KEY_DOWN) {
+                    form_driver(manager->form, REQ_NEXT_FIELD);
+                } else {
+                    form_driver(manager->form, REQ_PREV_FIELD);
+                }
+                form_driver(manager->form, REQ_END_LINE);
+
+                active_field = current_field(manager->form);
+                current_index = field_index(active_field);
+
+                on_field_change(manager, old_field, active_field);
+                update_field_highlighting(manager);
+
+                if (current_index < manager->input_count) {
+                    is_btn_highlighted = false;
+                    pos_form_cursor(manager->form);
+                } else {
+                    is_btn_highlighted = true;
+                    set_field_buffer(hash_collision_form_field_get(manager->input_count), 0,
+                                     s_hash_form_buttons_metadata[0].label);
+                    pos_form_cursor(manager->form);
+                }
             }
 
-            update_field_highlighting(s_hash_collision_form, s_hash_form_field_metadata_len + 1,
-                                      (unsigned short[]){s_hash_form_field_metadata_len}, 1);
-
-            if (current_index < s_hash_form_field_metadata_len) {
-                is_btn_highlighted = false;
-                pos_form_cursor(s_hash_collision_form);
-            } else {
-                is_btn_highlighted = true;
-                set_field_buffer(hash_collision_form_field_get(s_hash_form_field_metadata_len), 0,
-                                 s_hash_form_submit_button_text);
-                pos_form_cursor(s_hash_collision_form);
-            }
         } break;
 
         case KEY_LEFT:
             if (current_index < s_hash_form_field_metadata_len) {
-                form_driver(s_hash_collision_form, REQ_PREV_CHAR);
+                form_driver(manager->form, REQ_PREV_CHAR);
             }
             break;
         case KEY_RIGHT:
             if (current_index < s_hash_form_field_metadata_len) {
-                form_driver(s_hash_collision_form, REQ_NEXT_CHAR);
+                form_driver(manager->form, REQ_NEXT_CHAR);
             }
             break;
 
         case KEY_BACKSPACE:
-        case 127: form_driver(s_hash_collision_form, REQ_DEL_PREV); break;
+        case '\b':
+        case 127:
+            if (is_active_field_input && get_field_current_length(manager, active_field) > 0) {
+                unsigned short prev_length = get_field_length_on_screen(manager, active_field);
+                int result = form_driver(manager->form, REQ_DEL_PREV);
+                if (result == E_OK) {
+                    unsigned short new_length = get_field_length_on_screen(manager, active_field);
+
+                    if (new_length != prev_length) {
+                        decrement_field_length(manager, active_field);
+                    }
+                }
+            }
+            break;
         case KEY_DC:
-            if (current_index < s_hash_form_field_metadata_len) {
-                form_driver(s_hash_collision_form, REQ_DEL_CHAR);
+            if (is_active_field_input && get_field_current_length(manager, active_field) > 0) {
+                unsigned short prev_length = get_field_length_on_screen(manager, active_field);
+                int result = form_driver(manager->form, REQ_DEL_CHAR);
+                if (result == E_OK) {
+                    unsigned short new_length = get_field_length_on_screen(manager, active_field);
+
+                    if (new_length != prev_length) {
+                        decrement_field_length(manager, active_field);
+                    }
+                }
             }
             break;
 
         case '\n': {
-            int result = form_driver(s_hash_collision_form, REQ_VALIDATION);
+            int result = form_driver(manager->form, REQ_VALIDATION);
 
             if (result == E_INVALID_FIELD) {
-                display_field_error(
-                    s_hash_collision_form_sub_win, current, current_index, s_max_label_length,
-                    longest_max_length_pad,
-                    calculate_form_max_value(s_hash_form_field_metadata[current_index].max_length),
-                    true);
+                display_field_error(manager->sub_win, active_field, current_index,
+                                    manager->max_label_length, longest_max_length_pad,
+                                    calculate_form_max_value(field_max_length), true);
             } else if (current_index == s_hash_form_field_metadata_len) {
                 bool has_results_to_check = g_atomic_int_get(&ctx->result->attempts_made) != -1;
 
@@ -588,8 +599,17 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
         } break;
 
         default:
-            if (current_index < s_hash_form_field_metadata_len && isdigit(ch)) {
-                form_driver(s_hash_collision_form, ch);
+            if (is_active_field_input && isdigit(ch)
+                && field_has_space_for_char(manager, active_field)) {
+                unsigned short prev_length = get_field_length_on_screen(manager, active_field);
+                int result = form_driver(manager->form, ch);
+                if (result == E_OK) {
+                    unsigned short new_length = get_field_length_on_screen(manager, active_field);
+
+                    if (new_length != prev_length) {
+                        increment_field_length(manager, active_field);
+                    }
+                }
             }
             break;
     }
@@ -686,10 +706,10 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
     render_page_details(content_win, current_hash_function, *max_x);
 
     hash_collision_form_init(content_win, *max_y, *max_x); // Initialize the form fields
-    FORM* s_hash_collision_form = hash_collision_form_render(
-        content_win, *max_y - BH_LAYOUT_PADDING, *max_x); // Render the form in the window
+    FORM* hash_collision_form = hash_collision_form_render(content_win, *max_y - BH_LAYOUT_PADDING,
+                                                           *max_x); // Render the form in the window
 
-    pos_form_cursor(s_hash_collision_form);
+    pos_form_cursor(hash_collision_form);
 
     // Initialize result structure
     hash_collision_simulation_result_t* result = malloc(sizeof(hash_collision_simulation_result_t));
@@ -743,15 +763,15 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
         if (has_results_to_check && (all_tasks_completed || result->collision_found)) {
             update_button_field_is_running(
                 hash_collision_form_field_get(s_hash_form_field_metadata_len),
-                s_hash_form_submit_button_text, s_hash_form_submit_button_running_text, false);
+                s_hash_form_buttons_metadata[0].label,
+                s_hash_form_buttons_metadata[0].loading_label, false);
 
             if (is_btn_highlighted) {
-                update_field_highlighting(s_hash_collision_form, s_hash_form_field_metadata_len + 1,
-                                          (unsigned short[]){s_hash_form_field_metadata_len}, 1);
+                update_field_highlighting(manager);
 
                 set_field_buffer(hash_collision_form_field_get(s_hash_form_field_metadata_len), 0,
-                                 s_hash_form_submit_button_text);
-                pos_form_cursor(s_hash_collision_form);
+                                 s_hash_form_buttons_metadata[0].label);
+                pos_form_cursor(manager->form);
             }
 
             hash_progress_bar_update(result->attempts_made, max_attempts, true);
@@ -762,16 +782,17 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
             // if button is not in running state, set it to running state
             if (strcmp(
                     field_buffer(hash_collision_form_field_get(s_hash_form_field_metadata_len), 0),
-                    s_hash_form_submit_button_running_text)
+                    s_hash_form_buttons_metadata[0].loading_label)
                 != 0) {
                 update_button_field_is_running(
                     hash_collision_form_field_get(s_hash_form_field_metadata_len),
-                    s_hash_form_submit_button_text, s_hash_form_submit_button_running_text, true);
+                    s_hash_form_buttons_metadata[0].label,
+                    s_hash_form_buttons_metadata[0].loading_label, true);
             }
 
             // Update the intermediate result display
             hash_progress_bar_update(result->attempts_made, max_attempts, false);
-            wrefresh(s_hash_collision_form_sub_win);
+            wrefresh(manager->sub_win);
         }
 
         if (check_console_window_resize_event(&win_size)) {

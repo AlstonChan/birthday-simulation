@@ -35,6 +35,7 @@ struct FormInputField {
  */
 struct FormButton {
     char* label;
+    char* loading_label;
     unsigned int action_id; // or function pointer, enum, etc.
 };
 
@@ -98,9 +99,7 @@ void update_button_field_is_running(FIELD* button_field, const char* label,
 
 /******************** FORM FIELD FUNCTIONS *********************/
 
-void update_field_highlighting(FORM* current_form, unsigned short form_field_count,
-                               unsigned short form_button_indexes[],
-                               unsigned short form_button_indexes_len);
+void update_field_highlighting(form_manager_t* manager);
 void display_field_error(WINDOW* sub_win, FIELD* field, int field_index,
                          unsigned short max_label_length, unsigned short max_field_length,
                          int max_field_value, bool y_padding);
@@ -109,10 +108,10 @@ void clear_field_error(WINDOW* sub_win, int field_index, unsigned short max_labe
 
 /************************ FORM MANAGERS ************************/
 
-form_manager_t* create_paradox_form_manager(const struct FormInputField const input_metadata[],
-                                            unsigned short input_metadata_len,
-                                            const struct FormButton const button_metadata[],
-                                            unsigned short button_metadata_len);
+form_manager_t* create_form_manager(const struct FormInputField const input_metadata[],
+                                    unsigned short input_metadata_len,
+                                    const struct FormButton const button_metadata[],
+                                    unsigned short button_metadata_len);
 field_tracker_t* find_field_tracker(form_manager_t* manager, FIELD* field);
 bool field_has_space_for_char(form_manager_t* manager, FIELD* field);
 void increment_field_length(form_manager_t* manager, FIELD* field);
@@ -121,5 +120,5 @@ void reset_field_length(form_manager_t* manager, FIELD* field);
 unsigned short get_field_length_on_screen(form_manager_t* manager, FIELD* field);
 int get_field_current_length(form_manager_t* manager, FIELD* field);
 void on_field_change(form_manager_t* manager, FIELD* old_field, FIELD* new_field);
-void free_paradox_form_manager(form_manager_t* manager);
+void free_form_manager(form_manager_t* manager);
 #endif
