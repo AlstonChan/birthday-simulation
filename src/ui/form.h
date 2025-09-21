@@ -21,14 +21,52 @@
 #include "../utils/utils.h"
 
 /**
- * \brief          The structure for the input fields in the paradox form.
+ * \brief          Input field configuration
  *
  */
 struct FormInputField {
     char* label;
     unsigned short default_value;
-    int max_length;
+    unsigned int max_length;
 };
+
+/**
+ * \brief          Button configuration
+ */
+struct FormButton {
+    char* label;
+    unsigned int action_id; // or function pointer, enum, etc.
+};
+
+/**
+ * \brief          Runtime tracking structure for form fields. This only
+ *                 tracks the current length of one field value that is 
+ *                 being edited/active.  
+ */
+typedef struct FieldTracker {
+    FIELD* field;
+    unsigned int current_length;
+    unsigned int max_length;
+    unsigned int field_index; // Index in the metadata array
+} field_tracker_t;
+
+/**
+ * \brief          Form manager structure
+ */
+typedef struct FormManager {
+    FIELD** fields; // Combined array for ncurses (inputs + buttons + NULL)
+    field_tracker_t* trackers;
+
+    int input_count;
+    int button_count;
+    int total_field_count;
+
+    unsigned int max_label_length;
+    unsigned int max_field_length;
+
+    FORM* form;
+    WINDOW* sub_win;
+} form_manager_t;
 
 /**
  * \brief          The y-padding of the form relative to the parent window.
@@ -46,24 +84,42 @@ struct FormInputField {
  */
 #define BH_FORM_FIELD_BRACKET_PADDING 2
 
+/********************** UTILITY FUNCTIONS **********************/
+
 unsigned short calculate_longest_max_length(const struct FormInputField const form_fields[],
                                             uint8_t form_fields_len, bool padding);
+int calculate_form_max_value(int length);
+
+/********************** BUTTON FUNCTIONS ***********************/
 
 FIELD* create_button_field(const char* label, unsigned short frow, unsigned short fcol);
 void update_button_field_is_running(FIELD* button_field, const char* label,
                                     const char* running_label, bool is_running);
 
-int calculate_form_max_value(int length);
+/******************** FORM FIELD FUNCTIONS *********************/
 
 void update_field_highlighting(FORM* current_form, unsigned short form_field_count,
                                unsigned short form_button_indexes[],
                                unsigned short form_button_indexes_len);
-
 void display_field_error(WINDOW* sub_win, FIELD* field, int field_index,
                          unsigned short max_label_length, unsigned short max_field_length,
                          int max_field_value, bool y_padding);
-
 void clear_field_error(WINDOW* sub_win, int field_index, unsigned short max_label_length,
                        unsigned short max_field_length);
 
+/************************ FORM MANAGERS ************************/
+
+form_manager_t* create_paradox_form_manager(const struct FormInputField const input_metadata[],
+                                            unsigned short input_metadata_len,
+                                            const struct FormButton const button_metadata[],
+                                            unsigned short button_metadata_len);
+field_tracker_t* find_field_tracker(form_manager_t* manager, FIELD* field);
+bool field_has_space_for_char(form_manager_t* manager, FIELD* field);
+void increment_field_length(form_manager_t* manager, FIELD* field);
+void decrement_field_length(form_manager_t* manager, FIELD* field);
+void reset_field_length(form_manager_t* manager, FIELD* field);
+unsigned short get_field_length_on_screen(form_manager_t* manager, FIELD* field);
+int get_field_current_length(form_manager_t* manager, FIELD* field);
+void on_field_change(form_manager_t* manager, FIELD* old_field, FIELD* new_field);
+void free_paradox_form_manager(form_manager_t* manager);
 #endif

@@ -24,15 +24,6 @@
 #include "../../utils/utils.h"
 #include "../form.h"
 
-extern const char const* paradox_form_button_text;
-extern const struct FormInputField paradox_fields[];
-extern const unsigned short paradox_fields_len;
-
-FIELD* paradox_form_field_get(int index);
-FIELD** paradox_form_field_get_all();
-FORM* paradox_form_get();
-WINDOW* paradox_form_sub_win_get();
-
 void paradox_form_init(WINDOW* win, int max_y, int max_x);
 
 FORM* paradox_form_render(WINDOW* win, int max_y, int max_x);
