@@ -209,32 +209,30 @@ update_field_highlighting(form_manager_t* manager) {
 /**
  * \brief          Displays an error message for a specific field in the form on the right side
  *
- * \param[in]      sub_win The sub-window where the form is displayed.
- * \param[in]      field The field to display the error for.
- * \param[in]      field_index The index of the field in the form's field array.
- * \param[in]      max_label_length The maximum length of the field label of the form.
- * \param[in]      max_field_length The maximum length of the field value of the form.
- * \param[in]      max_field_value The maximum value allowed for the current field based on its max_length.
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to display the error for
+ * \param[in]      max_length The maximum length of the field value of the form.
  * \param[in]      y_padding Whether to apply BH_FORM_Y_PADDING to the error message.
  */
 void
-display_field_error(WINDOW* sub_win, FIELD* field, int field_index, unsigned short max_label_length,
-                    unsigned short max_field_length, int max_field_value, bool y_padding) {
-    clear_field_error(sub_win, field_index, max_label_length, max_field_length);
+display_field_error(form_manager_t* manager, FIELD* field, unsigned int max_length,
+                    bool y_padding) {
+    if (manager == NULL) {
+        return;
+    }
+
+    clear_field_error(manager, field);
 
     char* buffer = field_buffer(field, 0);
     int value;
 
-    int y_pos = field_index;
+    int y_pos = field_index(field);
     if (y_padding) {
         y_pos += BH_FORM_Y_PADDING; // Apply vertical padding if needed
     }
 
-    int x_pos = BH_FORM_X_PADDING + max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1
-                + max_field_length + BH_FORM_FIELD_BRACKET_PADDING + 2;
-
-    // Clear any previous error message first
-    mvwprintw(sub_win, y_pos, x_pos, "                    ");
+    int x_pos = BH_FORM_X_PADDING + manager->max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1
+                + manager->max_field_length + BH_FORM_FIELD_BRACKET_PADDING + 2;
 
     // Trim trailing spaces from buffer
     char* end = buffer + strlen(buffer) - 1;
@@ -250,20 +248,20 @@ display_field_error(WINDOW* sub_win, FIELD* field, int field_index, unsigned sho
 
     // Try to convert the buffer to a number
     if (sscanf(buffer, "%d", &value) != 1) {
-        wattron(sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
-        mvwprintw(sub_win, y_pos, x_pos, "Must be a number");
-        wattroff(sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+        wattron(manager->sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+        mvwprintw(manager->sub_win, y_pos, x_pos, "Must be a number");
+        wattroff(manager->sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
         return;
     }
 
     // Get the maximum allowed value based on the field's max length
     int min = 1;
-    int max = max_field_value;
+    int max = calculate_form_max_value(max_length);
 
     if (value < min || value > max) {
-        wattron(sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
-        mvwprintw(sub_win, y_pos, x_pos, "Range: %d-%d", min, max);
-        wattroff(sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+        wattron(manager->sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+        mvwprintw(manager->sub_win, y_pos, x_pos, "Range: %d-%d", min, max);
+        wattroff(manager->sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
     }
 }
 
@@ -271,18 +269,17 @@ display_field_error(WINDOW* sub_win, FIELD* field, int field_index, unsigned sho
  * \brief          Clears the error message for a specific field in the form created by
  *                 display_field_error.
  *
- * \param[in]      sub_win The sub-window where the form is displayed.
- * \param[in]      field_index The index of the field in the form's field array.
- * \param[in]      max_label_length The maximum length of the field label of the form.
- * \param[in]      max_field_length The maximum length of the field value of the form.
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to clear the error for
  *
  */
 void
-clear_field_error(WINDOW* sub_win, int field_index, unsigned short max_label_length,
-                  unsigned short max_field_length) {
-    mvwprintw(sub_win, field_index + BH_FORM_Y_PADDING,
-              BH_FORM_X_PADDING + max_label_length + +BH_FORM_FIELD_BRACKET_PADDING + 1
-                  + max_field_length + BH_FORM_FIELD_BRACKET_PADDING + 2,
+clear_field_error(form_manager_t* manager, FIELD* field) {
+    int current_index = field_index(field);
+
+    mvwprintw(manager->sub_win, current_index + BH_FORM_Y_PADDING,
+              BH_FORM_X_PADDING + manager->max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1
+                  + manager->max_field_length + BH_FORM_FIELD_BRACKET_PADDING + 2,
               "                    ");
 }
 

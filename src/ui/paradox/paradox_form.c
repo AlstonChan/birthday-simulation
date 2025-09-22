@@ -1,5 +1,5 @@
 /**
- * \file            manager->form.c
+ * \file            paradox_form.c
  * \brief           The main birthday paradox function to create, render, resize
  *                  handle input, execute logic and display results.
  */
@@ -151,10 +151,8 @@ paradox_form_validate_all_fields() {
 
         if (result == E_INVALID_FIELD) {
             all_valid = false;
-            display_field_error(
-                manager->sub_win, paradox_form_field_get(i), i, manager->max_label_length,
-                longest_max_length_pad,
-                calculate_form_max_value(paradox_form_fields_metadata[i].max_length), true);
+            display_field_error(manager, paradox_form_field_get(i),
+                                paradox_form_fields_metadata[i].max_length, true);
         }
     }
 
@@ -397,12 +395,9 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
             int result = form_driver(manager->form, REQ_VALIDATION);
 
             if (result == E_INVALID_FIELD) {
-                display_field_error(manager->sub_win, active_field, current_index,
-                                    manager->max_label_length, longest_max_length_pad,
-                                    field_max_length, true);
+                display_field_error(manager, active_field, field_max_length, true);
             } else {
-                clear_field_error(manager->sub_win, current_index, manager->max_label_length,
-                                  longest_max_length_pad);
+                clear_field_error(manager, active_field);
 
                 FIELD* old_field = active_field;
                 if (ch == KEY_DOWN) {
@@ -418,10 +413,10 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
                 on_field_change(manager, old_field, active_field);
                 update_field_highlighting(manager);
 
-                if (current_index < paradox_form_fields_metadata_len) {
+                if (current_index < manager->input_count) {
                     pos_form_cursor(manager->form);
                 } else {
-                    set_field_buffer(paradox_form_field_get(paradox_form_fields_metadata_len), 0,
+                    set_field_buffer(paradox_form_field_get(manager->input_count), 0,
                                      paradox_form_buttons_metadata[0].label);
                     pos_form_cursor(manager->form);
                 }
@@ -430,12 +425,12 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
         } break;
 
         case KEY_LEFT:
-            if (current_index < paradox_form_fields_metadata_len) {
+            if (current_index < manager->input_count) {
                 form_driver(manager->form, REQ_PREV_CHAR);
             }
             break;
         case KEY_RIGHT:
-            if (current_index < paradox_form_fields_metadata_len) {
+            if (current_index < manager->input_count) {
                 form_driver(manager->form, REQ_NEXT_CHAR);
             }
             break;
@@ -472,10 +467,8 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
         case '\n': {
             int result = form_driver(manager->form, REQ_VALIDATION);
             if (result == E_INVALID_FIELD) {
-                display_field_error(manager->sub_win, active_field, current_index,
-                                    manager->max_label_length, longest_max_length_pad,
-                                    calculate_form_max_value(field_max_length), true);
-            } else if (current_index == paradox_form_fields_metadata_len) {
+                display_field_error(manager, active_field, field_max_length, true);
+            } else if (current_index == manager->input_count) {
                 bool all_field_valid = paradox_form_validate_all_fields();
                 if (all_field_valid) {
                     run_simulation_from_input(collision_probability, simulated_runs_results);

@@ -100,11 +100,9 @@ void update_button_field_is_running(FIELD* button_field, const char* label,
 /******************** FORM FIELD FUNCTIONS *********************/
 
 void update_field_highlighting(form_manager_t* manager);
-void display_field_error(WINDOW* sub_win, FIELD* field, int field_index,
-                         unsigned short max_label_length, unsigned short max_field_length,
-                         int max_field_value, bool y_padding);
-void clear_field_error(WINDOW* sub_win, int field_index, unsigned short max_label_length,
-                       unsigned short max_field_length);
+void display_field_error(form_manager_t* manager, FIELD* field, unsigned int max_length,
+                         bool y_padding);
+void clear_field_error(form_manager_t* manager, FIELD* field);
 
 /************************ FORM MANAGERS ************************/
 

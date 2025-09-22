@@ -15,7 +15,7 @@
 
 #define ACTION_SUBMIT 1
 
-static const char* s_hash_collision_page_title = "[ Hash Collision Demonstration ]";
+static const char* const s_hash_collision_page_title = "[ Hash Collision Demonstration ]";
 
 static const struct FormButton const s_hash_form_buttons_metadata[] = {
     {"[ Run Simulation ]", "[ Running... ]", ACTION_SUBMIT},
@@ -255,27 +255,21 @@ render_attack_result(hash_collision_simulation_result_t results) {
 static bool
 hash_form_validate_all_fields() {
     bool all_valid = true;
-    unsigned short longest_max_length_pad = calculate_longest_max_length(
-        s_hash_form_field_metadata, s_hash_form_field_metadata_len, true);
 
     for (unsigned short i = 0; i < s_hash_form_field_metadata_len; ++i) {
         FIELD* field = hash_collision_form_field_get(i);
         int result = form_driver(manager->form, REQ_VALIDATION);
 
         if (result == E_INVALID_FIELD) {
-            display_field_error(
-                manager->sub_win, field, i, manager->max_label_length, longest_max_length_pad,
-                calculate_form_max_value(s_hash_form_field_metadata[i].max_length), true);
+            display_field_error(manager, field, s_hash_form_field_metadata[i].max_length, true);
             all_valid = false;
         } else {
-            clear_field_error(manager->sub_win, i, manager->max_label_length,
-                              longest_max_length_pad);
+            clear_field_error(manager, field);
         }
     }
 
     if (all_valid) {
-        set_current_field(manager->form,
-                          hash_collision_form_field_get(s_hash_form_field_metadata_len));
+        set_current_field(manager->form, hash_collision_form_field_get(manager->input_count));
     } else {
         set_current_field(manager->form, hash_collision_form_field_get(0));
     }
@@ -501,14 +495,9 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
             int result = form_driver(manager->form, REQ_VALIDATION);
 
             if (result == E_INVALID_FIELD) {
-                display_field_error(
-                    manager->sub_win, active_field, current_index, manager->max_label_length,
-                    longest_max_length_pad,
-                    calculate_form_max_value(s_hash_form_field_metadata[current_index].max_length),
-                    false);
+                display_field_error(manager, active_field, field_max_length, true);
             } else {
-                clear_field_error(manager->sub_win, current_index, manager->max_label_length,
-                                  longest_max_length_pad);
+                clear_field_error(manager, active_field);
 
                 FIELD* old_field = active_field;
                 if (ch == KEY_DOWN) {
@@ -538,12 +527,12 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
         } break;
 
         case KEY_LEFT:
-            if (current_index < s_hash_form_field_metadata_len) {
+            if (current_index < manager->input_count) {
                 form_driver(manager->form, REQ_PREV_CHAR);
             }
             break;
         case KEY_RIGHT:
-            if (current_index < s_hash_form_field_metadata_len) {
+            if (current_index < manager->input_count) {
                 form_driver(manager->form, REQ_NEXT_CHAR);
             }
             break;
@@ -581,10 +570,8 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
             int result = form_driver(manager->form, REQ_VALIDATION);
 
             if (result == E_INVALID_FIELD) {
-                display_field_error(manager->sub_win, active_field, current_index,
-                                    manager->max_label_length, longest_max_length_pad,
-                                    calculate_form_max_value(field_max_length), true);
-            } else if (current_index == s_hash_form_field_metadata_len) {
+                display_field_error(manager, active_field, field_max_length, true);
+            } else if (current_index == manager->input_count) {
                 bool has_results_to_check = g_atomic_int_get(&ctx->result->attempts_made) != -1;
 
                 // We are not going to run another simulation if there are still
