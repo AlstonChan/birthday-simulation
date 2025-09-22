@@ -255,6 +255,7 @@ paradox_form_init(WINDOW* win, int max_y, int max_x) {
         manager->trackers[i].current_length = strlen(string_buffer);
         manager->trackers[i].max_length = metadata->max_length;
         manager->trackers[i].field_index = i;
+        manager->trackers[i].cursor_position = manager->trackers[i].current_length;
 
         free(string_buffer);
     }
@@ -425,13 +426,27 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
         } break;
 
         case KEY_LEFT:
-            if (current_index < manager->input_count) {
-                form_driver(manager->form, REQ_PREV_CHAR);
+            bool can_move_left = cursor_can_move_left(manager, active_field);
+            if (current_index < manager->input_count && can_move_left) {
+                int result = form_driver(manager->form, REQ_PREV_CHAR);
+                if (result == E_OK) {
+                    unsigned int cursor_pos = get_cursor_position(manager, active_field);
+                    if (cursor_pos > 0) {
+                        decrement_cursor_position(manager, active_field);
+                    }
+                }
             }
             break;
         case KEY_RIGHT:
-            if (current_index < manager->input_count) {
-                form_driver(manager->form, REQ_NEXT_CHAR);
+            bool can_move_right = cursor_can_move_right(manager, active_field);
+            if (current_index < manager->input_count && can_move_right) {
+                int result = form_driver(manager->form, REQ_NEXT_CHAR);
+                if (result == E_OK) {
+                    unsigned int cursor_pos = get_cursor_position(manager, active_field);
+                    if (cursor_pos < get_field_current_length(manager, active_field)) {
+                        increment_cursor_position(manager, active_field);
+                    }
+                }
             }
             break;
 
@@ -446,6 +461,9 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
 
                     if (new_length != prev_length) {
                         decrement_field_length(manager, active_field);
+                        // Whenever a character is deleted, the cursor position is automatically
+                        // move to the left by ncurses, so we need to update our tracker as well
+                        decrement_cursor_position(manager, active_field);
                     }
                 }
             }
@@ -487,6 +505,9 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
 
                     if (new_length != prev_length) {
                         increment_field_length(manager, active_field);
+                        // Whenever a character is added, the cursor position is automatically
+                        // move to the right by ncurses, so we need to update our tracker as well
+                        increment_cursor_position(manager, active_field);
                     }
                 }
             }

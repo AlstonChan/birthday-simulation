@@ -457,6 +457,112 @@ reset_field_length(form_manager_t* manager, FIELD* field) {
 }
 
 /**
+ * \brief          Increment field cursor position
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to increment cursor position for
+ */
+void
+increment_cursor_position(form_manager_t* manager, FIELD* field) {
+    if (!manager || !field) {
+        return;
+    }
+
+    field_tracker_t* tracker = find_field_tracker(manager, field);
+    if (tracker && tracker->cursor_position < tracker->current_length) {
+        tracker->cursor_position++;
+    }
+}
+
+/**
+ * \brief          Decrement field cursor position
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to decrement cursor position for
+ */
+void
+decrement_cursor_position(form_manager_t* manager, FIELD* field) {
+    if (!manager || !field) {
+        return;
+    }
+
+    field_tracker_t* tracker = find_field_tracker(manager, field);
+    if (tracker && tracker->cursor_position > 0) {
+        tracker->cursor_position--;
+    }
+}
+
+/**
+ * \brief          Reset field cursor position
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to reset cursor position for
+ */
+void
+reset_cursor_position(form_manager_t* manager, FIELD* field) {
+    if (!manager || !field) {
+        return;
+    }
+
+    field_tracker_t* tracker = find_field_tracker(manager, field);
+    if (tracker) {
+        tracker->cursor_position = tracker->current_length;
+    }
+}
+
+/**
+ * \brief          Get the current cursor position in the field
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to get cursor position for
+ */
+unsigned int
+get_cursor_position(form_manager_t* manager, FIELD* field) {
+    if (!manager || !field) {
+        return 0;
+    }
+
+    field_tracker_t* tracker = find_field_tracker(manager, field);
+    return tracker ? tracker->cursor_position : 0;
+}
+
+/**
+ * \brief          Check if cursor can move right in the field
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to check
+ *
+ * \return         true if cursor can move right, false otherwise
+ */
+bool
+cursor_can_move_right(form_manager_t* manager, FIELD* field) {
+    if (!manager || !field) {
+        return false;
+    }
+
+    field_tracker_t* tracker = find_field_tracker(manager, field);
+    return tracker && tracker->cursor_position < tracker->current_length;
+}
+
+/**
+ * \brief          Check if cursor can move left in the field
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field The field to check
+ *
+ * \return         true if cursor can move left, false otherwise
+ */
+bool
+cursor_can_move_left(form_manager_t* manager, FIELD* field) {
+    if (!manager || !field) {
+        return false;
+    }
+
+    field_tracker_t* tracker = find_field_tracker(manager, field);
+    return tracker && tracker->cursor_position > 0;
+}
+
+/**
  * \brief          Get current length of field by checking what is visible on screen
  *
  * \param[in]      manager The form manager instance
@@ -537,6 +643,7 @@ on_field_change(form_manager_t* manager, FIELD* old_field, FIELD* new_field) {
     // Sync the old field's length in case it was modified externally
     if (old_field) {
         reset_field_length(manager, old_field);
+        reset_cursor_position(manager, old_field);
     }
 }
 

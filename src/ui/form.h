@@ -47,6 +47,7 @@ struct FormButton {
 typedef struct FieldTracker {
     FIELD* field;
     unsigned int current_length;
+    unsigned int cursor_position;
     unsigned int max_length;
     unsigned int field_index; // Index in the metadata array
 } field_tracker_t;
@@ -115,6 +116,12 @@ bool field_has_space_for_char(form_manager_t* manager, FIELD* field);
 void increment_field_length(form_manager_t* manager, FIELD* field);
 void decrement_field_length(form_manager_t* manager, FIELD* field);
 void reset_field_length(form_manager_t* manager, FIELD* field);
+void increment_cursor_position(form_manager_t* manager, FIELD* field);
+void decrement_cursor_position(form_manager_t* manager, FIELD* field);
+void reset_cursor_position(form_manager_t* manager, FIELD* field);
+unsigned int get_cursor_position(form_manager_t* manager, FIELD* field);
+bool cursor_can_move_right(form_manager_t* manager, FIELD* field);
+bool cursor_can_move_left(form_manager_t* manager, FIELD* field);
 unsigned short get_field_length_on_screen(form_manager_t* manager, FIELD* field);
 int get_field_current_length(form_manager_t* manager, FIELD* field);
 void on_field_change(form_manager_t* manager, FIELD* old_field, FIELD* new_field);
