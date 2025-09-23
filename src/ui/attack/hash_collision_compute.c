@@ -102,7 +102,13 @@ hash_collision_worker(gpointer data, gpointer user_data) {
     WorkerData* worker = (WorkerData*)data;
     hash_collision_context_t* ctx = worker->ctx;
 
+    g_atomic_int_inc((gint*)&ctx->remaining_workers);
+
     for (unsigned int attempt = 0; attempt < worker->attempts_to_make; ++attempt) {
+        if (g_atomic_int_get((gint*)&ctx->cancel)) {
+            break; // Exit if cancellation is requested
+        }
+
         // Check if another worker found collision
         g_mutex_lock(ctx->result_mutex);
         if (*ctx->collision_found) {
@@ -165,9 +171,10 @@ hash_collision_worker(gpointer data, gpointer user_data) {
         free(hash_hex);
 
         // Update attempts counter
-        g_atomic_int_inc(&ctx->result->attempts_made);
+        g_atomic_int_inc((guint*)&ctx->result->attempts_made);
     }
 
+    g_atomic_int_dec_and_test((gint*)&ctx->remaining_workers);
     // Cleanup worker data
     g_free(worker);
 }

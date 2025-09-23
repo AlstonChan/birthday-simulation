@@ -37,6 +37,10 @@ typedef struct HashCollisionContext {
     enum hash_function_ids hash_id;
     hash_table_t* shared_table;
     GMutex* table_mutex;
+
+    int cancel; ///< Flag to signal cancellation to worker threads
+    int remaining_workers; ///< Count of remaining active worker threads, used to determine when all threads have completed
+
     bool* collision_found;
     hash_collision_simulation_result_t* result;
     GMutex* result_mutex;

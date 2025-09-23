@@ -86,6 +86,8 @@ hash_collision_simulation_run(unsigned int max_attempts, GThreadPool* thread_poo
     g_mutex_init(ctx->table_mutex);
     g_mutex_init(ctx->result_mutex);
     *ctx->collision_found = false;
+    ctx->cancel = 0;
+    ctx->remaining_workers = 0;
 
     // Divide work among threads
     int num_threads = g_thread_pool_get_max_threads(thread_pool);
@@ -148,6 +150,25 @@ hash_progress_bar_update(int progress, int total, bool is_final) {
         mvwprintw(manager->sub_win, starting_y, BH_FORM_X_PADDING, "Progress: %d%% (%d/%d)",
                   percentage, progress, total);
     }
+}
+
+/**
+ * \brief          Update the exit progress bar in the hash collision form sub window.
+ *
+ * \param[in]      left The number of threads that have NOT completed.
+ * \param[in]      total The total number of threads.
+ */
+static void
+hash_exit_bar_update(int left, int total) {
+    uint8_t starting_y = s_hash_form_field_metadata_len + 1 + 2 + 3 + 1;
+
+    // Clear the row first
+    for (int col = BH_FORM_X_PADDING; col <= COLS - BH_FORM_X_PADDING; col++) {
+        mvwaddch(manager->sub_win, starting_y, col, ' ');
+    }
+
+    int percentage = ((total - left) * 100) / total;
+    mvwprintw(manager->sub_win, starting_y, BH_FORM_X_PADDING, "Exiting: %d%%", percentage);
 }
 
 /**
@@ -755,11 +776,21 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
                                       .shared_table = g_new(hash_table_t, 1),
                                       .table_mutex = g_new(GMutex, 1),
                                       .result_mutex = g_new(GMutex, 1),
+                                      .cancel = 0,
+                                      .remaining_workers = 0,
                                       .collision_found = g_new(bool, 1),
                                       .result = result};
 
     int char_input;
-    while ((char_input = wgetch(content_win)) != KEY_F(2)) {
+
+    while (true) {
+        char_input = wgetch(content_win);
+
+        if (char_input == KEY_F(2)) {
+            g_atomic_int_set((gint*)&ctx->cancel, 1); // Signal cancellation to worker threads
+            break;
+        }
+
         hash_form_handle_input(char_input, ctx, thread_pool);
 
         // If the user has initiated a simulation run, check if the thread pool has
@@ -833,6 +864,16 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
 
             mvwprintw(content_win, 0, (*max_x - title_len) / 2, s_hash_collision_page_title);
             wrefresh(content_win);
+        }
+    }
+
+    bool waiting_all_threads_to_exit = true;
+    while (waiting_all_threads_to_exit) {
+        gint left = g_atomic_int_get((gint*)&ctx->remaining_workers);
+        hash_exit_bar_update(left, g_thread_pool_get_max_threads(thread_pool));
+
+        if (left == 0) {
+            waiting_all_threads_to_exit = false;
         }
     }
 

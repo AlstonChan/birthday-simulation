@@ -36,19 +36,19 @@ You can download the executable from [GitHub release](https://github.com/AlstonC
    On Windows, using **MinGW**
 
    ```powershell
-   cmake . -G "MinGW Makefiles"
+   cmake -S . -B build -G "MinGW Makefiles"
    ```
 
    On Linux/Unix, using the standard unix makefile
 
    ```bash
-   cmake . -G "Unix Makefiles"
+   cmake -S . -B build -G "Unix Makefiles"
    ```
 
 3. Run `make` to build the application
 
    ```bash
-   make
+   make -C build
    ```
 
 ## Resources
