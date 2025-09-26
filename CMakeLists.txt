@@ -16,19 +16,46 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # This affects find_package and general linking behavior.
 option(USE_STATIC_LIBS "Use static linking for dependencies" ON)
 
+if(WIN32)
+    # This block runs on MSYS2/MinGW (which CMake detects as WIN32)
+    message(STATUS "Configuring for WIN32 (MSYS2/MinGW)")
+    
+    # Set Windows-specific linker flags for static build
+    if(USE_STATIC_LIBS)
+        # These aggressive flags are often needed on MinGW for static linking
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -Bstatic -Wl,-Bdynamic")
+    endif()
+
+    # Set Windows-specific prefix paths for finding packages
+    set(CMAKE_PREFIX_PATH
+        "C:/msys64/ucrt64"
+        "/ucrt64"
+        "/usr/local"
+    )
+else()
+    # This block runs on Linux/Debian
+    message(STATUS "Configuring for POSIX (Linux/Debian)")
+    
+    # Use standard POSIX/Linux paths
+    set(CMAKE_PREFIX_PATH
+        "/usr/local"
+    )
+endif()
+
 if(USE_STATIC_LIBS)
     set(BUILD_SHARED_LIBS OFF)
     add_compile_definitions(NCURSES_STATIC)
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -Bstatic -Wl,-Bdynamic")
     set(OPENSSL_USE_STATIC_LIBS TRUE)
 else()
     set(BUILD_SHARED_LIBS ON)
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".dll" ".dylib")
 endif()
 
+
 # Embed the markdown file content
-include(${CMAKE_SOURCE_DIR}/EmbedMarkdown.cmake)
+include("${CMAKE_SOURCE_DIR}/EmbedMarkdown.Cmake" REQUIRED)
+message(STATUS "EmbedMarkdown.cmake included")
 
 set(MARKDOWN_FILE "${CMAKE_SOURCE_DIR}/src/explanation.md")
 set(GENERATED_C "${CMAKE_BINARY_DIR}/explanation_embedded.c")
@@ -47,14 +74,8 @@ add_executable(Birthday_Simulation ${SOURCES} "${GENERATED_C}")
 
 target_include_directories(Birthday_Simulation PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR})
 
-set(CMAKE_PREFIX_PATH
-    "C:/msys64/ucrt64"
-    "/ucrt64"
-    "/usr/local"
-)
-
 find_package(OpenSSL REQUIRED)
-
+ 
 # --- Find GLib using pkg-config ---
 find_package(PkgConfig REQUIRED)
 

@@ -31,7 +31,15 @@ You can download the executable from [GitHub release](https://github.com/AlstonC
    git clone https://github.com/AlstonChan/birthday-simulation.git
    ```
 
-2. Generate the `make` file with `CMake`, for your platform:
+2. Install the dependencies package
+
+   For linux:
+
+   ```bash
+   sudo apt update && sudo apt install build-essential libncurses5-dev libncursesw5-dev libssl-dev libglib2.0-dev libc6-dev
+   ```
+
+3. Generate the `make` file with `CMake`, for your platform:
 
    On Windows, using **MinGW**
 
@@ -45,7 +53,7 @@ You can download the executable from [GitHub release](https://github.com/AlstonC
    cmake -S . -B build -G "Unix Makefiles"
    ```
 
-3. Run `make` to build the application
+4. Run `make` to build the application
 
    ```bash
    make -C build
