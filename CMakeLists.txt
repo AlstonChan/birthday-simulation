@@ -91,6 +91,7 @@ if(USE_STATIC_LIBS)
     find_library(FORMW_STATIC_LIB formw PATHS /usr/lib /usr/local/lib)
     find_library(MENUW_STATIC_LIB menuw PATHS /usr/lib /usr/local/lib)
     find_library(PTHREAD_STATIC_LIB pthread PATHS /usr/lib /usr/local/lib)
+    find_library(TINFO_STATIC_LIB tinfo PATHS /usr/lib usr/local/lib)
 endif()
 
 # --- Link Libraries ---
@@ -100,6 +101,7 @@ if(USE_STATIC_LIBS AND NCURSESW_STATIC_LIB AND FORMW_STATIC_LIB AND MENUW_STATIC
         ${MENUW_STATIC_LIB}
         ${FORMW_STATIC_LIB}
         ${NCURSESW_STATIC_LIB}
+        ${TINFO_STATIC_LIB}
         OpenSSL::SSL
         OpenSSL::Crypto
         ${GLIB2_STATIC_LIBRARIES}
