@@ -4,19 +4,13 @@
     {
       "label": "build-windows",
       "type": "shell",
-      "command": "powershell",
-      "args": [
-        "-Command",
-        "New-Item -ItemType Directory -Force -Path build; Set-Location build; cmake .. -G \\\"MinGW Makefiles\\\"; make"
-      ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
+      "command": "New-Item -ItemType Directory -Force -Path build; Set-Location build; cmake .. -G \\\"MinGW Makefiles\\\"; make",
+      "group": "build",
       "problemMatcher": [],
       "options": {
         "shell": {
-          "executable": "powershell.exe"
+          "executable": "powershell.exe",
+          "args": ["-Command"]
         }
       }
     },
@@ -29,9 +23,7 @@
       "options": {
         "shell": {
           "executable": "/bin/bash",
-          "args": [
-            "-c"
-          ]
+          "args": ["-c"]
         }
       }
     },
@@ -39,10 +31,7 @@
       "label": "clean",
       "type": "shell",
       "command": "rm",
-      "args": [
-        "-rf",
-        "build"
-      ],
+      "args": ["-rf", "build"],
       "group": "build",
       "problemMatcher": []
     }

@@ -19,7 +19,7 @@ option(USE_STATIC_LIBS "Use static linking for dependencies" ON)
 if(WIN32)
     # This block runs on MSYS2/MinGW (which CMake detects as WIN32)
     message(STATUS "Configuring for WIN32 (MSYS2/MinGW)")
-    
+
     # Set Windows-specific linker flags for static build
     if(USE_STATIC_LIBS)
         # These aggressive flags are often needed on MinGW for static linking
@@ -29,13 +29,14 @@ if(WIN32)
     # Set Windows-specific prefix paths for finding packages
     set(CMAKE_PREFIX_PATH
         "C:/msys64/ucrt64"
+        "/ucrt64/include"
         "/ucrt64"
         "/usr/local"
     )
 else()
     # This block runs on Linux/Debian
     message(STATUS "Configuring for POSIX (Linux/Debian)")
-    
+
     # Use standard POSIX/Linux paths
     set(CMAKE_PREFIX_PATH
         "/usr/local"
@@ -51,7 +52,6 @@ else()
     set(BUILD_SHARED_LIBS ON)
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".dll" ".dylib")
 endif()
-
 
 # Embed the markdown file content
 include("${CMAKE_SOURCE_DIR}/EmbedMarkdown.Cmake" REQUIRED)
@@ -72,10 +72,14 @@ configure_file(
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.c)
 add_executable(Birthday_Simulation ${SOURCES} "${GENERATED_C}")
 
-target_include_directories(Birthday_Simulation PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR})
+if(WIN32)
+    target_include_directories(Birthday_Simulation PRIVATE ${CMAKE_SOURCE_DIR}/include "C:/msys64/ucrt64/include/ncursesw" ${CMAKE_CURRENT_BINARY_DIR})
+else()
+    target_include_directories(Birthday_Simulation PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR})
+endif()
 
 find_package(OpenSSL REQUIRED)
- 
+
 # --- Find GLib using pkg-config ---
 find_package(PkgConfig REQUIRED)
 
@@ -91,22 +95,37 @@ if(USE_STATIC_LIBS)
     find_library(FORMW_STATIC_LIB formw PATHS /usr/lib /usr/local/lib)
     find_library(MENUW_STATIC_LIB menuw PATHS /usr/lib /usr/local/lib)
     find_library(PTHREAD_STATIC_LIB pthread PATHS /usr/lib /usr/local/lib)
-    find_library(TINFO_STATIC_LIB tinfo PATHS /usr/lib usr/local/lib)
+
+    if(LINUX)
+        find_library(TINFO_STATIC_LIB tinfo PATHS /usr/lib usr/local/lib)
+    endif()
 endif()
 
 # --- Link Libraries ---
 if(USE_STATIC_LIBS AND NCURSESW_STATIC_LIB AND FORMW_STATIC_LIB AND MENUW_STATIC_LIB)
     # Use manually found static libraries
-    target_link_libraries(Birthday_Simulation PRIVATE
-        ${MENUW_STATIC_LIB}
-        ${FORMW_STATIC_LIB}
-        ${NCURSESW_STATIC_LIB}
-        ${TINFO_STATIC_LIB}
-        OpenSSL::SSL
-        OpenSSL::Crypto
-        ${GLIB2_STATIC_LIBRARIES}
-        ${PTHREAD_STATIC_LIB}
-    )
+    if(LINUX)
+        target_link_libraries(Birthday_Simulation PRIVATE
+            ${MENUW_STATIC_LIB}
+            ${FORMW_STATIC_LIB}
+            ${NCURSESW_STATIC_LIB}
+            ${TINFO_STATIC_LIB}
+            OpenSSL::SSL
+            OpenSSL::Crypto
+            ${GLIB2_STATIC_LIBRARIES}
+            ${PTHREAD_STATIC_LIB}
+        )
+    else()
+        target_link_libraries(Birthday_Simulation PRIVATE
+            ${MENUW_STATIC_LIB}
+            ${FORMW_STATIC_LIB}
+            ${NCURSESW_STATIC_LIB}
+            OpenSSL::SSL
+            OpenSSL::Crypto
+            ${GLIB2_STATIC_LIBRARIES}
+            ${PTHREAD_STATIC_LIB}
+        )
+    endif()
 else()
     # Use pkg-config found libraries
     target_link_libraries(Birthday_Simulation PRIVATE

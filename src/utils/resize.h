@@ -21,17 +21,18 @@
     #include <signal.h>
     #include <sys/ioctl.h>
     #include <unistd.h>
+    
+    #ifndef COORD
+    /**
+         * \brief           Placeholder for Windows COORD structure on POSIX
+         */
+    typedef struct _COORD {
+        SHORT X;
+        SHORT Y;
+    } COORD, *PCOORD;
+    #endif
 #endif
 
-#ifndef COORD
-/**
- * \brief           Placeholder for Windows COORD structure on POSIX
- */
-typedef struct {
-    short X;
-    short Y;
-} COORD;
-#endif
 
 bool check_console_window_resize_event(COORD* info);
 
