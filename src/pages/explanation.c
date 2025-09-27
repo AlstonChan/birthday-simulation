@@ -91,22 +91,6 @@ open_explanation_md() {
     return fopen(fullpath, "r");
 }
 
-static FILE*
-open_explanation_md() {
-#ifdef _WIN32
-    char fullpath[MAX_PATH];
-    const char* exe_dir = get_executable_dir();
-    if (!exe_dir) return NULL;
-    snprintf(fullpath, sizeof(fullpath), "%s\\explanation.md", exe_dir);
-#else
-    char fullpath[PATH_MAX];
-    const char* exe_dir = get_executable_dir();
-    if (!exe_dir) return NULL;
-    snprintf(fullpath, sizeof(fullpath), "%s/explanation.md", exe_dir);
-#endif
-    return fopen(fullpath, "r");
-}
-
 /**
  * \brief          Read all lines from an embedded string and return an array of lines.
  *
