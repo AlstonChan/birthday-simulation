@@ -798,8 +798,9 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
         unsigned int max_attempts = atoi(field_buffer(hash_collision_form_field_get(0), 0));
         bool has_results_to_check = g_atomic_int_get(&result->attempts_made) != -1;
         bool all_tasks_completed = g_atomic_int_get(&result->attempts_made) >= max_attempts;
+        gint left = g_atomic_int_get((gint*)&ctx->remaining_workers);
 
-        if (has_results_to_check && (all_tasks_completed || result->collision_found)) {
+        if (has_results_to_check && (all_tasks_completed || result->collision_found) && left == 0) {
             update_button_field_is_running(
                 hash_collision_form_field_get(s_hash_form_field_metadata_len),
                 s_hash_form_buttons_metadata[0].label,

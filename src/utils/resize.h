@@ -27,8 +27,8 @@
          * \brief           Placeholder for Windows COORD structure on POSIX
          */
     typedef struct _COORD {
-        SHORT X;
-        SHORT Y;
+        short X;
+        short Y;
     } COORD, *PCOORD;
     #endif
 #endif

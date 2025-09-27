@@ -287,13 +287,15 @@ clear_result_hash_collision_context(hash_collision_context_t* ctx, bool free_str
         clear_result_hash_collision_simulation_result(ctx->result, free_struct);
     }
 
-    // Cleanup mutexes
-    g_mutex_clear(ctx->table_mutex);
-    g_mutex_clear(ctx->result_mutex);
-
-    // free the mutexes
-    g_free(ctx->table_mutex);
-    g_free(ctx->result_mutex);
+    // Cleanup and free mutexes
+    if (ctx->table_mutex != NULL) {
+        g_mutex_clear(ctx->table_mutex);
+        g_free(ctx->table_mutex);
+    }
+    if (ctx->result_mutex != NULL) {
+        g_mutex_clear(ctx->result_mutex);
+        g_free(ctx->result_mutex);
+    }
 
     // free the collision found flag
     g_free(ctx->collision_found);
