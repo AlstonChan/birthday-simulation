@@ -12,7 +12,7 @@
 #ifndef LAYOUT_H
 #define LAYOUT_H
 
-#include <ncurses/ncurses.h>
+#include <ncurses.h>
 #include <string.h>
 
 #include "../pages/attack.h"

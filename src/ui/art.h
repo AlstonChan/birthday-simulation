@@ -12,7 +12,7 @@
 #ifndef ART_H
 #define ART_H
 
-#include <ncurses/ncurses.h>
+#include <ncurses.h>
 #include <string.h>
 
 #include "../utils/utils.h"

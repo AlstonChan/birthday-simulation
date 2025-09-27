@@ -15,7 +15,7 @@
 #include <ctype.h>
 #include <libgen.h>
 #include <math.h>
-#include <ncurses/ncurses.h>
+#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 

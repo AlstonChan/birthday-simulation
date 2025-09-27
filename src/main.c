@@ -10,8 +10,8 @@
  */
 
 #include <locale.h>
-#include <ncurses/menu.h>
-#include <ncurses/ncurses.h>
+#include <menu.h>
+#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 

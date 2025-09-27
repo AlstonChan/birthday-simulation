@@ -12,7 +12,7 @@
 #ifndef RESIZE_H
 #define RESIZE_H
 
-#include <ncurses/ncurses.h>
+#include <ncurses.h>
 #include <stdbool.h>
 
 #ifdef _WIN32

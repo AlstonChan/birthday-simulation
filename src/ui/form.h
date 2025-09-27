@@ -14,8 +14,8 @@
 
 #include <ctype.h>
 #include <math.h>
-#include <ncurses/form.h>
-#include <ncurses/ncurses.h>
+#include <form.h>
+#include <ncurses.h>
 #include <string.h>
 
 #include "../utils/utils.h"
