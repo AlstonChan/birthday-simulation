@@ -16,7 +16,21 @@
 #include <stdbool.h>
 
 #ifdef _WIN32
-#include <windows.h>
+    #include <windows.h>
+#else
+    #include <signal.h>
+    #include <sys/ioctl.h>
+    #include <unistd.h>
+#endif
+
+#ifndef COORD
+/**
+ * \brief           Placeholder for Windows COORD structure on POSIX
+ */
+typedef struct {
+    short X;
+    short Y;
+} COORD;
 #endif
 
 bool check_console_window_resize_event(COORD* info);
