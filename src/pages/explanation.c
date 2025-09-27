@@ -19,8 +19,24 @@ static const char const* s_explanation_page_title = "[ Birthday Paradox Informat
                        INTERNAL FUNCTION
 ****************************************************************/
 
+/**
+ * \brief          Gets the directory path where the current executable is located
+ * 
+ *                 This function determines the directory containing the currently running
+ *                 executable in a cross-platform manner. On Windows, it uses GetModuleFileNameA()
+ *                 to retrieve the executable path. On Linux, it reads the /proc/self/exe symlink.
+ * 
+ * \return         Pointer to a static string containing the executable directory path,
+ *                 or NULL if the path cannot be determined (Linux only)
+ * 
+ * \note           The returned string is stored in a static buffer and will be overwritten
+ *                 on subsequent calls to this function
+ * \note           On Windows, the path uses backslashes as separators
+ * \note           On Linux, the path uses forward slashes as separators
+ */
 static char*
 get_executable_dir() {
+#ifdef _WIN32
     static char path[MAX_PATH];
     GetModuleFileNameA(NULL, path, MAX_PATH);
     char* last_slash = strrchr(path, '\\');
@@ -28,12 +44,66 @@ get_executable_dir() {
         *last_slash = '\0'; // truncate to directory
     }
     return path;
+#else
+    static char path[PATH_MAX];
+    ssize_t count = readlink("/proc/self/exe", path, PATH_MAX);
+    if (count != -1) {
+        path[count] = '\0';
+        char* last_slash = strrchr(path, '/');
+        if (last_slash) {
+            *last_slash = '\0'; // truncate to directory
+        }
+        return path;
+    }
+    return NULL;
+#endif
+}
+
+/**
+ * \brief          Opens the explanation.md file located in the same directory as the executable
+ * 
+ *                 This function constructs the full path to an "explanation.md" file by combining
+ *                 the executable directory (obtained from get_executable_dir()) with the filename.
+ *                 It handles path construction in a cross-platform manner, using appropriate
+ *                 path separators for Windows (\) and Linux (/).
+ * 
+ * \return         FILE pointer to the opened explanation.md file in read mode,
+ *                 or NULL if the file cannot be opened or the executable directory
+ *                 cannot be determined
+ * 
+ * \note           The caller is responsible for closing the returned FILE pointer
+ * \note           The file is opened in text read mode ("r")
+ * \note           If get_executable_dir() returns NULL, this function will also return NULL
+ */
+static FILE*
+open_explanation_md() {
+#ifdef _WIN32
+    char fullpath[MAX_PATH];
+    const char* exe_dir = get_executable_dir();
+    if (!exe_dir) return NULL;
+    snprintf(fullpath, sizeof(fullpath), "%s\\explanation.md", exe_dir);
+#else
+    char fullpath[PATH_MAX];
+    const char* exe_dir = get_executable_dir();
+    if (!exe_dir) return NULL;
+    snprintf(fullpath, sizeof(fullpath), "%s/explanation.md", exe_dir);
+#endif
+    return fopen(fullpath, "r");
 }
 
 static FILE*
 open_explanation_md() {
+#ifdef _WIN32
     char fullpath[MAX_PATH];
-    snprintf(fullpath, sizeof(fullpath), "%s\\explanation.md", get_executable_dir());
+    const char* exe_dir = get_executable_dir();
+    if (!exe_dir) return NULL;
+    snprintf(fullpath, sizeof(fullpath), "%s\\explanation.md", exe_dir);
+#else
+    char fullpath[PATH_MAX];
+    const char* exe_dir = get_executable_dir();
+    if (!exe_dir) return NULL;
+    snprintf(fullpath, sizeof(fullpath), "%s/explanation.md", exe_dir);
+#endif
     return fopen(fullpath, "r");
 }
 
