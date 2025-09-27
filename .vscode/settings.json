@@ -91,7 +91,13 @@
     "hash_collision_table.h": "c",
     "codecvt": "c",
     "expected": "c",
-    "xutility": "c"
+    "xutility": "c",
+    "hash_collision.h": "c"
   },
-  "cSpell.words": ["Iinclude", "KECCAK", "lmenuw", "lncursesw"]
+  "cSpell.words": [
+    "Iinclude",
+    "KECCAK",
+    "lmenuw",
+    "lncursesw"
+  ]
 }
