@@ -39,6 +39,16 @@
           "description": "Enable pretty-printing for gdb",
           "text": "-enable-pretty-printing",
           "ignoreFailures": true
+        },
+        {
+          "description": "Set scheduler locking off",
+          "text": "-gdb-set scheduler-locking off",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Catch SIGSEGV",
+          "text": "catch signal SIGSEGV",
+          "ignoreFailures": true
         }
       ],
       "preLaunchTask": "build-linux"
