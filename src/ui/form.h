@@ -97,6 +97,8 @@ int calculate_form_max_value(int length);
 FIELD* create_button_field(const char* label, unsigned short frow, unsigned short fcol);
 void update_button_field_is_running(FIELD* button_field, const char* label,
                                     const char* running_label, bool is_running);
+int get_button_field_indices(int len_a, int len_b, unsigned short** button_indices);
+bool is_field_button(form_manager_t* manager, int field_index);
 
 /******************** FORM FIELD FUNCTIONS *********************/
 

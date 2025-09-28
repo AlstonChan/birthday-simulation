@@ -94,6 +94,23 @@ get_button_field_indices(int len_a, int len_b, unsigned short** button_indices) 
     return len_b;
 }
 
+/**
+ * \brief          Check if the field index given refers to a button field
+ *
+ * \param[in]      manager The form manager instance
+ * \param[in]      field_index the field index to check
+ * \return         true if the field is a button field, false other wise
+ */
+bool 
+is_field_button(form_manager_t* manager, int field_index) {
+    unsigned short* button_indices;
+    int num_buttons =
+        get_button_field_indices(manager->input_count, manager->button_count, &button_indices);
+
+    bool is_button = binary_search(button_indices, num_buttons, field_index);
+    return is_button;
+}
+
 /****************************************************************
                         BUTTON FUNCTIONS
 ****************************************************************/

@@ -75,21 +75,23 @@ hash_collision_simulation_run(unsigned int max_attempts, GThreadPool* thread_poo
     if (!table) {
         render_full_page_error_exit(stdscr, 0, 0, "Memory allocation failed for hash table.");
     }
-
-    ctx->table_mutex = g_new0(GMutex, 1);
-    ctx->result_mutex = g_new0(GMutex, 1);
-    ctx->error_info = error_info_create();
-    if (!ctx->error_info) {
-       render_full_page_error_exit(stdscr, 0, 0, "Memory allocation failed for ctx error info");
-    }
-
     ctx->shared_table = table;
-    ctx->result->attempts_made = 0;
+    ctx->table_mutex = g_new0(GMutex, 1);
     g_mutex_init(ctx->table_mutex);
-    g_mutex_init(ctx->result_mutex);
-    ctx->collision_found = false;
+
     ctx->cancel = 0;
     ctx->remaining_workers = 0;
+
+    ctx->collision_found = false;
+    ctx->result_mutex = g_new0(GMutex, 1);
+    g_mutex_init(ctx->result_mutex);
+    
+    ctx->error_info = error_info_create();
+    if (!ctx->error_info) {
+        render_full_page_error_exit(stdscr, 0, 0, "Memory allocation failed for ctx error info");
+    }
+    
+    ctx->result->attempts_made = 0;
 
     // Divide work among threads
     int num_threads = g_thread_pool_get_max_threads(thread_pool);
@@ -508,10 +510,10 @@ static void
 hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* thread_pool) {
     FIELD* active_field = current_field(manager->form);
     int current_index = field_index(active_field);
+    bool is_button = is_field_button(manager, current_index);
 
-    int field_max_length = manager->trackers[current_index].max_length;
+    int field_max_length = is_button ? 0 : manager->trackers[current_index].max_length;
     int longest_max_length_pad = manager->max_field_length + 1;
-    bool is_active_field_input = current_index < manager->input_count;
 
     switch (ch) {
         case KEY_UP:
@@ -534,10 +536,10 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
                 active_field = current_field(manager->form);
                 current_index = field_index(active_field);
 
-                on_field_change(manager, old_field, active_field);
                 update_field_highlighting(manager);
-
-                if (current_index < manager->input_count) {
+                
+                if (!is_button) {
+                    on_field_change(manager, old_field, active_field);
                     is_btn_highlighted = false;
                     pos_form_cursor(manager->form);
                 } else {
@@ -552,7 +554,7 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
 
         case KEY_LEFT:
             bool can_move_left = cursor_can_move_left(manager, active_field);
-            if (current_index < manager->input_count && can_move_left) {
+            if (!is_button && can_move_left) {
                 int result = form_driver(manager->form, REQ_PREV_CHAR);
                 if (result == E_OK) {
                     unsigned int cursor_pos = get_cursor_position(manager, active_field);
@@ -564,7 +566,7 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
             break;
         case KEY_RIGHT:
             bool can_move_right = cursor_can_move_right(manager, active_field);
-            if (current_index < manager->input_count && can_move_right) {
+            if (!is_button && can_move_right) {
                 int result = form_driver(manager->form, REQ_NEXT_CHAR);
                 if (result == E_OK) {
                     unsigned int cursor_pos = get_cursor_position(manager, active_field);
@@ -578,7 +580,7 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
         case KEY_BACKSPACE:
         case '\b':
         case 127:
-            if (is_active_field_input && get_field_current_length(manager, active_field) > 0) {
+            if (!is_button && get_field_current_length(manager, active_field) > 0) {
                 unsigned short prev_length = get_field_length_on_screen(manager, active_field);
                 int result = form_driver(manager->form, REQ_DEL_PREV);
                 if (result == E_OK) {
@@ -594,7 +596,7 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
             }
             break;
         case KEY_DC:
-            if (is_active_field_input && get_field_current_length(manager, active_field) > 0) {
+            if (!is_button && get_field_current_length(manager, active_field) > 0) {
                 unsigned short prev_length = get_field_length_on_screen(manager, active_field);
                 int result = form_driver(manager->form, REQ_DEL_CHAR);
                 if (result == E_OK) {
@@ -627,7 +629,7 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
         } break;
 
         default:
-            if (is_active_field_input && isdigit(ch)
+            if (!is_button && isdigit(ch)
                 && field_has_space_for_char(manager, active_field)) {
                 unsigned short prev_length = get_field_length_on_screen(manager, active_field);
                 int result = form_driver(manager->form, ch);
@@ -768,26 +770,20 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
     prev_result.collision_hash_hex = NULL;
 
     // Initialize context state
-    hash_collision_context_t* ctx = malloc(sizeof(hash_collision_context_t));
-    if (!ctx) {
-        render_full_page_error_exit(
-            stdscr, 0, 0, "Memory allocation failed for hash collision simulation context.");
-    }
+    hash_collision_context_t ctx = {
+        .hash_id         = hash_id,
+        .shared_table    = NULL,
+        .table_mutex     = NULL,
 
-    *ctx = (hash_collision_context_t){.hash_id = hash_id,
-                                      .shared_table = g_new(hash_table_t, 1),
-                                      .table_mutex = g_new(GMutex, 1),
-                                      .result_mutex = g_new(GMutex, 1),
-                                      .cancel = 0,
-                                      .remaining_workers = 0,
-                                      .collision_found = g_new(bool, 1),
-                                      .result = result,
-                                      .error_info = error_info_create()};
-   
-    if (!ctx->error_info) {
-        render_full_page_error_exit(
-            stdscr, 0, 0, "Memory allocation failed for hash collision error info.");
-    }
+        .cancel          = 0,
+        .remaining_workers = 0,
+
+        .collision_found = false,
+        .result_mutex    = NULL,
+        .result          = result,
+
+        .error_info      = NULL
+    };
 
     int char_input;
 
@@ -795,20 +791,20 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
         char_input = wgetch(content_win);
 
         if (char_input == KEY_F(2)) {
-            g_atomic_int_set((gint*)&ctx->cancel, 1); // Signal cancellation to worker threads
+            g_atomic_int_set((gint*)&ctx.cancel, 1); // Signal cancellation to worker threads
             break;
         }
 
-        hash_form_handle_input(char_input, ctx, thread_pool);
+        hash_form_handle_input(char_input, &ctx, thread_pool);
 
         // If the user has initiated a simulation run, check if the thread pool has
         // finished processing all tasks
         unsigned int max_attempts = atoi(field_buffer(hash_collision_form_field_get(0), 0));
         bool has_results_to_check = g_atomic_int_get(&result->attempts_made) != -1;
         bool all_tasks_completed = g_atomic_int_get(&result->attempts_made) >= max_attempts;
-        gint left = g_atomic_int_get((gint*)&ctx->remaining_workers);
+        gint left = g_atomic_int_get((gint*)&ctx.remaining_workers);
 
-        if (left == 0 && has_results_to_check && (all_tasks_completed || result->collision_found || ctx->error_info->has_error)) {
+        if (left == 0 && has_results_to_check && (all_tasks_completed || result->collision_found || ctx.error_info->has_error)) {
             update_button_field_is_running(
                 hash_collision_form_field_get(s_hash_form_field_metadata_len),
                 s_hash_form_buttons_metadata[0].label,
@@ -822,22 +818,22 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
                 pos_form_cursor(manager->form);
             }
 
-            if (ctx->error_info->has_error) {
+            if (ctx.error_info->has_error) {
                 char result[512];
                 snprintf(result, sizeof(result), "%s%s\n%s%s%s%s%s", 
                     "An error had occured when calculating hashes.\nError: ",
-                    ctx->error_info->error_message,
+                    ctx.error_info->error_message,
                     " at ",
-                    ctx->error_info->error_location,
-                    " (", error_type_to_string(ctx->error_info->error_type)," )"
+                    ctx.error_info->error_location,
+                    " (", error_type_to_string(ctx.error_info->error_type)," )"
                 );
                 render_full_page_error(content_win, 0, 0, result);
             }
 
             hash_progress_bar_update(result->attempts_made, max_attempts, true);
-            render_attack_result(*ctx->result);
+            render_attack_result(*ctx.result);
             deep_copy_hash_collision_simulation_result(&prev_result, result);
-            clear_result_hash_collision_context(ctx, false);
+            clear_result_hash_collision_context(&ctx, false);
         } else if (has_results_to_check) {
             // if button is not in running state, set it to running state
             if (strcmp(
@@ -890,7 +886,7 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
 
     bool waiting_all_threads_to_exit = true;
     while (waiting_all_threads_to_exit) {
-        gint left = g_atomic_int_get((gint*)&ctx->remaining_workers);
+        gint left = g_atomic_int_get((gint*)&ctx.remaining_workers);
         hash_exit_bar_update(left, g_thread_pool_get_max_threads(thread_pool));
 
         if (left == 0) {
@@ -899,7 +895,7 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
     }
 
     // Cleanup
-    clear_result_hash_collision_context(ctx, true);
+    clear_result_hash_collision_context(&ctx, true);
     clear_result_hash_collision_simulation_result(&prev_result, false);
     hash_collision_form_destroy();
 

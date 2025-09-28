@@ -34,7 +34,7 @@
     {
       "label": "build-linux-asan",
       "type": "shell",
-      "command": "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS_DEBUG='-g -O1 -fsanitize=address -fsanitize=undefined' .. && make",
+      "command": "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS_DEBUG='-g -O0 -fsanitize=address -fsanitize=undefined' .. && make",
       "group": "build",
       "problemMatcher": [],
       "options": {

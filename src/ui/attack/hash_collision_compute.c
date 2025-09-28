@@ -31,7 +31,7 @@ compute_hash(enum hash_function_ids hash_id, const uint8_t* input, size_t input_
              char** output) {
     size_t hash_hex_len = get_hash_hex_length(hash_id);
     *output = malloc(hash_hex_len);
-    if (!output) {
+    if (!*output) {
         return false;
     }
 
@@ -74,9 +74,10 @@ compute_hash(enum hash_function_ids hash_id, const uint8_t* input, size_t input_
                 return false;
             }
 
-            size_t bin_len = hash_hex_len - 1;          // Exclude null terminator
+            free(*output);
+
+            size_t bin_len = (hash_hex_len - 1) / 2;          // Exclude null terminator
             *output = bytes_to_hex(digest, bin_len, 1); // Convert to hex string
-            (*output)[hash_hex_len - 1] = '\0';         // Null-terminate the string
             if (!*output) {
                 free(digest);
                 return false; // Memory allocation failed in bytes_to_hex
@@ -320,23 +321,38 @@ clear_result_hash_collision_context(hash_collision_context_t* ctx, bool free_str
         g_free(ctx->result_mutex);
     }
 
-    g_mutex_clear(ctx->error_info->error_mutex);
-    free(ctx->error_info);
+    if (ctx->error_info != NULL) {
+        if (ctx->error_info->error_mutex != NULL) {
+            g_mutex_clear(ctx->error_info->error_mutex);
+            g_free(ctx->error_info->error_mutex);
+        }
+        g_free(ctx->error_info);
+    }
 
     // Cleanup: Free the hash table and its entries
     hash_table_destroy(ctx->shared_table);
 
-    if (free_struct) {
-        free(ctx);
-    } else {
-        ctx->result_mutex = NULL;
-        ctx->table_mutex = NULL;
-        ctx->collision_found = false;
-        ctx->shared_table = NULL;
-    }
+    ctx->shared_table = NULL;
+    ctx->table_mutex = NULL;
+    
+    ctx->cancel = 0;
+    ctx->remaining_workers = 0;
+    
+    ctx->collision_found = false;
+    ctx->result_mutex = NULL;
+
+    ctx->error_info = NULL;
 }
 
-thread_error_info_t* error_info_create(void) {
+/**
+ * \brief          Create a struct of thread_error_info_t for storing error message
+ *                 that happens in the thread to be passed to main thread to alert
+ *                 the user.
+ *
+ * \return         thread_error_info_t* A pointer to the created struct, that the
+ *                 caller is responsible for freeing it.
+ */
+thread_error_info_t* error_info_create() {
     thread_error_info_t* info = malloc(sizeof(thread_error_info_t));
     if (!info) return NULL;
     
@@ -351,6 +367,16 @@ thread_error_info_t* error_info_create(void) {
     return info;
 }
 
+/**
+ * \brief          A helper function to register an error in the shared context struct
+ * 
+ * \param[in]      ctx The shared context between each worker to register the error message
+ * \param[in]      worker_id The worker id of the thread that are registering the error message
+ * \param[in]      error_type_t The type of error that had occured
+ * \param[in]      error_message The message to alert the user of
+ * \param[in]      error_location The location of the error occured
+ * 
+ */
 void register_thread_error(hash_collision_context_t* ctx, 
                           unsigned int worker_id,
                           error_type_t error_type,
@@ -384,12 +410,18 @@ void register_thread_error(hash_collision_context_t* ctx,
     g_mutex_unlock(ctx->error_info->error_mutex);
 }
 
+/**
+ * \brief          A helper function to convert a error type into a friendly string
+ * 
+ * \param[in]      type the error type to get the friendly error string
+ * 
+ */
 const char* error_type_to_string(error_type_t type) {
     switch(type) {
         case ERROR_NONE: return "NONE";
         case ERROR_MEMORY_ALLOCATION: return "MEMORY_ALLOCATION";
         case ERROR_HASH_COMPUTATION: return "HASH_COMPUTATION";
-        case ERROR_HASH_TABLE_INSERT: return "TABLE_OPERATION";
+        case ERROR_HASH_TABLE_INSERT: return "HASH_TABLE_INSERT";
         default: return "UNKNOWN";
     }
 }

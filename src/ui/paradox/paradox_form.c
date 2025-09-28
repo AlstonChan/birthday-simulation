@@ -385,10 +385,10 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
 
     FIELD* active_field = current_field(manager->form);
     int current_index = field_index(active_field);
+    bool is_button = is_field_button(manager, current_index);
 
-    int field_max_length = manager->trackers[current_index].max_length;
+    int field_max_length = is_button ? 0 : manager->trackers[current_index].max_length;
     int longest_max_length_pad = manager->max_field_length + 1;
-    bool is_active_field_input = current_index < manager->input_count;
 
     switch (ch) {
         case KEY_UP:
@@ -411,10 +411,10 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
                 active_field = current_field(manager->form);
                 current_index = field_index(active_field);
 
-                on_field_change(manager, old_field, active_field);
                 update_field_highlighting(manager);
-
-                if (current_index < manager->input_count) {
+                
+                if (!is_button) {
+                    on_field_change(manager, old_field, active_field);
                     pos_form_cursor(manager->form);
                 } else {
                     set_field_buffer(paradox_form_field_get(manager->input_count), 0,
@@ -427,7 +427,7 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
 
         case KEY_LEFT:
             bool can_move_left = cursor_can_move_left(manager, active_field);
-            if (current_index < manager->input_count && can_move_left) {
+            if (!is_button && can_move_left) {
                 int result = form_driver(manager->form, REQ_PREV_CHAR);
                 if (result == E_OK) {
                     unsigned int cursor_pos = get_cursor_position(manager, active_field);
@@ -439,7 +439,7 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
             break;
         case KEY_RIGHT:
             bool can_move_right = cursor_can_move_right(manager, active_field);
-            if (current_index < manager->input_count && can_move_right) {
+            if (!is_button && can_move_right) {
                 int result = form_driver(manager->form, REQ_NEXT_CHAR);
                 if (result == E_OK) {
                     unsigned int cursor_pos = get_cursor_position(manager, active_field);
@@ -453,7 +453,7 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
         case KEY_BACKSPACE:
         case '\b':
         case 127:
-            if (is_active_field_input && get_field_current_length(manager, active_field) > 0) {
+            if (!is_button && get_field_current_length(manager, active_field) > 0) {
                 unsigned short prev_length = get_field_length_on_screen(manager, active_field);
                 int result = form_driver(manager->form, REQ_DEL_PREV);
                 if (result == E_OK) {
@@ -469,7 +469,7 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
             }
             break;
         case KEY_DC:
-            if (is_active_field_input && get_field_current_length(manager, active_field) > 0) {
+            if (!is_button && get_field_current_length(manager, active_field) > 0) {
                 unsigned short prev_length = get_field_length_on_screen(manager, active_field);
                 int result = form_driver(manager->form, REQ_DEL_CHAR);
                 if (result == E_OK) {
@@ -496,7 +496,7 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
         } break;
 
         default: {
-            if (is_active_field_input && isdigit(ch)
+            if (!is_button && isdigit(ch)
                 && field_has_space_for_char(manager, active_field)) {
                 unsigned short prev_length = get_field_length_on_screen(manager, active_field);
                 int result = form_driver(manager->form, ch);
