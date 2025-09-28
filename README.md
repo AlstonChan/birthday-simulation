@@ -16,6 +16,7 @@ You can download the executable from [GitHub release](https://github.com/AlstonC
 
 - [OpenSSL](https://www.openssl.org/) - For generating cryptographically random bytes for hashing, which also provides the hash function the program needed like `sha256`, `sha512`, etc..
 - [ncurses](https://invisible-island.net/ncurses/) - The core library to build UI in this CLI application
+- [GLib](https://docs.gtk.org/glib/index.html) - To use their thread pool implementation for calculating hashes concurrently without block the main/UI thread
 
 ## Prerequisites
 
@@ -33,11 +34,33 @@ You can download the executable from [GitHub release](https://github.com/AlstonC
 
 2. Install the dependencies package
 
-   For linux:
+   - For linux:
 
-   ```bash
-   sudo apt update && sudo apt install build-essential libncurses5-dev libncursesw5-dev libssl-dev libglib2.0-dev libc6-dev libzstd-dev libtinfo-dev gdb valgrind clang-format
-   ```
+      ```bash
+      sudo apt update && sudo apt install build-essential libncurses5-dev libncursesw5-dev libssl-dev libglib2.0-dev libc6-dev libzstd-dev libtinfo-dev gdb valgrind clang-format
+      ```
+
+   - For Windows:
+
+      Open your MSYS2-UCRT64 command line:
+
+      Update and upgrade all the packages, you MAY need to run this command multiple times until you see the message `there is nothing to do`.
+
+      ```bash
+      pacman -Syu
+      ```
+
+      Install the toolchain:
+
+      ```bash
+      pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain
+      ```
+
+      then install the packages:
+
+      ```bash
+      pacman -S mingw-w64-ucrt-x86_64-glib2 mingw-w64-ucrt-x86_64-ncurses mingw-w64-ucrt-x86_64-openssl
+      ```
 
 3. Generate the `make` file with `CMake`, for your platform:
 
