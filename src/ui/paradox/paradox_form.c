@@ -133,38 +133,6 @@ render_simulation_result(WINDOW* win, double collision_probability, double simul
     wrefresh(win);
 }
 
-/**
- * \brief          Loop over all field and validate the field. Error message will
- *                 be displayed at the side of the field if any
- *
- * \return         true No error found, all field is valid
- * \return         false One or more input is invalid
- */
-static bool
-paradox_form_validate_all_fields() {
-    bool all_valid = true;
-    for (int i = 0; i < paradox_form_fields_metadata_len; i++) {
-        set_current_field(manager->form, paradox_form_field_get(i));
-        int result = form_driver(manager->form, REQ_VALIDATION);
-        unsigned short longest_max_length_pad = calculate_longest_max_length(
-            paradox_form_fields_metadata, paradox_form_fields_metadata_len, true);
-
-        if (result == E_INVALID_FIELD) {
-            all_valid = false;
-            display_field_error(manager, paradox_form_field_get(i),
-                                paradox_form_fields_metadata[i].max_length, true);
-        }
-    }
-
-    if (all_valid) {
-        set_current_field(manager->form, paradox_form_field_get(paradox_form_fields_metadata_len));
-    } else {
-        set_current_field(manager->form, paradox_form_field_get(0));
-    }
-
-    return all_valid;
-}
-
 /****************************************************************
                        EXTERNAL FUNCTION
 ****************************************************************/
@@ -393,13 +361,9 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
     switch (ch) {
         case KEY_UP:
         case KEY_DOWN: {
-            int result = form_driver(manager->form, REQ_VALIDATION);
+            bool valid = validate_field_and_display(manager);
 
-            if (result == E_INVALID_FIELD) {
-                display_field_error(manager, active_field, field_max_length, true);
-            } else {
-                clear_field_error(manager, active_field);
-
+            if (valid) {
                 FIELD* old_field = active_field;
                 if (ch == KEY_DOWN) {
                     form_driver(manager->form, REQ_NEXT_FIELD);
@@ -412,7 +376,7 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
                 current_index = field_index(active_field);
 
                 update_field_highlighting(manager);
-                
+
                 if (!is_button) {
                     on_field_change(manager, old_field, active_field);
                     pos_form_cursor(manager->form);
@@ -422,7 +386,6 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
                     pos_form_cursor(manager->form);
                 }
             }
-
         } break;
 
         case KEY_LEFT:
@@ -483,21 +446,15 @@ paradox_form_handle_input(WINDOW* win, int ch, double* collision_probability,
             break;
 
         case '\n': {
-            int result = form_driver(manager->form, REQ_VALIDATION);
-            if (result == E_INVALID_FIELD) {
-                display_field_error(manager, active_field, field_max_length, true);
-            } else if (current_index == manager->input_count) {
-                bool all_field_valid = paradox_form_validate_all_fields();
-                if (all_field_valid) {
-                    run_simulation_from_input(collision_probability, simulated_runs_results);
-                    render_simulation_result(win, *collision_probability, *simulated_runs_results);
-                }
+            bool valid = validate_field_and_display(manager);
+            if (valid && is_button) {
+                run_simulation_from_input(collision_probability, simulated_runs_results);
+                render_simulation_result(win, *collision_probability, *simulated_runs_results);
             }
         } break;
 
         default: {
-            if (!is_button && isdigit(ch)
-                && field_has_space_for_char(manager, active_field)) {
+            if (!is_button && isdigit(ch) && field_has_space_for_char(manager, active_field)) {
                 unsigned short prev_length = get_field_length_on_screen(manager, active_field);
                 int result = form_driver(manager->form, ch);
                 if (result == E_OK) {

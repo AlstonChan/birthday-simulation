@@ -13,8 +13,8 @@
 #define COMMON_FORM_H
 
 #include <ctype.h>
-#include <math.h>
 #include <form.h>
+#include <math.h>
 #include <ncurses.h>
 #include <string.h>
 
@@ -103,7 +103,8 @@ bool is_field_button(form_manager_t* manager, int field_index);
 /******************** FORM FIELD FUNCTIONS *********************/
 
 void update_field_highlighting(form_manager_t* manager);
-void display_field_error(form_manager_t* manager, FIELD* field, unsigned int max_length,
+bool validate_field_and_display(form_manager_t* manager);
+bool display_field_error(form_manager_t* manager, FIELD* field, unsigned int max_length,
                          bool y_padding);
 void clear_field_error(form_manager_t* manager, FIELD* field);
 

@@ -85,12 +85,12 @@ hash_collision_simulation_run(unsigned int max_attempts, GThreadPool* thread_poo
     ctx->collision_found = false;
     ctx->result_mutex = g_new0(GMutex, 1);
     g_mutex_init(ctx->result_mutex);
-    
+
     ctx->error_info = error_info_create();
     if (!ctx->error_info) {
         render_full_page_error_exit(stdscr, 0, 0, "Memory allocation failed for ctx error info");
     }
-    
+
     ctx->result->attempts_made = 0;
 
     // Divide work among threads
@@ -268,38 +268,6 @@ render_attack_result(hash_collision_simulation_result_t results) {
     }
 
     wrefresh(manager->sub_win);
-}
-
-/**
- * \brief          Loop over all field and validate the field. Error message will
- *                 be displayed at the side of the field if any
- *
- * \return         true No error found, all field is valid
- * \return         false One or more input is invalid
- */
-static bool
-hash_form_validate_all_fields() {
-    bool all_valid = true;
-
-    for (unsigned short i = 0; i < s_hash_form_field_metadata_len; ++i) {
-        FIELD* field = hash_collision_form_field_get(i);
-        int result = form_driver(manager->form, REQ_VALIDATION);
-
-        if (result == E_INVALID_FIELD) {
-            display_field_error(manager, field, s_hash_form_field_metadata[i].max_length, true);
-            all_valid = false;
-        } else {
-            clear_field_error(manager, field);
-        }
-    }
-
-    if (all_valid) {
-        set_current_field(manager->form, hash_collision_form_field_get(manager->input_count));
-    } else {
-        set_current_field(manager->form, hash_collision_form_field_get(0));
-    }
-
-    return all_valid;
 }
 
 /**
@@ -518,13 +486,9 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
     switch (ch) {
         case KEY_UP:
         case KEY_DOWN: {
-            int result = form_driver(manager->form, REQ_VALIDATION);
+            bool valid = validate_field_and_display(manager);
 
-            if (result == E_INVALID_FIELD) {
-                display_field_error(manager, active_field, field_max_length, true);
-            } else {
-                clear_field_error(manager, active_field);
-
+            if (valid) {
                 FIELD* old_field = active_field;
                 if (ch == KEY_DOWN) {
                     form_driver(manager->form, REQ_NEXT_FIELD);
@@ -537,7 +501,7 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
                 current_index = field_index(active_field);
 
                 update_field_highlighting(manager);
-                
+
                 if (!is_button) {
                     on_field_change(manager, old_field, active_field);
                     is_btn_highlighted = false;
@@ -549,7 +513,6 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
                     pos_form_cursor(manager->form);
                 }
             }
-
         } break;
 
         case KEY_LEFT:
@@ -610,27 +573,21 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
             break;
 
         case '\n': {
-            int result = form_driver(manager->form, REQ_VALIDATION);
+            bool valid = validate_field_and_display(manager);
 
-            if (result == E_INVALID_FIELD) {
-                display_field_error(manager, active_field, field_max_length, true);
-            } else if (current_index == manager->input_count) {
+            if (valid && is_button) {
                 bool is_not_running = g_atomic_int_get(&ctx->result->attempts_made) == -1;
 
                 // We are not going to run another simulation if there are still
                 // pending simulation running
                 if (is_not_running) {
-                    bool all_field_valid = hash_form_validate_all_fields();
-                    if (all_field_valid) {
-                        run_hash_collision_from_input(thread_pool, ctx);
-                    }
+                    run_hash_collision_from_input(thread_pool, ctx);
                 }
             }
         } break;
 
         default:
-            if (!is_button && isdigit(ch)
-                && field_has_space_for_char(manager, active_field)) {
+            if (!is_button && isdigit(ch) && field_has_space_for_char(manager, active_field)) {
                 unsigned short prev_length = get_field_length_on_screen(manager, active_field);
                 int result = form_driver(manager->form, ch);
                 if (result == E_OK) {
@@ -770,20 +727,18 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
     prev_result.collision_hash_hex = NULL;
 
     // Initialize context state
-    hash_collision_context_t ctx = {
-        .hash_id         = hash_id,
-        .shared_table    = NULL,
-        .table_mutex     = NULL,
+    hash_collision_context_t ctx = {.hash_id = hash_id,
+                                    .shared_table = NULL,
+                                    .table_mutex = NULL,
 
-        .cancel          = 0,
-        .remaining_workers = 0,
+                                    .cancel = 0,
+                                    .remaining_workers = 0,
 
-        .collision_found = false,
-        .result_mutex    = NULL,
-        .result          = result,
+                                    .collision_found = false,
+                                    .result_mutex = NULL,
+                                    .result = result,
 
-        .error_info      = NULL
-    };
+                                    .error_info = NULL};
 
     int char_input;
 
@@ -804,7 +759,8 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
         bool all_tasks_completed = g_atomic_int_get(&result->attempts_made) >= max_attempts;
         gint left = g_atomic_int_get((gint*)&ctx.remaining_workers);
 
-        if (left == 0 && has_results_to_check && (all_tasks_completed || result->collision_found || ctx.error_info->has_error)) {
+        if (left == 0 && has_results_to_check
+            && (all_tasks_completed || result->collision_found || ctx.error_info->has_error)) {
             update_button_field_is_running(
                 hash_collision_form_field_get(s_hash_form_field_metadata_len),
                 s_hash_form_buttons_metadata[0].label,
@@ -820,13 +776,10 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
 
             if (ctx.error_info->has_error) {
                 char result[512];
-                snprintf(result, sizeof(result), "%s%s\n%s%s%s%s%s", 
-                    "An error had occured when calculating hashes.\nError: ",
-                    ctx.error_info->error_message,
-                    " at ",
-                    ctx.error_info->error_location,
-                    " (", error_type_to_string(ctx.error_info->error_type)," )"
-                );
+                snprintf(result, sizeof(result), "%s%s\n%s%s%s%s%s",
+                         "An error had occured when calculating hashes.\nError: ",
+                         ctx.error_info->error_message, " at ", ctx.error_info->error_location,
+                         " (", error_type_to_string(ctx.error_info->error_type), " )");
                 render_full_page_error(content_win, 0, 0, result);
             }
 

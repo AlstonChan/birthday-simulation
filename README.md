@@ -36,7 +36,7 @@ You can download the executable from [GitHub release](https://github.com/AlstonC
    For linux:
 
    ```bash
-   sudo apt update && sudo apt install build-essential libncurses5-dev libncursesw5-dev libssl-dev libglib2.0-dev libc6-dev libzstd-dev libtinfo-dev gdb valgrind
+   sudo apt update && sudo apt install build-essential libncurses5-dev libncursesw5-dev libssl-dev libglib2.0-dev libc6-dev libzstd-dev libtinfo-dev gdb valgrind clang-format
    ```
 
 3. Generate the `make` file with `CMake`, for your platform:

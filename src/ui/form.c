@@ -101,7 +101,7 @@ get_button_field_indices(int len_a, int len_b, unsigned short** button_indices) 
  * \param[in]      field_index the field index to check
  * \return         true if the field is a button field, false other wise
  */
-bool 
+bool
 is_field_button(form_manager_t* manager, int field_index) {
     unsigned short* button_indices;
     int num_buttons =
@@ -224,18 +224,49 @@ update_field_highlighting(form_manager_t* manager) {
 }
 
 /**
+ * \brief          Validate the active field and display error with display_field_error if
+ *                 there are any error.
+ *
+ * \param[in]      manager The form manager instance
+ * 
+ * \return         true if the field is valid, false otherwise
+ */
+bool
+validate_field_and_display(form_manager_t* manager) {
+    FIELD* active_field = current_field(manager->form);
+    int current_index = field_index(active_field);
+
+    // Nothing to validate for a button
+    if (is_field_button(manager, current_index)) {
+        return true;
+    }
+
+    int result = form_driver(manager->form, REQ_VALIDATION);
+
+    bool is_valid = display_field_error(manager, active_field,
+                                        manager->trackers[current_index].max_length, true);
+
+    if (is_valid) {
+        clear_field_error(manager, active_field);
+    }
+    return is_valid;
+}
+
+/**
  * \brief          Displays an error message for a specific field in the form on the right side
  *
  * \param[in]      manager The form manager instance
  * \param[in]      field The field to display the error for
  * \param[in]      max_length The maximum length of the field value of the form.
  * \param[in]      y_padding Whether to apply BH_FORM_Y_PADDING to the error message.
+ * 
+ * \return         true if the field is valid, false otherwise
  */
-void
+bool
 display_field_error(form_manager_t* manager, FIELD* field, unsigned int max_length,
                     bool y_padding) {
     if (manager == NULL) {
-        return;
+        return false;
     }
 
     clear_field_error(manager, field);
@@ -249,7 +280,7 @@ display_field_error(form_manager_t* manager, FIELD* field, unsigned int max_leng
     }
 
     int x_pos = BH_FORM_X_PADDING + manager->max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1
-                + manager->max_field_length + BH_FORM_FIELD_BRACKET_PADDING + 2;
+                + 1 + manager->max_field_length + BH_FORM_FIELD_BRACKET_PADDING + 2;
 
     // Trim trailing spaces from buffer
     char* end = buffer + strlen(buffer) - 1;
@@ -260,7 +291,16 @@ display_field_error(form_manager_t* manager, FIELD* field, unsigned int max_leng
 
     // If empty after trimming, don't show error
     if (strlen(buffer) == 0) {
-        return;
+        return false;
+    }
+
+    // If the first buffer is still a space after trimming, then it means that
+    // the input is empty
+    if (buffer[0] == ' ') {
+        wattron(manager->sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+        mvwprintw(manager->sub_win, y_pos, x_pos, "Input cannot be empty");
+        wattroff(manager->sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+        return false;
     }
 
     // Try to convert the buffer to a number
@@ -268,7 +308,7 @@ display_field_error(form_manager_t* manager, FIELD* field, unsigned int max_leng
         wattron(manager->sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
         mvwprintw(manager->sub_win, y_pos, x_pos, "Must be a number");
         wattroff(manager->sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
-        return;
+        return false;
     }
 
     // Get the maximum allowed value based on the field's max length
@@ -279,7 +319,10 @@ display_field_error(form_manager_t* manager, FIELD* field, unsigned int max_leng
         wattron(manager->sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
         mvwprintw(manager->sub_win, y_pos, x_pos, "Range: %d-%d", min, max);
         wattroff(manager->sub_win, COLOR_PAIR(BH_ERROR_COLOR_PAIR));
+        return false;
     }
+
+    return true;
 }
 
 /**
@@ -294,10 +337,14 @@ void
 clear_field_error(form_manager_t* manager, FIELD* field) {
     int current_index = field_index(field);
 
-    mvwprintw(manager->sub_win, current_index + BH_FORM_Y_PADDING,
-              BH_FORM_X_PADDING + manager->max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1
-                  + manager->max_field_length + BH_FORM_FIELD_BRACKET_PADDING + 2,
-              "                    ");
+    int y_pos = current_index + BH_FORM_Y_PADDING;
+    int x_pos = BH_FORM_X_PADDING + manager->max_label_length + BH_FORM_FIELD_BRACKET_PADDING + 1
+                + 1 + manager->max_field_length + BH_FORM_FIELD_BRACKET_PADDING + 2;
+
+    // Clear the row first
+    for (int col = x_pos; col <= COLS - BH_FORM_X_PADDING; col++) {
+        mvwaddch(manager->sub_win, y_pos, col, ' ');
+    }
 }
 
 /****************************************************************
