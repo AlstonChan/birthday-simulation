@@ -22,3 +22,7 @@ build/
 /docs/
 html/
 latex/
+
+# Debug files
+debug/
+valgrind-out.txt

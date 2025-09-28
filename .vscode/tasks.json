@@ -32,6 +32,43 @@
       }
     },
     {
+      "label": "build-linux-asan",
+      "type": "shell",
+      "command": "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS_DEBUG='-g -O1 -fsanitize=address -fsanitize=undefined' .. && make",
+      "group": "build",
+      "problemMatcher": [],
+      "options": {
+        "shell": {
+          "executable": "/bin/bash",
+          "args": [
+            "-c"
+          ]
+        }
+      }
+    },
+    {
+      "label": "run-valgrind-task",
+      "type": "shell",
+      "command": "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=${workspaceFolder}/valgrind-out.txt ${workspaceFolder}/build/Birthday_Simulation",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "dependsOn": "build-linux",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "/bin/bash",
+          "args": [
+            "-c"
+          ]
+        }
+      }
+    },
+    {
       "label": "clean",
       "type": "shell",
       "command": "rm",
