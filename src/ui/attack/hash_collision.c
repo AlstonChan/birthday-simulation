@@ -76,16 +76,18 @@ hash_collision_simulation_run(unsigned int max_attempts, GThreadPool* thread_poo
         render_full_page_error_exit(stdscr, 0, 0, "Memory allocation failed for hash table.");
     }
 
-    ctx->shared_table = g_new(hash_table_t, 1);
-    ctx->table_mutex = g_new(GMutex, 1);
-    ctx->result_mutex = g_new(GMutex, 1);
-    ctx->collision_found = g_new(bool, 1);
+    ctx->table_mutex = g_new0(GMutex, 1);
+    ctx->result_mutex = g_new0(GMutex, 1);
+    ctx->error_info = error_info_create();
+    if (!ctx->error_info) {
+       render_full_page_error_exit(stdscr, 0, 0, "Memory allocation failed for ctx error info");
+    }
 
     ctx->shared_table = table;
     ctx->result->attempts_made = 0;
     g_mutex_init(ctx->table_mutex);
     g_mutex_init(ctx->result_mutex);
-    *ctx->collision_found = false;
+    ctx->collision_found = false;
     ctx->cancel = 0;
     ctx->remaining_workers = 0;
 
@@ -611,11 +613,11 @@ hash_form_handle_input(int ch, hash_collision_context_t* ctx, GThreadPool* threa
             if (result == E_INVALID_FIELD) {
                 display_field_error(manager, active_field, field_max_length, true);
             } else if (current_index == manager->input_count) {
-                bool has_results_to_check = g_atomic_int_get(&ctx->result->attempts_made) != -1;
+                bool is_not_running = g_atomic_int_get(&ctx->result->attempts_made) == -1;
 
                 // We are not going to run another simulation if there are still
                 // pending simulation running
-                if (!has_results_to_check) {
+                if (is_not_running) {
                     bool all_field_valid = hash_form_validate_all_fields();
                     if (all_field_valid) {
                         run_hash_collision_from_input(thread_pool, ctx);
@@ -779,7 +781,13 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
                                       .cancel = 0,
                                       .remaining_workers = 0,
                                       .collision_found = g_new(bool, 1),
-                                      .result = result};
+                                      .result = result,
+                                      .error_info = error_info_create()};
+   
+    if (!ctx->error_info) {
+        render_full_page_error_exit(
+            stdscr, 0, 0, "Memory allocation failed for hash collision error info.");
+    }
 
     int char_input;
 
@@ -800,7 +808,7 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
         bool all_tasks_completed = g_atomic_int_get(&result->attempts_made) >= max_attempts;
         gint left = g_atomic_int_get((gint*)&ctx->remaining_workers);
 
-        if (has_results_to_check && (all_tasks_completed || result->collision_found) && left == 0) {
+        if (left == 0 && has_results_to_check && (all_tasks_completed || result->collision_found || ctx->error_info->has_error)) {
             update_button_field_is_running(
                 hash_collision_form_field_get(s_hash_form_field_metadata_len),
                 s_hash_form_buttons_metadata[0].label,
@@ -812,6 +820,18 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
                 set_field_buffer(hash_collision_form_field_get(s_hash_form_field_metadata_len), 0,
                                  s_hash_form_buttons_metadata[0].label);
                 pos_form_cursor(manager->form);
+            }
+
+            if (ctx->error_info->has_error) {
+                char result[512];
+                snprintf(result, sizeof(result), "%s%s\n%s%s%s%s%s", 
+                    "An error had occured when calculating hashes.\nError: ",
+                    ctx->error_info->error_message,
+                    " at ",
+                    ctx->error_info->error_location,
+                    " (", error_type_to_string(ctx->error_info->error_type)," )"
+                );
+                render_full_page_error(content_win, 0, 0, result);
             }
 
             hash_progress_bar_update(result->attempts_made, max_attempts, true);

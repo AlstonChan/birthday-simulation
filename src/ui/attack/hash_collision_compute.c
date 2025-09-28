@@ -109,9 +109,15 @@ hash_collision_worker(gpointer data, gpointer user_data) {
             break; // Exit if cancellation is requested
         }
 
+        if (ctx->result_mutex == NULL) {
+            REGISTER_ERROR(ctx, worker->worker_id,
+                    ERROR_RESULT_MUTEX_NOT_ALLOCATED, "Result mutex memory is not allocated!");
+            break;
+        }
+
         // Check if another worker found collision
         g_mutex_lock(ctx->result_mutex);
-        if (*ctx->collision_found) {
+        if (ctx->collision_found) {
             g_mutex_unlock(ctx->result_mutex);
             break;
         }
@@ -126,14 +132,22 @@ hash_collision_worker(gpointer data, gpointer user_data) {
         bool compute_success = compute_hash(ctx->hash_id, current_input, input_len, &hash_hex);
         if (!compute_success) {
             free(hash_hex);
-            continue;
+            REGISTER_ERROR_FUNC(ctx, worker->worker_id,
+                        ERROR_HASH_COMPUTATION, "Hash function returned invalid result");
+            break;
+        }
+
+        if (ctx->table_mutex == NULL) {
+            REGISTER_ERROR(ctx, worker->worker_id,
+                    ERROR_HASH_TABLE_MUTEX_NOT_ALLOCATED, "Hash table mutex memory is not allocated!");
+            break;
         }
 
         // Step 3: Check collision (thread-safe)
         g_mutex_lock(ctx->table_mutex);
 
         // Double-check collision flag while holding lock
-        if (*ctx->collision_found) {
+        if (ctx->collision_found) {
             g_mutex_unlock(ctx->table_mutex);
             free(hash_hex);
             break;
@@ -144,8 +158,8 @@ hash_collision_worker(gpointer data, gpointer user_data) {
         if (existing) {
             // Collision found! BIRTHDAY ATTACK SUCCESS: Same hash with different inputs!
             g_mutex_lock(ctx->result_mutex);
-            if (!*ctx->collision_found) { // First to find collision
-                *ctx->collision_found = true;
+            if (!ctx->collision_found) { // First to find collision
+                ctx->collision_found = true;
                 ctx->result->collision_found = true;
                 ctx->result->collision_input_1 = strdup(existing->input);
                 ctx->result->collision_input_2 =
@@ -164,7 +178,10 @@ hash_collision_worker(gpointer data, gpointer user_data) {
             g_mutex_unlock(ctx->table_mutex);
 
             if (!insert_success) {
-                // Handle insertion failure if needed
+               free(hash_hex);
+               REGISTER_ERROR_FUNC(ctx, worker->worker_id,
+                        ERROR_HASH_TABLE_INSERT, "Hash result insert into hash table failed");
+               break;
             }
         }
 
@@ -174,9 +191,9 @@ hash_collision_worker(gpointer data, gpointer user_data) {
         g_atomic_int_inc((guint*)&ctx->result->attempts_made);
     }
 
-    g_atomic_int_dec_and_test((gint*)&ctx->remaining_workers);
     // Cleanup worker data
     g_free(worker);
+    g_atomic_int_dec_and_test((gint*)&ctx->remaining_workers);
 }
 
 /**************************************************************
@@ -283,6 +300,12 @@ clear_result_hash_collision_simulation_result(hash_collision_simulation_result_t
  */
 void
 clear_result_hash_collision_context(hash_collision_context_t* ctx, bool free_struct) {
+    gint left = g_atomic_int_get((gint*)&ctx->remaining_workers);
+    if (left != 0) {
+        render_full_page_error_exit(
+            stdscr, 0, 0, "Attack collision context are being cleared when the remaining thread hasn't exit");
+    }
+    
     if (ctx->result) {
         clear_result_hash_collision_simulation_result(ctx->result, free_struct);
     }
@@ -297,8 +320,8 @@ clear_result_hash_collision_context(hash_collision_context_t* ctx, bool free_str
         g_free(ctx->result_mutex);
     }
 
-    // free the collision found flag
-    g_free(ctx->collision_found);
+    g_mutex_clear(ctx->error_info->error_mutex);
+    free(ctx->error_info);
 
     // Cleanup: Free the hash table and its entries
     hash_table_destroy(ctx->shared_table);
@@ -308,7 +331,65 @@ clear_result_hash_collision_context(hash_collision_context_t* ctx, bool free_str
     } else {
         ctx->result_mutex = NULL;
         ctx->table_mutex = NULL;
-        ctx->collision_found = NULL;
+        ctx->collision_found = false;
         ctx->shared_table = NULL;
+    }
+}
+
+thread_error_info_t* error_info_create(void) {
+    thread_error_info_t* info = malloc(sizeof(thread_error_info_t));
+    if (!info) return NULL;
+    
+    info->has_error = false;
+    info->worker_id = 0;
+    info->error_type = ERROR_NONE;
+    info->error_message[0] = '\0';
+    info->error_location[0] = '\0';
+    info->error_mutex = g_new0(GMutex, 1);
+    g_mutex_init(info->error_mutex);
+    
+    return info;
+}
+
+void register_thread_error(hash_collision_context_t* ctx, 
+                          unsigned int worker_id,
+                          error_type_t error_type,
+                          const char* error_message,
+                          const char* error_location) {
+    if (!ctx || !ctx->error_info) return;
+    
+    g_mutex_lock(ctx->error_info->error_mutex);
+    
+    // Only register the first error (subsequent errors are ignored)
+    if (!ctx->error_info->has_error) {
+        ctx->error_info->worker_id = worker_id;
+        
+        ctx->error_info->error_type = error_type;
+        
+        strncpy(ctx->error_info->error_message, error_message ? error_message : "Unknown error", 
+                sizeof(ctx->error_info->error_message) - 1);
+        ctx->error_info->error_message[sizeof(ctx->error_info->error_message) - 1] = '\0';
+        
+        strncpy(ctx->error_info->error_location, error_location ? error_location : "unknown location", 
+                sizeof(ctx->error_info->error_location) - 1);
+        ctx->error_info->error_location[sizeof(ctx->error_info->error_location) - 1] = '\0';
+        
+        // Set error flag LAST (acts as a memory barrier)
+        ctx->error_info->has_error = true;
+        
+        // Also set the cancel flag to stop other threads
+        ctx->cancel = 1;
+    }
+    
+    g_mutex_unlock(ctx->error_info->error_mutex);
+}
+
+const char* error_type_to_string(error_type_t type) {
+    switch(type) {
+        case ERROR_NONE: return "NONE";
+        case ERROR_MEMORY_ALLOCATION: return "MEMORY_ALLOCATION";
+        case ERROR_HASH_COMPUTATION: return "HASH_COMPUTATION";
+        case ERROR_HASH_TABLE_INSERT: return "TABLE_OPERATION";
+        default: return "UNKNOWN";
     }
 }
