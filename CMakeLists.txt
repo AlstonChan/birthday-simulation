@@ -17,16 +17,12 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 option(USE_STATIC_LIBS "Use static linking for dependencies" ON)
 
 if(WIN32)
-    # This block runs on MSYS2/MinGW (which CMake detects as WIN32)
     message(STATUS "Configuring for WIN32 (MSYS2/MinGW)")
 
-    # Set Windows-specific linker flags for static build
     if(USE_STATIC_LIBS)
-        # These aggressive flags are often needed on MinGW for static linking
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -Bstatic -Wl,-Bdynamic")
     endif()
 
-    # Set Windows-specific prefix paths for finding packages
     set(CMAKE_PREFIX_PATH
         "C:/msys64/ucrt64"
         "/ucrt64/include"
@@ -34,10 +30,8 @@ if(WIN32)
         "/usr/local"
     )
 else()
-    # This block runs on Linux/Debian
     message(STATUS "Configuring for POSIX (Linux/Debian)")
 
-    # Use standard POSIX/Linux paths
     set(CMAKE_PREFIX_PATH
         "/usr/local"
     )
@@ -73,20 +67,86 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.c)
 add_executable(Birthday_Simulation ${SOURCES} "${GENERATED_C}")
 
 if(WIN32)
-    target_include_directories(Birthday_Simulation PRIVATE ${CMAKE_SOURCE_DIR}/include "C:/msys64/ucrt64/include/ncursesw" ${CMAKE_CURRENT_BINARY_DIR})
+    target_include_directories(
+        Birthday_Simulation
+        PRIVATE ${CMAKE_SOURCE_DIR}/include
+        "C:/msys64/ucrt64/include/ncursesw"
+        ${CMAKE_CURRENT_BINARY_DIR}
+    )
 else()
-    target_include_directories(Birthday_Simulation PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR})
+    target_include_directories(
+        Birthday_Simulation
+        PRIVATE ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_BINARY_DIR}
+    )
 endif()
 
 find_package(OpenSSL REQUIRED)
-
-# --- Find GLib using pkg-config ---
 find_package(PkgConfig REQUIRED)
 
-# Find GLib-2.0
-pkg_check_modules(GLIB2 REQUIRED glib-2.0)
+if(USE_STATIC_LIBS)
+    target_link_options(Birthday_Simulation PRIVATE
+        -Wl,-Bstatic
+        -lglib-2.0 -lintl -lpcre2-8
+        -Wl,-Bdynamic
+        -lws2_32 -lole32 -lwinmm -lshlwapi -luuid -lm
+    )
 
-# Find ncurses libraries
+    # Add static compilation flags
+    target_compile_definitions(Birthday_Simulation PRIVATE
+        GLIB_STATIC_COMPILATION
+        G_DISABLE_DEPRECATED
+    )
+
+    if(WIN32)
+        set(GLIB2_STATIC_LIBS
+            "C:/msys64/ucrt64/lib/libglib-2.0.a"
+            "C:/msys64/ucrt64/lib/libpcre2-8.a"
+            "C:/msys64/ucrt64/lib/libintl.a"
+            "C:/msys64/ucrt64/lib/libiconv.a"
+        )
+
+        set(GLIB2_SYSTEM_LIBS
+            ws2_32
+            ole32
+            winmm
+            shlwapi
+            uuid
+            m
+        )
+    else()
+        set(GLIB2_STATIC_LIBS
+            "/usr/lib/x86_64-linux-gnu/libglib-2.0.a" # or /usr/local/lib/
+            "/usr/lib/x86_64-linux-gnu/libpcre2-8.a" # or /usr/local/lib/
+        )
+
+        set(GLIB2_SYSTEM_LIBS
+            m # math library
+        )
+
+        # Note: On Linux, you typically don't need libintl and libiconv
+        # as they're part of glibc, but check if they exist
+        if(EXISTS "/usr/lib/x86_64-linux-gnu/libintl.a")
+            list(APPEND GLIB2_STATIC_LIBS "/usr/lib/x86_64-linux-gnu/libintl.a")
+        endif()
+    endif()
+
+    # Check if the static libraries exist
+    foreach(lib ${GLIB2_STATIC_LIBS})
+        if(NOT EXISTS ${lib})
+            message(FATAL_ERROR "Static library not found: ${lib}")
+        endif()
+    endforeach()
+
+    message(STATUS "Using explicit static GLib libraries: ${GLIB2_STATIC_LIBS}")
+else()
+    pkg_check_modules(GLIB2 REQUIRED glib-2.0)
+endif()
+
+# Always get include directories
+pkg_check_modules(GLIB2_INCLUDES REQUIRED glib-2.0)
+target_include_directories(Birthday_Simulation PRIVATE ${GLIB2_INCLUDES_INCLUDE_DIRS})
+
 pkg_check_modules(NCURSES REQUIRED ncursesw formw menuw)
 
 # Fallback manual library finding for static linking if needed
@@ -112,7 +172,8 @@ if(USE_STATIC_LIBS AND NCURSESW_STATIC_LIB AND FORMW_STATIC_LIB AND MENUW_STATIC
             ${TINFO_STATIC_LIB}
             OpenSSL::SSL
             OpenSSL::Crypto
-            ${GLIB2_STATIC_LIBRARIES}
+            ${GLIB2_STATIC_LIBS} # Full paths to .a files
+            ${GLIB2_SYSTEM_LIBS} # Sy
             ${PTHREAD_STATIC_LIB}
         )
     else()
@@ -122,7 +183,8 @@ if(USE_STATIC_LIBS AND NCURSESW_STATIC_LIB AND FORMW_STATIC_LIB AND MENUW_STATIC
             ${NCURSESW_STATIC_LIB}
             OpenSSL::SSL
             OpenSSL::Crypto
-            ${GLIB2_STATIC_LIBRARIES}
+            ${GLIB2_STATIC_LIBS} # Full paths to .a files
+            ${GLIB2_SYSTEM_LIBS} # Sy
             ${PTHREAD_STATIC_LIB}
         )
     endif()
@@ -135,13 +197,6 @@ else()
         ${GLIB2_LIBRARIES}
     )
 endif()
-
-# Add GLib include directories and compile flags
-target_include_directories(Birthday_Simulation PRIVATE ${GLIB2_INCLUDE_DIRS})
-target_compile_options(Birthday_Simulation PRIVATE ${GLIB2_CFLAGS_OTHER})
-
-# Add library directories for GLib
-target_link_directories(Birthday_Simulation PRIVATE ${GLIB2_LIBRARY_DIRS})
 
 # Custom output directory
 set_target_properties(Birthday_Simulation PROPERTIES
