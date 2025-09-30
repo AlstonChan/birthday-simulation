@@ -45,8 +45,7 @@ struct FormButton {
 
 /**
  * \brief          Runtime tracking structure for form fields. This only
- *                 tracks the current length of one field value that is 
- *                 being edited/active.  
+ *                 tracks all the writable input field and not buttons
  */
 typedef struct FieldTracker {
     FIELD*
