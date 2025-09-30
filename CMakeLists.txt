@@ -85,12 +85,22 @@ find_package(OpenSSL REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 if(USE_STATIC_LIBS)
-    target_link_options(Birthday_Simulation PRIVATE
-        -Wl,-Bstatic
-        -lglib-2.0 -lintl -lpcre2-8
-        -Wl,-Bdynamic
-        -lws2_32 -lole32 -lwinmm -lshlwapi -luuid -lm
-    )
+    if(WIN32)
+        target_link_options(Birthday_Simulation PRIVATE
+            -Wl,-Bstatic
+            -lglib-2.0 -lintl -lpcre2-8
+            -Wl,-Bdynamic
+            -lws2_32 -lole32 -lwinmm -lshlwapi -luuid -lm
+        )
+    else()
+        # Linux-specific static linking options
+        target_link_options(Birthday_Simulation PRIVATE
+            -Wl,-Bstatic
+            -lglib-2.0 -lpcre2-8 -lsysprof-capture-4
+            -Wl,-Bdynamic
+            -lm
+        )
+    endif()
 
     # Add static compilation flags
     target_compile_definitions(Birthday_Simulation PRIVATE
@@ -118,6 +128,7 @@ if(USE_STATIC_LIBS)
         set(GLIB2_STATIC_LIBS
             "/usr/lib/x86_64-linux-gnu/libglib-2.0.a" # or /usr/local/lib/
             "/usr/lib/x86_64-linux-gnu/libpcre2-8.a" # or /usr/local/lib/
+            "/usr/lib/x86_64-linux-gnu/libsysprof-capture-4.a"
         )
 
         set(GLIB2_SYSTEM_LIBS
