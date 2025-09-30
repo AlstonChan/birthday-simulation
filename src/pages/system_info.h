@@ -12,6 +12,7 @@
 #ifndef SYSTEM_INFO_H
 #define SYSTEM_INFO_H
 
+#include <glib.h>
 #include <ncurses.h>
 #include <openssl/crypto.h>
 

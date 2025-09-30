@@ -45,6 +45,9 @@ render_info(WINDOW* win) {
     unsigned long version_num = OPENSSL_VERSION_NUMBER;
     mvwprintw(win, 7, 2, "- OpenSSL Version: %lu.%lu.%lu", (version_num >> 28) & 0xFF,
               (version_num >> 20) & 0xFF, (version_num >> 4) & 0xFF);
+
+    mvwprintw(win, 8, 2, "- GLib Version: %d.%d.%d", GLIB_MAJOR_VERSION, GLIB_MINOR_VERSION,
+              GLIB_MICRO_VERSION);
 }
 
 /**
