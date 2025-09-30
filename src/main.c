@@ -10,8 +10,8 @@
  */
 
 #include <locale.h>
-#include <ncurses/menu.h>
-#include <ncurses/ncurses.h>
+#include <menu.h>
+#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -54,6 +54,15 @@ main() {
 
     int max_y, max_x;               // Store the stdscr dimensions
     getmaxyx(stdscr, max_y, max_x); // Get initial window size
+
+#if __linux__
+    // Initialize terminal size tracking
+    win_size.Y = max_y;
+    win_size.X = max_x;
+
+    // Initialize resize detection (this will set up signal handlers on Linux)
+    check_console_window_resize_event(&win_size);
+#endif
 
     WINDOW* header_win = newwin(2, max_x, 0, 0);
     WINDOW* footer_win = newwin(2, max_x, max_y - 2, 0);

@@ -1,5 +1,4 @@
 {
-  "C_Cpp.clang_format_path": "C:/msys64/ucrt64/bin/clang-format.exe",
   "C_Cpp.clang_format_style": "file",
   "editor.formatOnSave": true,
   "[c]": {
@@ -85,7 +84,19 @@
     "header.h": "c",
     "source_location": "c",
     "charconv": "c",
-    "xmemory": "c"
+    "xmemory": "c",
+    "attack.h": "c",
+    "ctype.h": "c",
+    "hash_collision_table.h": "c",
+    "codecvt": "c",
+    "expected": "c",
+    "xutility": "c",
+    "hash_collision.h": "c"
   },
-  "cSpell.words": ["Iinclude", "KECCAK", "lmenuw", "lncursesw"]
+  "cSpell.words": [
+    "Iinclude",
+    "KECCAK",
+    "lmenuw",
+    "lncursesw"
+  ]
 }

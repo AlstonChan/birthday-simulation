@@ -1,0 +1,82 @@
+name: Build Windows
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: "Version to use for the build"
+    outputs:
+      artifact_name:
+        description: "Name of the generated Windows artifact"
+        value: ${{ jobs.build.outputs.artifact_name }}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      artifact_name: ${{ steps.artifact.outputs.exe_name }}
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up MSYS2 with UCRT64
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            base-devel
+            cmake
+            git
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ncurses
+            mingw-w64-ucrt-x86_64-openssl
+
+      - name: Build with CMake (ucrt64)
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+          echo "Build completed successfully"
+          ls -la *.exe
+
+      - name: Prepare release artifacts
+        id: artifact
+        run: |
+          cd build
+          BIN_NAME="birthday_simulation_${{ inputs.version }}_Windows_x86_64.exe"
+
+          # Find the executable (assuming there's only one .exe file)
+          EXE_FILE=$(find . -name "*.exe" -type f | head -1)
+          if [ -z "$EXE_FILE" ]; then
+            echo "Error: No executable found in build directory"
+            exit 1
+          fi
+
+          mv "$EXE_FILE" "../$BIN_NAME"
+          cd ..
+          echo "exe_name=$BIN_NAME" >> $GITHUB_OUTPUT
+          echo "Created artifact: $BIN_NAME"
+
+      - name: Generate checksum
+        run: |
+          sha256sum "${{ steps.artifact.outputs.exe_name }}" > "${{ steps.artifact.outputs.exe_name }}.sha256"
+          echo "Generated checksum for Windows build"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build-${{ inputs.version }}
+          path: |
+            ${{ steps.artifact.outputs.exe_name }}
+            ${{ steps.artifact.outputs.exe_name }}.sha256
+          retention-days: 30

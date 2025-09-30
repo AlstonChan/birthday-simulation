@@ -1,4 +1,4 @@
-name: Release with MSYS2 UCRT64
+name: Release
 
 on:
   push:
@@ -6,120 +6,88 @@ on:
       - main
 
 jobs:
-  release:
-    runs-on: windows-latest
+  version-analysis:
+    uses: ./.github/workflows/version.yml
+
+  build-windows:
+    needs: version-analysis
+    if: needs.version-analysis.outputs.should_release == 'true'
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      version: ${{ needs.version-analysis.outputs.new_version }}
+
+  build-linux:
+    needs: version-analysis
+    if: needs.version-analysis.outputs.should_release == 'true'
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      version: ${{ needs.version-analysis.outputs.new_version }}
+
+  create-release:
+    needs: [version-analysis, build-windows, build-linux]
+    if: needs.version-analysis.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
     permissions:
       contents: write
 
-    defaults:
-      run:
-        shell: msys2 {0}
-
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up MSYS2 with UCRT64
-        uses: msys2/setup-msys2@v2
         with:
-          msystem: UCRT64
-          update: true
-          install: >-
-            base-devel
-            cmake
-            git
-            mingw-w64-ucrt-x86_64-toolchain
-            mingw-w64-ucrt-x86_64-cmake
-            mingw-w64-ucrt-x86_64-ncurses
-            mingw-w64-ucrt-x86_64-openssl
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get latest commit message
-        id: commit
+      - name: Update version in CMakeLists.txt
         run: |
-          echo "msg=$(git log -1 --pretty=format:%s%n%b)" >> "$GITHUB_OUTPUT"
+          NEW_VERSION="${{ needs.version-analysis.outputs.new_version }}"
+          sed -i "s/VERSION [0-9]*\.[0-9]*\.[0-9]*/VERSION $NEW_VERSION/" CMakeLists.txt
+          echo "Updated CMakeLists.txt to version $NEW_VERSION"
 
-      - name: Determine version bump
-        id: bump
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build-${{ needs.version-analysis.outputs.new_version }}
+          path: ./artifacts/windows/
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build-${{ needs.version-analysis.outputs.new_version }}
+          path: ./artifacts/linux/
+
+      - name: Create combined checksum file
         run: |
-          COMMIT_MSG="${{ steps.commit.outputs.msg }}"
+          echo "# Checksums for Release v${{ needs.version-analysis.outputs.new_version }}" > checksums.txt
+          echo "" >> checksums.txt
 
-          if [[ "$COMMIT_MSG" == *"BREAKING CHANGE"* ]]; then
-            echo "level=major" >> "$GITHUB_OUTPUT"
-          elif [[ "$COMMIT_MSG" == feat:* ]]; then
-            echo "level=minor" >> "$GITHUB_OUTPUT"
-          elif [[ "$COMMIT_MSG" == fix:* ]]; then
-            echo "level=patch" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=true" >> "$GITHUB_OUTPUT"
+          if [ -f "./artifacts/windows/"*.sha256 ]; then
+            echo "## Windows x86_64" >> checksums.txt
+            cat ./artifacts/windows/*.sha256 >> checksums.txt
+            echo "" >> checksums.txt
           fi
 
-      - name: Exit if no bump needed
-        if: steps.bump.outputs.skip == 'true'
-        run: echo "No version bump required. Exiting..."
+          if [ -f "./artifacts/linux/"*.sha256 ]; then
+            echo "## Linux x86_64" >> checksums.txt
+            cat ./artifacts/linux/*.sha256 >> checksums.txt
+          fi
 
-      - name: Bump version in CMakeLists.txt
-        if: steps.bump.outputs.skip != 'true'
-        id: version
+      - name: Commit version bump and create tag
         run: |
-          file="CMakeLists.txt"
-          version_line=$(grep -E 'project\(.*VERSION [0-9]+\.[0-9]+\.[0-9]+' "$file")
-          current_version=$(echo "$version_line" | grep -oP 'VERSION \K[0-9]+\.[0-9]+\.[0-9]+')
-          IFS='.' read -r major minor patch <<< "$current_version"
-
-          case "${{ steps.bump.outputs.level }}" in
-            major)
-              ((major+=1)); minor=0; patch=0 ;;
-            minor)
-              ((minor+=1)); patch=0 ;;
-            patch)
-              ((patch+=1)) ;;
-          esac
-
-          new_version="$major.$minor.$patch"
-          sed -i "s/VERSION [0-9]*\.[0-9]*\.[0-9]*/VERSION $new_version/" "$file"
-          echo "new_version=$new_version" >> $GITHUB_OUTPUT
-
-      - name: Build with CMake (ucrt64)
-        if: steps.bump.outputs.skip != 'true'
-        run: |
-          mkdir -p build
-          cd build
-          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
-          cmake --build . --config Release
-
-      - name: Prepare release artifacts
-        if: steps.bump.outputs.skip != 'true'
-        id: artifact
-        run: |
-          cd build
-          BIN_NAME="birthday_simulation_${{ steps.version.outputs.new_version }}_Windows_x86_64.exe"
-          mv *.exe "../$BIN_NAME"
-          cd ..
-          echo "exe_name=$BIN_NAME" >> $GITHUB_OUTPUT
-
-      - name: Generate checksum
-        if: steps.bump.outputs.skip != 'true'
-        run: |
-          sha256sum "${{ steps.artifact.outputs.exe_name }}" > checksum.txt
-
-      - name: Commit version bump and tag
-        if: steps.bump.outputs.skip != 'true'
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add CMakeLists.txt
-          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
-          git tag "v${{ steps.version.outputs.new_version }}"
+          git commit -m "chore: bump version to ${{ needs.version-analysis.outputs.new_version }}"
+          git tag "v${{ needs.version-analysis.outputs.new_version }}"
           git push origin main --tags
 
       - name: Create GitHub Release
-        if: steps.bump.outputs.skip != 'true'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "v${{ steps.version.outputs.new_version }}"
-          name: "v${{ steps.version.outputs.new_version }}"
+          tag_name: "v${{ needs.version-analysis.outputs.new_version }}"
+          name: "Release v${{ needs.version-analysis.outputs.new_version }}"
+          body: ${{ needs.version-analysis.outputs.release_notes }}
           files: |
-            ${{ steps.artifact.outputs.exe_name }}
-            checksum.txt
+            ./artifacts/windows/*
+            ./artifacts/linux/*
+            checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

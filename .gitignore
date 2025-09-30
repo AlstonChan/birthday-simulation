@@ -17,3 +17,12 @@ Makefile
 
 # Build folders
 build/
+
+# Doxygen output
+/docs/
+html/
+latex/
+
+# Debug files
+debug/
+valgrind-out.txt

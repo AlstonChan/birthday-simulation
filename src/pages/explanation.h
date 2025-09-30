@@ -15,12 +15,15 @@
 #include <ctype.h>
 #include <libgen.h>
 #include <math.h>
-#include <ncurses/ncurses.h>
+#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 
 #ifdef _WIN32
 #include <windows.h>
+#else
+#include <linux/limits.h>
+#include <unistd.h>
 #endif
 
 #include "../ui/error.h"

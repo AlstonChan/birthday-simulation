@@ -12,8 +12,8 @@
 #ifndef ATTACK_H
 #define ATTACK_H
 
-#include <ncurses/form.h>
-#include <ncurses/ncurses.h>
+#include <form.h>
+#include <ncurses.h>
 #include <string.h>
 
 #ifdef _WIN32
@@ -21,6 +21,7 @@
 #endif
 
 #include "../ui/attack/hash_collision.h"
+#include "../ui/attack/hash_collision_compute.h"
 #include "../ui/attack/hash_config.h"
 #include "../ui/attack/hash_menu.h"
 #include "../ui/error.h"

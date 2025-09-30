@@ -41,6 +41,8 @@ render_attack_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, 
         nodelay_modified = true; // Track if we modified nodelay
     }
 
+    GThreadPool* thread_pool = create_hash_attack_pool(g_get_num_processors());
+
     // Clear the window before rendering
     werase(content_win);
 
@@ -84,7 +86,7 @@ render_attack_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, 
             case 10: // Enter key
                 hash_menu_erase();
                 render_hash_collision_page(content_win, header_win, footer_win, max_y, max_x,
-                                           selected_item_index);
+                                           selected_item_index, thread_pool);
 
                 // Back to menu after exiting the hash collision page
                 hash_menu_restore(content_win, *max_y, *max_x);
@@ -137,6 +139,13 @@ render_attack_page(WINDOW* content_win, WINDOW* header_win, WINDOW* footer_win, 
 
     if (nodelay_modified) {
         nodelay(content_win, FALSE); // Restore nodelay to true
+    }
+
+    if (thread_pool) {
+        g_thread_pool_free(thread_pool,
+                           TRUE, // Shutdown immediately
+                           FALSE // wait for task to finish?
+        );
     }
 
     // Clear the window after user input

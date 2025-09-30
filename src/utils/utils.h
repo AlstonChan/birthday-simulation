@@ -15,7 +15,7 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 #include <limits.h>
-#include <ncurses/ncurses.h>
+#include <ncurses.h>
 #include <openssl/rand.h>
 #include <stdlib.h>
 #include <string.h>

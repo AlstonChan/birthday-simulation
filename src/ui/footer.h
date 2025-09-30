@@ -12,7 +12,7 @@
 #ifndef FOOTER_H
 #define FOOTER_H
 
-#include <ncurses/ncurses.h>
+#include <ncurses.h>
 #include <string.h>
 
 #include "error.h"

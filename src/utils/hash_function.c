@@ -99,7 +99,6 @@ hash_16bit(const void* data, size_t len) {
  * \brief          Generic wrapper for OpenSSL hash functions
  *                 REMEMBER TO `free()` the returned pointer after use.
  *
- *
  * \param[in]      data Pointer to input data buffer
  * \param[in]      len Length of input data in bytes
  * \param[in]      hash_id The ID of the hash function to use

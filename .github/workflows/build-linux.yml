@@ -1,0 +1,75 @@
+name: Build Linux
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: "Version to use for the build"
+    outputs:
+      artifact_name:
+        description: "Name of the generated Linux artifact"
+        value: ${{ jobs.build.outputs.artifact_name }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_name: ${{ steps.artifact.outputs.bin_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake libncurses5-dev libncursesw5-dev libssl-dev libglib2.0-dev libc6-dev libzstd-dev libtinfo-dev
+
+      - name: Build with CMake
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+          echo "Build completed successfully"
+          ls -la
+
+      - name: Prepare release artifacts
+        id: artifact
+        run: |
+          cd build
+          BIN_NAME="birthday_simulation_${{ inputs.version }}_Linux_x86_64"
+
+          # Find the executable (look for files without extension that are executable)
+          EXE_FILE=$(find . -type f -executable ! -name "*.so*" ! -name "*.a" ! -path "*/CMakeFiles/*" | head -1)
+          if [ -z "$EXE_FILE" ]; then
+            echo "Error: No executable found in build directory"
+            echo "Contents of build directory:"
+            find . -type f -ls
+            exit 1
+          fi
+
+          mv "$EXE_FILE" "../$BIN_NAME"
+          cd ..
+
+          # Make sure it's executable
+          chmod +x "$BIN_NAME"
+
+          echo "bin_name=$BIN_NAME" >> $GITHUB_OUTPUT
+          echo "Created artifact: $BIN_NAME"
+
+      - name: Generate checksum
+        run: |
+          sha256sum "${{ steps.artifact.outputs.bin_name }}" > "${{ steps.artifact.outputs.bin_name }}.sha256"
+          echo "Generated checksum for Linux build"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build-${{ inputs.version }}
+          path: |
+            ${{ steps.artifact.outputs.bin_name }}
+            ${{ steps.artifact.outputs.bin_name }}.sha256
+          retention-days: 30

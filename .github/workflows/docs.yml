@@ -1,0 +1,137 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.c"
+      - "**.cpp"
+      - "**.h"
+      - "**.hpp"
+      - "**.md"
+      - "Doxyfile"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "**.c"
+      - "**.cpp"
+      - "**.h"
+      - "**.hpp"
+      - "**.md"
+      - "Doxyfile"
+      - ".github/workflows/docs.yml"
+
+# Allow one concurrent deployment
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    if: github.ref == 'refs/heads/zmain' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history for git info in docs
+
+      - name: Install Doxygen and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz plantuml
+
+      - name: Verify Doxyfile exists
+        run: |
+          if [ ! -f "Doxyfile" ]; then
+            echo "Error: Doxyfile not found in repository root"
+            echo "Please create a Doxyfile in the root directory"
+            exit 1
+          fi
+          echo "Doxyfile found ✓"
+
+      - name: Configure Doxygen output
+        run: |
+          # Ensure OUTPUT_DIRECTORY points to docs
+          if ! grep -q "^OUTPUT_DIRECTORY.*=.*docs" Doxyfile; then
+            echo "Configuring OUTPUT_DIRECTORY to docs/"
+            sed -i 's/^OUTPUT_DIRECTORY[[:space:]]*=.*/OUTPUT_DIRECTORY = docs/' Doxyfile
+            # If OUTPUT_DIRECTORY doesn't exist, add it
+            if ! grep -q "^OUTPUT_DIRECTORY" Doxyfile; then
+              echo "OUTPUT_DIRECTORY = docs" >> Doxyfile
+            fi
+          fi
+
+          # Ensure HTML output is enabled
+          sed -i 's/^GENERATE_HTML[[:space:]]*=.*/GENERATE_HTML = YES/' Doxyfile
+          if ! grep -q "^GENERATE_HTML" Doxyfile; then
+            echo "GENERATE_HTML = YES" >> Doxyfile
+          fi
+
+          # Set HTML output directory to html (relative to OUTPUT_DIRECTORY)
+          sed -i 's/^HTML_OUTPUT[[:space:]]*=.*/HTML_OUTPUT = html/' Doxyfile
+          if ! grep -q "^HTML_OUTPUT" Doxyfile; then
+            echo "HTML_OUTPUT = html" >> Doxyfile
+          fi
+
+      - name: Generate documentation
+        run: |
+          echo "Generating documentation with Doxygen..."
+          doxygen Doxyfile
+
+          # Verify docs were generated
+          if [ ! -d "docs/html" ]; then
+            echo "Error: Documentation was not generated in docs/html"
+            echo "Please check your Doxyfile configuration"
+            exit 1
+          fi
+
+          echo "Documentation generated successfully ✓"
+          echo "Generated files:"
+          ls -la docs/html/
+
+      - name: Add .nojekyll file
+        run: |
+          # Add .nojekyll to prevent GitHub Pages from processing the site with Jekyll
+          touch docs/html/.nojekyll
+
+      - name: Upload documentation artifacts
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: docs/html/
+          retention-days: 30
+
+      - name: Setup Pages (for main branch only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages (for main branch only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/html/
+
+  deploy-pages:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build-docs
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

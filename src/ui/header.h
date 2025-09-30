@@ -12,7 +12,7 @@
 #ifndef HEADER_H
 #define HEADER_H
 
-#include <ncurses/ncurses.h>
+#include <ncurses.h>
 #include <string.h>
 
 #include "../utils/utils.h"

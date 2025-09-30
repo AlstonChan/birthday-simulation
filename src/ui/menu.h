@@ -12,8 +12,8 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include <ncurses/menu.h>
-#include <ncurses/ncurses.h>
+#include <menu.h>
+#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -21,8 +21,8 @@
 #include "error.h"
 
 struct ListMenuItem {
-    const char* label;
-    const char* description;
+    const char* label;       ///< The menu label at the left
+    const char* description; ///< The longer description at the right
 };
 
 /**

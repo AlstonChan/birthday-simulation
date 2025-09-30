@@ -12,7 +12,8 @@
 #ifndef SYSTEM_INFO_H
 #define SYSTEM_INFO_H
 
-#include <ncurses/ncurses.h>
+#include <glib.h>
+#include <ncurses.h>
 #include <openssl/crypto.h>
 
 #ifdef _WIN32

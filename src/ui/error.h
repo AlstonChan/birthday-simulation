@@ -12,7 +12,7 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-#include <ncurses/ncurses.h>
+#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 
