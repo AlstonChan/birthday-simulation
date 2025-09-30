@@ -135,21 +135,21 @@ sigwinch_handler(int sig) {
 static bool
 get_terminal_size(short* width, short* height) {
     struct winsize ws;
-    
+
     // Try to get window size from stdin first
     if (ioctl(STDIN_FILENO, TIOCGWINSZ, &ws) == 0) {
         *width = (short)ws.ws_col;
         *height = (short)ws.ws_row;
         return true;
     }
-    
+
     // Fallback to stdout
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) {
         *width = (short)ws.ws_col;
         *height = (short)ws.ws_row;
         return true;
     }
-    
+
     return false;
 }
 
@@ -170,7 +170,7 @@ initialize_resize_detection(void) {
     // Init a empty sa_mask, https://stackoverflow.com/questions/20684290/signal-handling-and-sigemptyset
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART; // Restart interrupted system calls
-    
+
     // sigaction for detecting signals, https://stackoverflow.com/questions/231912/what-is-the-difference-between-sigaction-and-signal/
     return (sigaction(SIGWINCH, &sa, NULL) == 0);
 }
@@ -192,44 +192,44 @@ check_console_window_resize_event(COORD* info) {
     static short old_screen_w = 0, old_screen_h = 0;
     static bool initialized = false;
     short current_screen_w, current_screen_h;
-    
+
     // Initialize signal handler on first call
     if (!initialized) {
         if (!initialize_resize_detection()) {
             return false;
         }
         initialized = true;
-        
+
         // Get initial terminal size
         if (!get_terminal_size(&old_screen_w, &old_screen_h)) {
             return false;
         }
         return false; // Don't report resize on first call
     }
-    
+
     // Always check current size, not just when signal is received
     // This handles cases where signals might be missed or coalesced
     if (!get_terminal_size(&current_screen_w, &current_screen_h)) {
         return false;
     }
-    
+
     // Check if size actually changed
     if (current_screen_w != old_screen_w || current_screen_h != old_screen_h) {
         old_screen_w = current_screen_w;
         old_screen_h = current_screen_h;
         info->X = current_screen_w;
         info->Y = current_screen_h;
-        
+
         // Reset the resize flag after processing
         s_terminal_resized = 0;
         return true;
     }
-    
+
     // If we received a signal but size didn't change, reset the flag
     if (s_terminal_resized) {
         s_terminal_resized = 0;
     }
-    
+
     return false;
 }
 

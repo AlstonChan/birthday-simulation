@@ -93,7 +93,6 @@ if(USE_STATIC_LIBS)
             -lws2_32 -lole32 -lwinmm -lshlwapi -luuid -lm
         )
     else()
-        # Linux-specific static linking options
         target_link_options(Birthday_Simulation PRIVATE
             -Wl,-Bstatic
             -lglib-2.0 -lpcre2-8 -lsysprof-capture-4

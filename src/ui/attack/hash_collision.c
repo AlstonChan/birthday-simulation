@@ -82,7 +82,6 @@ hash_collision_simulation_run(unsigned int max_attempts, GThreadPool* thread_poo
     ctx->cancel = 0;
     ctx->remaining_workers = 0;
 
-    ctx->collision_found = false;
     ctx->result_mutex = g_new0(GMutex, 1);
     g_mutex_init(ctx->result_mutex);
 
@@ -734,7 +733,6 @@ render_hash_collision_page(WINDOW* content_win, WINDOW* header_win, WINDOW* foot
                                     .cancel = 0,
                                     .remaining_workers = 0,
 
-                                    .collision_found = false,
                                     .result_mutex = NULL,
                                     .result = result,
 

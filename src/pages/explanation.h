@@ -20,10 +20,10 @@
 #include <string.h>
 
 #ifdef _WIN32
-    #include <windows.h>
+#include <windows.h>
 #else
-    #include <linux/limits.h>
-    #include <unistd.h>
+#include <linux/limits.h>
+#include <unistd.h>
 #endif
 
 #include "../ui/error.h"

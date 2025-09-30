@@ -13,8 +13,8 @@
 #define PARADOX_FORM_H
 
 #include <ctype.h>
-#include <math.h>
 #include <form.h>
+#include <math.h>
 #include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>

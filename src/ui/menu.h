@@ -21,8 +21,8 @@
 #include "error.h"
 
 struct ListMenuItem {
-    const char* label;
-    const char* description;
+    const char* label;       ///< The menu label at the left
+    const char* description; ///< The longer description at the right
 };
 
 /**

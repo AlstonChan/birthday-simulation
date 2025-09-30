@@ -13,8 +13,8 @@
 #define HASH_COLLISION_H
 
 #include <ctype.h>
-#include <glib.h>
 #include <form.h>
+#include <glib.h>
 #include <ncurses.h>
 #include <stdint.h>
 #include <stdlib.h>

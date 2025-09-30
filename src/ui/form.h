@@ -25,18 +25,22 @@
  *
  */
 struct FormInputField {
-    char* label;
-    unsigned short default_value;
-    unsigned int max_length;
+    char* label;                  ///< The label for the form input field
+    unsigned short default_value; ///< Default value to set in the buffer on form init
+    unsigned int
+        max_length; ///< The maximum length the of character of the input field. The actual length of the input field would be N+1 to accomodate the text cursor
 };
 
 /**
  * \brief          Button configuration
  */
 struct FormButton {
-    char* label;
-    char* loading_label;
-    unsigned int action_id; // or function pointer, enum, etc.
+    char*
+        label; ///< The value for the button set on init for the field, as readonly to simulate a button
+    char*
+        loading_label; ///< The value to show when a process is ongoing and to make the button unavailable
+    unsigned int
+        action_id; // the action id to identify what action should be taken. This value depends on the usage context
 };
 
 /**
@@ -45,10 +49,12 @@ struct FormButton {
  *                 being edited/active.  
  */
 typedef struct FieldTracker {
-    FIELD* field;
-    unsigned int current_length;
-    unsigned int cursor_position;
-    unsigned int max_length;
+    FIELD*
+        field; ///< the form field this struct is tracking. This should be a writable input field and not a readonly (button) field
+    unsigned int current_length;  ///< The current length of the input field the user sees
+    unsigned int cursor_position; ///< The actual position of the text cursor the user sees
+    unsigned int
+        max_length; ///< The max length of character this input field can accept. This should be one character smaller than the input form field X length
     unsigned int field_index; // Index in the metadata array
 } field_tracker_t;
 
@@ -56,18 +62,20 @@ typedef struct FieldTracker {
  * \brief          Form manager structure
  */
 typedef struct FormManager {
-    FIELD** fields; // Combined array for ncurses (inputs + buttons + NULL)
-    field_tracker_t* trackers;
+    FIELD** fields;            // Combined array for ncurses (inputs + buttons + NULL)
+    field_tracker_t* trackers; ///< Tracker struct for writable input field (inputs only)
 
-    int input_count;
-    int button_count;
-    int total_field_count;
+    int input_count;  ///< The number of input field, not including NULL
+    int button_count; ///< The number of button field, not including NULL
+    int total_field_count; ///< The number of input + button field, value MUST be input_count + button_count
 
-    unsigned int max_label_length;
-    unsigned int max_field_length;
+    unsigned int
+        max_label_length; ///< The maximum length of the writable input label of the entire form
+    unsigned int
+        max_field_length; ///< The maximum length of the writable input field of the entire form
 
-    FORM* form;
-    WINDOW* sub_win;
+    FORM* form;      ///< The ncurses form that all fields attached to
+    WINDOW* sub_win; ///< The sub window that the form rendered at
 } form_manager_t;
 
 /**

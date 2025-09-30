@@ -82,6 +82,28 @@ You can download the executable from [GitHub release](https://github.com/AlstonC
    make -C build
    ```
 
+### Documentations
+
+1. To build and view the documentations locally, install doxygen
+
+   ```bash
+   sudo apt update && sudo apt install doxygen
+   ```
+
+   or install it from the [doxygen website](https://www.doxygen.nl/download.html) if you have a GUI
+
+2. Generate the documentation site to `docs`
+
+   ```bash
+   doxygen Doxyfile
+   ```
+
+3. View the site
+
+   ```bash
+   open ./docs/html/index.html
+   ```
+
 ## Resources
 
 - [Ncurses How to Guide](https://invisible-island.net/ncurses/howto/NCURSES-Programming-HOWTO.html)

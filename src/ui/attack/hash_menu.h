@@ -22,15 +22,10 @@
 #include "hash_config.h"
 
 MENU* hash_menu_get();
-
 bool hash_menu_init(WINDOW* win);
-
 MENU* hash_menu_render(WINDOW* win, int max_y, int max_x);
-
 void hash_menu_erase();
-
 void hash_menu_restore(WINDOW* win, int max_y, int max_x);
-
 void hash_menu_destroy();
 
 #endif

@@ -76,7 +76,7 @@ compute_hash(enum hash_function_ids hash_id, const uint8_t* input, size_t input_
 
             free(*output);
 
-            size_t bin_len = (hash_hex_len - 1) / 2;          // Exclude null terminator
+            size_t bin_len = (hash_hex_len - 1) / 2;    // Exclude null terminator
             *output = bytes_to_hex(digest, bin_len, 1); // Convert to hex string
             if (!*output) {
                 free(digest);
@@ -111,14 +111,14 @@ hash_collision_worker(gpointer data, gpointer user_data) {
         }
 
         if (ctx->result_mutex == NULL) {
-            REGISTER_ERROR(ctx, worker->worker_id,
-                    ERROR_RESULT_MUTEX_NOT_ALLOCATED, "Result mutex memory is not allocated!");
+            REGISTER_ERROR(ctx, worker->worker_id, ERROR_RESULT_MUTEX_NOT_ALLOCATED,
+                           "Result mutex memory is not allocated!");
             break;
         }
 
         // Check if another worker found collision
         g_mutex_lock(ctx->result_mutex);
-        if (ctx->collision_found) {
+        if (ctx->result->collision_found) {
             g_mutex_unlock(ctx->result_mutex);
             break;
         }
@@ -133,14 +133,14 @@ hash_collision_worker(gpointer data, gpointer user_data) {
         bool compute_success = compute_hash(ctx->hash_id, current_input, input_len, &hash_hex);
         if (!compute_success) {
             free(hash_hex);
-            REGISTER_ERROR_FUNC(ctx, worker->worker_id,
-                        ERROR_HASH_COMPUTATION, "Hash function returned invalid result");
+            REGISTER_ERROR_FUNC(ctx, worker->worker_id, ERROR_HASH_COMPUTATION,
+                                "Hash function returned invalid result");
             break;
         }
 
         if (ctx->table_mutex == NULL) {
-            REGISTER_ERROR(ctx, worker->worker_id,
-                    ERROR_HASH_TABLE_MUTEX_NOT_ALLOCATED, "Hash table mutex memory is not allocated!");
+            REGISTER_ERROR(ctx, worker->worker_id, ERROR_HASH_TABLE_MUTEX_NOT_ALLOCATED,
+                           "Hash table mutex memory is not allocated!");
             break;
         }
 
@@ -148,7 +148,7 @@ hash_collision_worker(gpointer data, gpointer user_data) {
         g_mutex_lock(ctx->table_mutex);
 
         // Double-check collision flag while holding lock
-        if (ctx->collision_found) {
+        if (ctx->result->collision_found) {
             g_mutex_unlock(ctx->table_mutex);
             free(hash_hex);
             break;
@@ -159,8 +159,7 @@ hash_collision_worker(gpointer data, gpointer user_data) {
         if (existing) {
             // Collision found! BIRTHDAY ATTACK SUCCESS: Same hash with different inputs!
             g_mutex_lock(ctx->result_mutex);
-            if (!ctx->collision_found) { // First to find collision
-                ctx->collision_found = true;
+            if (!ctx->result->collision_found) { // First to find collision
                 ctx->result->collision_found = true;
                 ctx->result->collision_input_1 = strdup(existing->input);
                 ctx->result->collision_input_2 =
@@ -179,10 +178,10 @@ hash_collision_worker(gpointer data, gpointer user_data) {
             g_mutex_unlock(ctx->table_mutex);
 
             if (!insert_success) {
-               free(hash_hex);
-               REGISTER_ERROR_FUNC(ctx, worker->worker_id,
-                        ERROR_HASH_TABLE_INSERT, "Hash result insert into hash table failed");
-               break;
+                free(hash_hex);
+                REGISTER_ERROR_FUNC(ctx, worker->worker_id, ERROR_HASH_TABLE_INSERT,
+                                    "Hash result insert into hash table failed");
+                break;
             }
         }
 
@@ -250,7 +249,6 @@ void
 deep_copy_hash_collision_simulation_result(hash_collision_simulation_result_t* dest,
                                            const hash_collision_simulation_result_t* src) {
     dest->attempts_made = src->attempts_made;
-    dest->collision_found = src->collision_found;
 
     // Deep copy each string safely
     dest->collision_input_1 = src->collision_input_1 ? strdup(src->collision_input_1) : NULL;
@@ -304,9 +302,10 @@ clear_result_hash_collision_context(hash_collision_context_t* ctx, bool free_str
     gint left = g_atomic_int_get((gint*)&ctx->remaining_workers);
     if (left != 0) {
         render_full_page_error_exit(
-            stdscr, 0, 0, "Attack collision context are being cleared when the remaining thread hasn't exit");
+            stdscr, 0, 0,
+            "Attack collision context are being cleared when the remaining thread hasn't exit");
     }
-    
+
     if (ctx->result) {
         clear_result_hash_collision_simulation_result(ctx->result, free_struct);
     }
@@ -334,11 +333,10 @@ clear_result_hash_collision_context(hash_collision_context_t* ctx, bool free_str
 
     ctx->shared_table = NULL;
     ctx->table_mutex = NULL;
-    
+
     ctx->cancel = 0;
     ctx->remaining_workers = 0;
-    
-    ctx->collision_found = false;
+
     ctx->result_mutex = NULL;
 
     ctx->error_info = NULL;
@@ -352,10 +350,13 @@ clear_result_hash_collision_context(hash_collision_context_t* ctx, bool free_str
  * \return         thread_error_info_t* A pointer to the created struct, that the
  *                 caller is responsible for freeing it.
  */
-thread_error_info_t* error_info_create() {
+thread_error_info_t*
+error_info_create() {
     thread_error_info_t* info = malloc(sizeof(thread_error_info_t));
-    if (!info) return NULL;
-    
+    if (!info) {
+        return NULL;
+    }
+
     info->has_error = false;
     info->worker_id = 0;
     info->error_type = ERROR_NONE;
@@ -363,7 +364,7 @@ thread_error_info_t* error_info_create() {
     info->error_location[0] = '\0';
     info->error_mutex = g_new0(GMutex, 1);
     g_mutex_init(info->error_mutex);
-    
+
     return info;
 }
 
@@ -377,36 +378,38 @@ thread_error_info_t* error_info_create() {
  * \param[in]      error_location The location of the error occured
  * 
  */
-void register_thread_error(hash_collision_context_t* ctx, 
-                          unsigned int worker_id,
-                          error_type_t error_type,
-                          const char* error_message,
-                          const char* error_location) {
-    if (!ctx || !ctx->error_info) return;
-    
+void
+register_thread_error(hash_collision_context_t* ctx, unsigned int worker_id,
+                      error_type_t error_type, const char* error_message,
+                      const char* error_location) {
+    if (!ctx || !ctx->error_info) {
+        return;
+    }
+
     g_mutex_lock(ctx->error_info->error_mutex);
-    
+
     // Only register the first error (subsequent errors are ignored)
     if (!ctx->error_info->has_error) {
         ctx->error_info->worker_id = worker_id;
-        
+
         ctx->error_info->error_type = error_type;
-        
-        strncpy(ctx->error_info->error_message, error_message ? error_message : "Unknown error", 
+
+        strncpy(ctx->error_info->error_message, error_message ? error_message : "Unknown error",
                 sizeof(ctx->error_info->error_message) - 1);
         ctx->error_info->error_message[sizeof(ctx->error_info->error_message) - 1] = '\0';
-        
-        strncpy(ctx->error_info->error_location, error_location ? error_location : "unknown location", 
+
+        strncpy(ctx->error_info->error_location,
+                error_location ? error_location : "unknown location",
                 sizeof(ctx->error_info->error_location) - 1);
         ctx->error_info->error_location[sizeof(ctx->error_info->error_location) - 1] = '\0';
-        
+
         // Set error flag LAST (acts as a memory barrier)
         ctx->error_info->has_error = true;
-        
+
         // Also set the cancel flag to stop other threads
         ctx->cancel = 1;
     }
-    
+
     g_mutex_unlock(ctx->error_info->error_mutex);
 }
 
@@ -416,8 +419,9 @@ void register_thread_error(hash_collision_context_t* ctx,
  * \param[in]      type the error type to get the friendly error string
  * 
  */
-const char* error_type_to_string(error_type_t type) {
-    switch(type) {
+const char*
+error_type_to_string(error_type_t type) {
+    switch (type) {
         case ERROR_NONE: return "NONE";
         case ERROR_MEMORY_ALLOCATION: return "MEMORY_ALLOCATION";
         case ERROR_HASH_COMPUTATION: return "HASH_COMPUTATION";
