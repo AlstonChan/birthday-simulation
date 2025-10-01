@@ -26,6 +26,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Update version in CMakeLists.txt
+        run: |
+          NEW_VERSION="${{ inputs.version }}"
+          sed -i "s/VERSION [0-9]*\.[0-9]*\.[0-9]*/VERSION $NEW_VERSION/" CMakeLists.txt
+          echo "Updated CMakeLists.txt to version $NEW_VERSION"
+          grep "project.*VERSION" CMakeLists.txt
+
       - name: Set up MSYS2 with UCRT64
         uses: msys2/setup-msys2@v2
         with:
