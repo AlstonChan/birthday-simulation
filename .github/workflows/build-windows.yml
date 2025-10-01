@@ -40,12 +40,30 @@ jobs:
             mingw-w64-ucrt-x86_64-ncurses
             mingw-w64-ucrt-x86_64-openssl
             mingw-w64-ucrt-x86_64-glib2
+            mingw-w64-ucrt-x86_64-pkg-config
+
+      - name: Debug library paths
+        run: |
+          echo "MSYS2 prefix: $MSYSTEM_PREFIX"
+          echo "Checking for glib libraries:"
+          find $MSYSTEM_PREFIX/lib -name "libglib*" -type f || true
+          pkg-config --cflags --libs glib-2.0 || true
 
       - name: Build with CMake (ucrt64)
         run: |
           mkdir -p build
           cd build
-          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+
+          # Set PKG_CONFIG_PATH to help find libraries
+          export PKG_CONFIG_PATH="$MSYSTEM_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+          # Use MSYSTEM_PREFIX for library paths instead of hardcoded paths
+          cmake .. \
+            -G "MinGW Makefiles" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$MSYSTEM_PREFIX" \
+            -DCMAKE_FIND_ROOT_PATH="$MSYSTEM_PREFIX"
+
           cmake --build . --config Release
           echo "Build completed successfully"
           ls -la *.exe

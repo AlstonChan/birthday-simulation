@@ -23,8 +23,18 @@ if(WIN32)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -Bstatic -Wl,-Bdynamic")
     endif()
 
+    # Use environment variable or CMake variable for MSYS2 prefix
+    if(DEFINED ENV{MSYSTEM_PREFIX})
+        set(MSYS2_PREFIX $ENV{MSYSTEM_PREFIX})
+    else()
+        set(MSYS2_PREFIX "C:/msys64/ucrt64")
+    endif()
+
+    message(STATUS "Using MSYS2 prefix: ${MSYS2_PREFIX}")
+
     set(CMAKE_PREFIX_PATH
-        "C:/msys64/ucrt64"
+        "${MSYS2_PREFIX}"
+        "${MSYS2_PREFIX}/include"
         "/ucrt64/include"
         "/ucrt64"
         "/usr/local"
@@ -70,7 +80,7 @@ if(WIN32)
     target_include_directories(
         Birthday_Simulation
         PRIVATE ${CMAKE_SOURCE_DIR}/include
-        "C:/msys64/ucrt64/include/ncursesw"
+        "${MSYS2_PREFIX}/include/ncursesw"
         ${CMAKE_CURRENT_BINARY_DIR}
     )
 else()
@@ -108,11 +118,17 @@ if(USE_STATIC_LIBS)
     )
 
     if(WIN32)
+        # Use dynamic library discovery instead of hardcoded paths
+        find_library(GLIB2_STATIC_LIB NAMES libglib-2.0.a glib-2.0 PATHS "${MSYS2_PREFIX}/lib" REQUIRED)
+        find_library(PCRE2_STATIC_LIB NAMES libpcre2-8.a pcre2-8 PATHS "${MSYS2_PREFIX}/lib" REQUIRED)
+        find_library(INTL_STATIC_LIB NAMES libintl.a intl PATHS "${MSYS2_PREFIX}/lib" REQUIRED)
+        find_library(ICONV_STATIC_LIB NAMES libiconv.a iconv PATHS "${MSYS2_PREFIX}/lib" REQUIRED)
+
         set(GLIB2_STATIC_LIBS
-            "C:/msys64/ucrt64/lib/libglib-2.0.a"
-            "C:/msys64/ucrt64/lib/libpcre2-8.a"
-            "C:/msys64/ucrt64/lib/libintl.a"
-            "C:/msys64/ucrt64/lib/libiconv.a"
+            "${GLIB2_STATIC_LIB}"
+            "${PCRE2_STATIC_LIB}"
+            "${INTL_STATIC_LIB}"
+            "${ICONV_STATIC_LIB}"
         )
 
         set(GLIB2_SYSTEM_LIBS
@@ -123,6 +139,12 @@ if(USE_STATIC_LIBS)
             uuid
             m
         )
+
+        message(STATUS "Found GLib static libraries:")
+        message(STATUS "  GLIB2: ${GLIB2_STATIC_LIB}")
+        message(STATUS "  PCRE2: ${PCRE2_STATIC_LIB}")
+        message(STATUS "  INTL: ${INTL_STATIC_LIB}")
+        message(STATUS "  ICONV: ${ICONV_STATIC_LIB}")
     else()
         set(GLIB2_STATIC_LIBS
             "/usr/lib/x86_64-linux-gnu/libglib-2.0.a" # or /usr/local/lib/
@@ -139,14 +161,14 @@ if(USE_STATIC_LIBS)
         if(EXISTS "/usr/lib/x86_64-linux-gnu/libintl.a")
             list(APPEND GLIB2_STATIC_LIBS "/usr/lib/x86_64-linux-gnu/libintl.a")
         endif()
-    endif()
 
-    # Check if the static libraries exist
-    foreach(lib ${GLIB2_STATIC_LIBS})
-        if(NOT EXISTS ${lib})
-            message(FATAL_ERROR "Static library not found: ${lib}")
-        endif()
-    endforeach()
+        # Check if the static libraries exist
+        foreach(lib ${GLIB2_STATIC_LIBS})
+            if(NOT EXISTS ${lib})
+                message(FATAL_ERROR "Static library not found: ${lib}")
+            endif()
+        endforeach()
+    endif()
 
     message(STATUS "Using explicit static GLib libraries: ${GLIB2_STATIC_LIBS}")
 else()
