@@ -36,31 +36,31 @@ You can download the executable from [GitHub release](https://github.com/AlstonC
 
    - For linux:
 
-      ```bash
-      sudo apt update && sudo apt install build-essential libncurses5-dev libncursesw5-dev libssl-dev libglib2.0-dev libc6-dev libzstd-dev libtinfo-dev gdb valgrind clang-format
-      ```
+     ```bash
+     sudo apt update && sudo apt install build-essential libncurses5-dev libncursesw5-dev libsysprof-capture-4-dev libssl-dev libglib2.0-dev libc6-dev libzstd-dev libtinfo-dev gdb valgrind clang-format
+     ```
 
    - For Windows:
 
-      Open your MSYS2-UCRT64 command line:
+     Open your MSYS2-UCRT64 command line:
 
-      Update and upgrade all the packages, you MAY need to run this command multiple times until you see the message `there is nothing to do`.
+     Update and upgrade all the packages, you MAY need to run this command multiple times until you see the message `there is nothing to do`.
 
-      ```bash
-      pacman -Syu
-      ```
+     ```bash
+     pacman -Syu
+     ```
 
-      Install the toolchain:
+     Install the toolchain:
 
-      ```bash
-      pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain
-      ```
+     ```bash
+     pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain
+     ```
 
-      then install the packages:
+     then install the packages:
 
-      ```bash
-      pacman -S mingw-w64-ucrt-x86_64-glib2 mingw-w64-ucrt-x86_64-ncurses mingw-w64-ucrt-x86_64-openssl
-      ```
+     ```bash
+     pacman -S mingw-w64-ucrt-x86_64-glib2 mingw-w64-ucrt-x86_64-ncurses mingw-w64-ucrt-x86_64-openssl
+     ```
 
 3. Generate the `make` file with `CMake`, for your platform:
 

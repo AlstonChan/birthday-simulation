@@ -39,6 +39,7 @@ jobs:
             mingw-w64-ucrt-x86_64-cmake
             mingw-w64-ucrt-x86_64-ncurses
             mingw-w64-ucrt-x86_64-openssl
+            mingw-w64-ucrt-x86_64-glib2
 
       - name: Build with CMake (ucrt64)
         run: |

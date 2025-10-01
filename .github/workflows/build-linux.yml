@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential cmake libncurses5-dev libncursesw5-dev libssl-dev libglib2.0-dev libc6-dev libzstd-dev libtinfo-dev
+          sudo apt install -y build-essential cmake libncurses5-dev libncursesw5-dev libssl-dev libglib2.0-dev libsysprof-capture-4-dev libc6-dev libzstd-dev libtinfo-dev
 
       - name: Build with CMake
         run: |

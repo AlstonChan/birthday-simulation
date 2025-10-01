@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   build-docs:
-    if: github.ref == 'refs/heads/zmain' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
